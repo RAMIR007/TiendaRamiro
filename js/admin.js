@@ -236,4 +236,124 @@ function resetDefaults() {
 function setupAdminEvents() {
   document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
   document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
+  document.getElementById('userForm')?.addEventListener('submit', handleSaveUser);
+}
+
+// Modal de Usuarios
+function openUsersModal() {
+  const modal = document.getElementById('usersModal');
+  renderUsersList();
+  document.getElementById('userForm').reset();
+  document.getElementById('userFormTitle').textContent = 'Crear Nuevo Usuario';
+  document.getElementById('uUsername').removeAttribute('readonly');
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('active'), 10);
+}
+
+function closeUsersModal() {
+  const modal = document.getElementById('usersModal');
+  modal.classList.remove('active');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 200);
+}
+
+function renderUsersList() {
+  const container = document.getElementById('usersListContainer');
+  const users = getUsers();
+
+  container.innerHTML = users.map(u => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 0.85rem;">
+      <div>
+        <strong>${u.name}</strong> <code style="color: #818cf8; margin-left: 4px;">@${u.user}</code>
+        <div style="font-size: 0.75rem; color: var(--text-dim);">
+          Rol: ${u.role === 'admin' ? '👑 Administrador Total' : '📦 Ventas & Stock'}
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.4rem; align-items: center;">
+        <button class="btn-icon" onclick="editUserPassword('${u.user}')" title="Cambiar Contraseña">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </button>
+        ${u.user !== 'admin' ? `
+          <button class="btn-icon del" onclick="deleteUserAccount('${u.user}')" title="Eliminar Usuario">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function editUserPassword(username) {
+  const users = getUsers();
+  const user = users.find(u => u.user === username);
+  if (!user) return;
+
+  document.getElementById('userFormTitle').textContent = `Editar / Cambiar Contraseña de @${user.user}`;
+  document.getElementById('uName').value = user.name;
+  document.getElementById('uUsername').value = user.user;
+  document.getElementById('uUsername').setAttribute('readonly', 'true');
+  document.getElementById('uPassword').value = user.pass;
+  document.getElementById('uRole').value = user.role;
+}
+
+function handleSaveUser(e) {
+  e.preventDefault();
+  const name = document.getElementById('uName').value.trim();
+  const username = document.getElementById('uUsername').value.trim().toLowerCase();
+  const pass = document.getElementById('uPassword').value.trim();
+  const role = document.getElementById('uRole').value;
+
+  if (!name || !username || !pass) {
+    alert('Por favor completa todos los campos.');
+    return;
+  }
+
+  let users = getUsers();
+  const existingIndex = users.findIndex(u => u.user.toLowerCase() === username);
+
+  if (existingIndex > -1) {
+    // Actualizar usuario o contraseña de admin
+    users[existingIndex].name = name;
+    users[existingIndex].pass = pass;
+    users[existingIndex].role = role;
+    alert(`Usuario @${username} actualizado con éxito.`);
+  } else {
+    // Nuevo usuario
+    users.push({ user: username, pass, role, name });
+    alert(`Nuevo usuario @${username} creado con éxito.`);
+  }
+
+  localStorage.setItem('rx_admin_users', JSON.stringify(users));
+  
+  // Si el usuario actualmente logueado se actualizó a sí mismo
+  if (currentUser && currentUser.user.toLowerCase() === username) {
+    currentUser = users.find(u => u.user.toLowerCase() === username);
+    sessionStorage.setItem('rx_admin_user', JSON.stringify(currentUser));
+    applyRolePermissions();
+  }
+
+  renderUsersList();
+  document.getElementById('userForm').reset();
+  document.getElementById('userFormTitle').textContent = 'Crear Nuevo Usuario';
+  document.getElementById('uUsername').removeAttribute('readonly');
+}
+
+function deleteUserAccount(username) {
+  if (username === 'admin') {
+    alert('No se puede eliminar la cuenta principal de admin.');
+    return;
+  }
+  if (!confirm(`¿Eliminar al usuario @${username}?`)) return;
+
+  let users = getUsers();
+  users = users.filter(u => u.user !== username);
+  localStorage.setItem('rx_admin_users', JSON.stringify(users));
+  renderUsersList();
 }
