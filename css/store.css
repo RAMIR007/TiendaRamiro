@@ -1093,3 +1093,47 @@ body {
   color: var(--primary);
   text-decoration: none;
 }
+
+/* Botón Flotante FAB Carrito para Móviles */
+.cart-floating-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px var(--primary-glow);
+  cursor: pointer;
+  z-index: 150;
+  transition: var(--transition);
+}
+
+.cart-floating-fab:hover {
+  transform: scale(1.08) translateY(-3px);
+  box-shadow: 0 12px 28px var(--primary-glow);
+}
+
+.cart-floating-fab .cart-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ffffff;
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+@media (min-width: 900px) {
+  .cart-floating-fab {
+    display: none;
+  }
+}
