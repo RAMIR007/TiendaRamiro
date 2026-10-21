@@ -158,7 +158,7 @@ function closeCartDrawer() {
   if (overlay) overlay.classList.remove('open');
 }
 
-// Enviar pedido estructurado hacia WhatsApp
+// Enviar pedido estructurado hacia WhatsApp y registrar venta
 function checkoutWhatsApp() {
   if (cart.length === 0) return;
 
@@ -166,7 +166,44 @@ function checkoutWhatsApp() {
   const clientAddress = document.getElementById('clientAddress')?.value.trim() || 'A coordinar';
   const clientNotes = document.getElementById('clientNotes')?.value.trim() || '';
 
-  const { total } = getCartTotals();
+  const { total, count } = getCartTotals();
+
+  // Guardar en el historial de ventas
+  const orderRecord = {
+    id: 'ord-' + Date.now(),
+    date: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
+    timestamp: Date.now(),
+    clientName,
+    clientAddress,
+    clientNotes,
+    items: JSON.parse(JSON.stringify(cart)),
+    total,
+    count
+  };
+
+  const existingOrders = JSON.parse(localStorage.getItem('rx_store_orders') || '[]');
+  existingOrders.unshift(orderRecord);
+  localStorage.setItem('rx_store_orders', JSON.stringify(existingOrders));
+
+  // Descontar inventario/stock de los productos vendidos
+  let products = getStoredProducts();
+  cart.forEach(cartItem => {
+    const prod = products.find(p => p.id === cartItem.id);
+    if (prod) {
+      prod.stock = Math.max(0, (prod.stock || 0) - cartItem.quantity);
+    }
+  });
+  saveProducts(products);
+
+  // Registrar en historial de auditoría
+  const auditLogs = JSON.parse(localStorage.getItem('rx_store_audit_logs') || '[]');
+  auditLogs.unshift({
+    timestamp: Date.now(),
+    date: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
+    user: 'Cliente (Web)',
+    action: `Venta generada por $${total} USD (${count} productos) para ${clientName}`
+  });
+  localStorage.setItem('rx_store_audit_logs', JSON.stringify(auditLogs));
 
   let message = `👋 ¡Hola! Quiero realizar el siguiente pedido en la tienda:\n\n`;
   message += `📦 *PRODUCTOS SOLICITADOS:*\n`;

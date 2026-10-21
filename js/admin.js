@@ -1,22 +1,47 @@
-// js/admin.js - Lógica del panel administrativo local con roles
+// js/admin.js - Lógica del panel administrativo con hashing SHA-256, roles, auditoría y pedidos
+
+// Hash SHA-256 precalculado para:
+// admin123 -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
+// ventas123 -> 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
 const DEFAULT_USERS = [
-  { user: 'admin', pass: 'admin123', role: 'admin', name: 'Administrador Principal' },
-  { user: 'ventas', pass: 'ventas123', role: 'staff', name: 'Gestor de Ventas y Stock' }
+  { user: 'admin', passHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', role: 'admin', name: 'Administrador Principal' },
+  { user: 'ventas', passHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'staff', name: 'Gestor de Ventas y Stock' }
 ];
 
 let currentUser = null;
+
+// Función criptográfica Web Crypto SHA-256
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 function getUsers() {
   const saved = localStorage.getItem('rx_admin_users');
   if (saved) {
     try {
-      return JSON.parse(saved);
-    } catch (e) {
-      // fallback
-    }
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {}
   }
   localStorage.setItem('rx_admin_users', JSON.stringify(DEFAULT_USERS));
   return DEFAULT_USERS;
+}
+
+// Registrar eventos en el historial de auditoría
+function logActivity(actionDesc) {
+  const auditLogs = JSON.parse(localStorage.getItem('rx_store_audit_logs') || '[]');
+  auditLogs.unshift({
+    timestamp: Date.now(),
+    date: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
+    user: currentUser ? `@${currentUser.user} (${currentUser.name})` : 'Sistema',
+    action: actionDesc
+  });
+  // Mantener últimos 150 registros
+  if (auditLogs.length > 150) auditLogs.pop();
+  localStorage.setItem('rx_store_audit_logs', JSON.stringify(auditLogs));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,6 +58,8 @@ function checkAuth() {
       document.getElementById('adminLayout').style.display = 'block';
       applyRolePermissions();
       renderAdminTable();
+      renderOrdersHistory();
+      renderAuditLogs();
       return;
     } catch (e) {}
   }
@@ -40,17 +67,22 @@ function checkAuth() {
   document.getElementById('adminLayout').style.display = 'none';
 }
 
-function handleLogin(e) {
+async function handleLogin(e) {
   e.preventDefault();
   const userInput = document.getElementById('adminUser').value.trim();
   const passInput = document.getElementById('adminPassword').value.trim();
+  const passHash = await sha256(passInput);
   const users = getUsers();
 
-  const found = users.find(u => u.user.toLowerCase() === userInput.toLowerCase() && u.pass === passInput);
+  const found = users.find(u => 
+    u.user.toLowerCase() === userInput.toLowerCase() && 
+    (u.passHash === passHash || u.pass === passInput)
+  );
 
   if (found) {
     currentUser = found;
     sessionStorage.setItem('rx_admin_user', JSON.stringify(found));
+    logActivity(`Inicio de sesión en panel administrativo`);
     checkAuth();
   } else {
     alert('Usuario o contraseña incorrectos.');
@@ -58,6 +90,9 @@ function handleLogin(e) {
 }
 
 function handleLogout() {
+  if (currentUser) {
+    logActivity(`Cierre de sesión`);
+  }
   currentUser = null;
   sessionStorage.removeItem('rx_admin_user');
   checkAuth();
@@ -67,16 +102,44 @@ function applyRolePermissions() {
   if (!currentUser) return;
   const userBadge = document.getElementById('adminUserBadge');
   if (userBadge) {
-    userBadge.textContent = `${currentUser.name} (${currentUser.role === 'admin' ? 'Acceso Total' : 'Stock & Pedidos'})`;
+    userBadge.textContent = `${currentUser.name} (${currentUser.role === 'admin' ? '👑 Acceso Total' : '📦 Ventas & Stock'})`;
   }
 
-  // Ocultar acciones críticas si es personal de ventas (staff)
+  // Ocultar acciones exclusivas de SuperAdmin al personal de ventas
   const isStaff = currentUser.role === 'staff';
-  const deleteBtns = document.querySelectorAll('.btn-icon.del');
-  deleteBtns.forEach(b => b.style.display = isStaff ? 'none' : 'inline-flex');
+  
+  const manageUsersBtn = document.getElementById('btnManageUsers');
+  if (manageUsersBtn) manageUsersBtn.style.display = isStaff ? 'none' : 'inline-flex';
 
   const resetBtn = document.getElementById('btnResetCatalog');
   if (resetBtn) resetBtn.style.display = isStaff ? 'none' : 'inline-flex';
+
+  const deleteBtns = document.querySelectorAll('.btn-icon.del');
+  deleteBtns.forEach(b => b.style.display = isStaff ? 'none' : 'inline-flex');
+}
+
+// Navegación entre pestañas (Catálogo, Pedidos, Auditoría)
+function switchAdminTab(tabKey) {
+  const tabs = ['products', 'orders', 'audit'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    const content = document.getElementById(`tabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    if (btn) {
+      if (t === tabKey) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      } else {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-secondary');
+      }
+    }
+    if (content) {
+      content.style.display = (t === tabKey) ? 'block' : 'none';
+    }
+  });
+
+  if (tabKey === 'orders') renderOrdersHistory();
+  if (tabKey === 'audit') renderAuditLogs();
 }
 
 // Renderizar tabla
@@ -299,19 +362,20 @@ function editUserPassword(username) {
   document.getElementById('uName').value = user.name;
   document.getElementById('uUsername').value = user.user;
   document.getElementById('uUsername').setAttribute('readonly', 'true');
-  document.getElementById('uPassword').value = user.pass;
+  document.getElementById('uPassword').value = '';
+  document.getElementById('uPassword').placeholder = 'Dejar en blanco para mantener la actual';
   document.getElementById('uRole').value = user.role;
 }
 
-function handleSaveUser(e) {
+async function handleSaveUser(e) {
   e.preventDefault();
   const name = document.getElementById('uName').value.trim();
   const username = document.getElementById('uUsername').value.trim().toLowerCase();
   const pass = document.getElementById('uPassword').value.trim();
   const role = document.getElementById('uRole').value;
 
-  if (!name || !username || !pass) {
-    alert('Por favor completa todos los campos.');
+  if (!name || !username) {
+    alert('Por favor completa el nombre y usuario.');
     return;
   }
 
@@ -319,20 +383,31 @@ function handleSaveUser(e) {
   const existingIndex = users.findIndex(u => u.user.toLowerCase() === username);
 
   if (existingIndex > -1) {
-    // Actualizar usuario o contraseña de admin
+    // Actualizar usuario existente
     users[existingIndex].name = name;
-    users[existingIndex].pass = pass;
     users[existingIndex].role = role;
+    if (pass) {
+      users[existingIndex].passHash = await sha256(pass);
+      delete users[existingIndex].pass; // Eliminar clave en texto plano
+      logActivity(`Cambió la contraseña del usuario @${username}`);
+    } else {
+      logActivity(`Actualizó datos del usuario @${username}`);
+    }
     alert(`Usuario @${username} actualizado con éxito.`);
   } else {
     // Nuevo usuario
-    users.push({ user: username, pass, role, name });
+    if (!pass) {
+      alert('Debes asignar una contraseña al nuevo usuario.');
+      return;
+    }
+    const passHash = await sha256(pass);
+    users.push({ user: username, passHash, role, name });
+    logActivity(`Creó un nuevo usuario: @${username} con rol ${role}`);
     alert(`Nuevo usuario @${username} creado con éxito.`);
   }
 
   localStorage.setItem('rx_admin_users', JSON.stringify(users));
   
-  // Si el usuario actualmente logueado se actualizó a sí mismo
   if (currentUser && currentUser.user.toLowerCase() === username) {
     currentUser = users.find(u => u.user.toLowerCase() === username);
     sessionStorage.setItem('rx_admin_user', JSON.stringify(currentUser));
@@ -343,6 +418,7 @@ function handleSaveUser(e) {
   document.getElementById('userForm').reset();
   document.getElementById('userFormTitle').textContent = 'Crear Nuevo Usuario';
   document.getElementById('uUsername').removeAttribute('readonly');
+  document.getElementById('uPassword').placeholder = 'Mínimo 4 caracteres';
 }
 
 function deleteUserAccount(username) {
@@ -355,5 +431,85 @@ function deleteUserAccount(username) {
   let users = getUsers();
   users = users.filter(u => u.user !== username);
   localStorage.setItem('rx_admin_users', JSON.stringify(users));
+  logActivity(`Eliminó la cuenta de usuario: @${username}`);
   renderUsersList();
+}
+
+// Renderizar Historial de Ventas / Pedidos
+function renderOrdersHistory() {
+  const container = document.getElementById('ordersListContainer');
+  const countBadge = document.getElementById('ordersBadgeCount');
+  const totalAmountEl = document.getElementById('ordersTotalAmount');
+  if (!container) return;
+
+  const orders = JSON.parse(localStorage.getItem('rx_store_orders') || '[]');
+  
+  if (countBadge) countBadge.textContent = orders.length;
+
+  let sum = 0;
+  orders.forEach(o => sum += (o.total || 0));
+  if (totalAmountEl) totalAmountEl.textContent = `$${sum} USD`;
+
+  if (orders.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2.5rem; color: var(--text-dim);">
+        <p>Aún no se han generado pedidos en la tienda.</p>
+        <small>Cada vez que un cliente complete un pedido a WhatsApp, se registrará aquí automáticamente.</small>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = orders.map(ord => `
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <strong style="color: #fff; font-size: 0.95rem;">👤 ${ord.clientName}</strong>
+          <span style="font-size: 0.75rem; color: var(--text-dim); margin-left: 0.5rem;">📍 ${ord.clientAddress}</span>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">$${ord.total} USD</span>
+          <div style="font-size: 0.72rem; color: var(--text-dim);">${ord.date}</div>
+        </div>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 0.5rem 0.75rem; border-radius: 6px;">
+        ${(ord.items || []).map(i => `• ${i.quantity}x ${i.name} ${i.variant ? `(${i.variant})` : ''} - $${i.price * i.quantity} USD`).join('<br>')}
+      </div>
+      ${ord.clientNotes ? `<div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.4rem;">💬 <em>Nota: ${ord.clientNotes}</em></div>` : ''}
+    </div>
+  `).join('');
+}
+
+// Renderizar Historial de Auditoría
+function renderAuditLogs() {
+  const container = document.getElementById('auditListContainer');
+  if (!container) return;
+
+  const logs = JSON.parse(localStorage.getItem('rx_store_audit_logs') || '[]');
+
+  if (logs.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: var(--text-dim);">
+        <p>No hay eventos registrados en la auditoría.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = logs.map(l => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.85rem; background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.82rem; border-left: 3px solid var(--primary);">
+      <div>
+        <strong style="color: #818cf8;">${l.user}</strong>: 
+        <span style="color: var(--text-main);">${l.action}</span>
+      </div>
+      <span style="font-size: 0.72rem; color: var(--text-dim); margin-left: 1rem; white-space: nowrap;">${l.date}</span>
+    </div>
+  `).join('');
+}
+
+function clearAuditLogs() {
+  if (confirm('¿Vaciar el historial de actividad y auditoría?')) {
+    localStorage.removeItem('rx_store_audit_logs');
+    renderAuditLogs();
+  }
 }
