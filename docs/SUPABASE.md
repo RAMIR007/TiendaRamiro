@@ -125,11 +125,11 @@ se actualiza después.
 ## 5. Esquema mínimo (SQL de referencia)
 
 ```sql
--- Perfiles y roles
+-- Perfiles y roles (toda cuenta nueva nace 'pending' hasta que un admin la aprueba)
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
-  role text not null default 'staff' check (role in ('admin','staff'))
+  role text not null default 'pending' check (role in ('admin','staff','pending'))
 );
 
 create or replace function public.is_admin()
@@ -137,11 +137,14 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 
--- Cualquier perfil existente (admin o staff) puede leer pedidos.
+-- Solo el personal aprobado (admin o staff) puede leer pedidos.
 -- Security definer evita que la política de profiles filtre la subconsulta.
 create or replace function public.is_staff()
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles where id = auth.uid());
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin','staff')
+  );
 $$;
 
 -- Catálogo

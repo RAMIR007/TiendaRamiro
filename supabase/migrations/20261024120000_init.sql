@@ -12,7 +12,9 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null default '',
-  role text not null default 'staff' check (role in ('admin', 'staff')),
+  -- 'pending' = cuenta creada pero sin aprobar: no puede leer ni escribir nada.
+  role text not null default 'pending'
+    check (role in ('admin', 'staff', 'pending')),
   created_at timestamptz not null default now()
 );
 
@@ -32,7 +34,7 @@ as $$
   );
 $$;
 
--- ¿El usuario autenticado es personal (admin o ventas)?
+-- ¿El usuario autenticado es personal aprobado (admin o ventas)?
 create or replace function public.is_staff()
 returns boolean
 language sql
@@ -42,11 +44,13 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.profiles
-    where id = auth.uid()
+    where id = auth.uid() and role in ('admin', 'staff')
   );
 $$;
 
 -- Perfil automático al crear un usuario en Supabase Auth.
+-- Queda en 'pending': aunque el registro público estuviera abierto, la cuenta
+-- nueva no puede ver pedidos ni tocar el catálogo hasta que un admin la apruebe.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -61,7 +65,7 @@ begin
       nullif(new.raw_user_meta_data ->> 'name', ''),
       split_part(coalesce(new.email, ''), '@', 1)
     ),
-    'staff'
+    'pending'
   )
   on conflict (id) do nothing;
 

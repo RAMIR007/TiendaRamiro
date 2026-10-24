@@ -49,14 +49,34 @@ where id = (select id from auth.users where email = 'ramiro@tudominio.com');
 
 5. Verifica en **Table Editor → profiles** que tu fila tenga `role = admin`.
 
-Para un empleado de ventas, repite el paso 1 y **no** ejecutes el `update`: queda como
-`staff` automáticamente (el trigger le crea el perfil).
+Para un empleado de ventas, repite el paso 1 y ejecuta también el `update`, pero con
+`role = 'staff'`:
+
+```sql
+update public.profiles
+set role = 'staff', name = 'Ventas'
+where id = (select id from auth.users where email = 'ventas@tudominio.com');
+```
+
+> Toda cuenta nueva nace como **`pending`**: puede iniciar sesión, pero no ve pedidos ni
+> toca el catálogo hasta que un administrador la ascienda a `staff` o `admin`. Es una
+> segunda barrera además de cerrar el registro público.
 
 ### Cerrar el registro público
 
 **Authentication → Providers → Email**: desactiva **Allow new users to sign up**.
 Así nadie puede crearse una cuenta desde la API pública; los usuarios se crean solo
 desde el panel de Supabase.
+
+#### ¿Qué hace exactamente ese interruptor?
+
+- Controla el endpoint público `POST /auth/v1/signup`. La `anon key` viaja en el
+  navegador, así que sin este paso cualquier persona podría crear cuentas en tu proyecto.
+- **No** afecta a los usuarios que creas desde **Authentication → Users** (esos usan la
+  API de administración).
+- **No** afecta al login de cuentas que ya existen, ni a la recuperación de contraseña.
+- En este esquema, una cuenta creada por la puerta pública quedaría en `pending` y no
+  podría leer pedidos, pero igual conviene cerrarlo para no acumular cuentas basura.
 
 ---
 
