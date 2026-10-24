@@ -128,12 +128,55 @@ Para multiusuario real hace falta un backend (ver punto 10).
 Es un sitio estático: no hay build ni variables de entorno.
 
 1. Sube `index.html`, `admin.html`, `css/`, `js/` (y opcionalmente `img/`) al hosting.
-2. `admin.html` ya incluye `noindex, nofollow` para que no aparezca en buscadores.
+2. `admin.html` incluye `noindex, nofollow`, y `robots.txt` + `_headers` refuerzan que no se
+   indexe.
 3. Recomendado: HTTPS. El login funciona igual sin él (hay un SHA-256 de respaldo en JS), pero
    HTTPS es lo correcto.
 4. Si actualizas `js/config.js`, fuerza recarga en los dispositivos que ya visitaron la tienda.
 
-Opciones gratuitas: Netlify Drop, GitHub Pages, Cloudflare Pages.
+### Cloudflare Pages
+
+La página de producción está en Cloudflare. Configuración correcta del proyecto:
+
+| Ajuste | Valor |
+| --- | --- |
+| Framework preset | **None** |
+| Build command | **(vacío)** |
+| Build output directory | **`/`** (raíz del repo) |
+| Production branch | `main` |
+
+Con el repo conectado, cada `git push` a `main` publica automáticamente. Si el proyecto se creó
+como *Direct Upload*, hay que conectarlo al repositorio en **Settings → Build & deployments** o
+subir los archivos a mano.
+
+Archivos incluidos para producción:
+
+- `_headers`: cabeceras de seguridad y `noindex` para el panel.
+- `robots.txt`: bloquea `/admin.html` en buscadores.
+- `docs/` y `tests/` también se publican como archivos estáticos; no contienen secretos.
+
+### Proteger el panel (importante)
+
+Hoy `admin.html` es accesible desde la URL pública y las credenciales demo están en el código
+(la autenticación es del lado del cliente). Como los datos son de cada navegador, nadie puede
+leer los pedidos del dueño, pero cualquiera puede abrir un panel que parece real.
+
+Opciones, de mejor a peor:
+
+1. **Cloudflare Access** (Zero Trust): política sobre `/admin.html` que solo deje pasar el correo
+   del dueño. El plan gratuito cubre hasta 50 usuarios. Es la solución correcta mientras no haya
+   backend.
+2. **Quitar `admin.html` del despliegue** hasta tener Supabase Auth (el panel no es útil en
+   producción si los datos son locales).
+3. **Mínimo:** `demoMode: false` en `js/config.js` para no mostrar las contraseñas en pantalla.
+   Ojo: la contraseña por defecto sigue funcionando en un navegador nuevo; esto no es seguridad.
+
+### Supabase (si decides migrar)
+
+El análisis completo está en [`docs/SUPABASE.md`](docs/SUPABASE.md): latencia esperada desde
+Cuba, beneficios, límites del plan gratuito, esquema SQL con RLS y plan de migración.
+
+Opciones gratuitas de hosting: Cloudflare Pages, Netlify, GitHub Pages.
 
 ---
 
