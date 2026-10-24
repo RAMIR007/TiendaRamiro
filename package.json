@@ -4,6 +4,8 @@
   "private": true,
   "description": "Catálogo y pedidos por WhatsApp — sitio estático sin build",
   "scripts": {
+    "build": "node scripts/build.js",
+    "deploy": "npx wrangler deploy",
     "test": "node tests/utils.test.js && node tests/integration.test.js",
     "test:utils": "node tests/utils.test.js",
     "test:integration": "node tests/integration.test.js",

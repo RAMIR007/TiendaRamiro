@@ -106,11 +106,11 @@ cliente no cambia: el cuello de botella real sigue siendo WhatsApp.
 
 ```
 Cliente
-  ├─ index.html, css, js  → Cloudflare CDN (igual que hoy)
-  ├─ catálogo             → caché en localStorage (TTL 1 h) + refresco en segundo plano
-  └─ checkout             → 1 POST a Supabase (orders + order_items) → WhatsApp
+  ├─ public/index.html, css, js → Cloudflare CDN (igual que hoy)
+  ├─ catálogo                    → caché en localStorage (TTL 1 h) + refresco en segundo plano
+  └─ checkout                    → 1 POST a Supabase (orders + order_items) → WhatsApp
 
-Panel (admin.html)
+Panel (public/admin.html)
   ├─ login                → Supabase Auth (email/contraseña)
   ├─ pedidos              → SELECT con RLS (solo autenticados)
   ├─ catálogo             → INSERT/UPDATE/DELETE con RLS (solo admin)
@@ -249,7 +249,7 @@ tokens y sesión.
 2. Ejecutar el esquema y las políticas RLS.
 3. Importar los 8 productos actuales (`Exportar JSON` del panel).
 4. Crear el usuario del dueño con Supabase Auth y desactivar registro público.
-5. Añadir `js/api.js` con fetch, caché de catálogo y manejo de errores.
+5. Añadir `public/js/api.js` con fetch, caché de catálogo y manejo de errores.
 6. Cambiar el checkout para guardar en Supabase y mantener WhatsApp como cierre.
 7. Migrar el panel: login real, pedidos desde la API, CRUD contra Supabase.
 8. Dejar `localStorage` como caché y como respaldo si falla la red.

@@ -1,6 +1,6 @@
 // tests/integration.test.js — Prueba de integración real con jsdom.
-// Carga index.html y admin.html, ejecuta sus scripts y simula clics/formularios.
-// Requiere: npm install (jsdom es solo dependencia de desarrollo).
+// Carga public/index.html y public/admin.html, ejecuta sus scripts y simula
+// clics/formularios. Requiere: npm install (jsdom es dependencia de desarrollo).
 
 const fs = require('fs');
 const path = require('path');
@@ -86,7 +86,7 @@ function readJson(win, key, fallback) {
   console.log('\nTienda — catálogo y renderizado');
   /* ---------------------------------------------------------------- */
 
-  const store = await loadPage('index.html');
+  const store = await loadPage('public/index.html');
   const { win, doc } = store;
 
   await check('sin errores de ejecución al cargar', () => {
@@ -262,7 +262,7 @@ function readJson(win, key, fallback) {
   console.log('\nPanel — autenticación');
   /* ---------------------------------------------------------------- */
 
-  const admin = await loadPage('admin.html');
+  const admin = await loadPage('public/admin.html');
   const adminWin = admin.win;
   const adminDoc = admin.doc;
 
@@ -314,7 +314,7 @@ function readJson(win, key, fallback) {
   console.log('\nPanel — administración');
   /* ---------------------------------------------------------------- */
 
-  const panel = await loadPage('admin.html');
+  const panel = await loadPage('public/admin.html');
   const pw = panel.win;
   const pd = panel.doc;
 

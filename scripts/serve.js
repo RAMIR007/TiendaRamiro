@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const root = path.join(__dirname, '..');
+const root = path.join(__dirname, '..', 'public');
 const port = Number(process.env.PORT) || 8080;
 
 const MIME_TYPES = {

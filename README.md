@@ -9,16 +9,16 @@ pedido se envía al WhatsApp del negocio.
 
 ## 1. Empezar
 
-Abrir `index.html` directamente en el navegador, o servirlo en la LAN para probar desde el móvil:
+Abrir `public/index.html` directamente en el navegador, o servirlo en la LAN para probar desde el móvil:
 
 ```bash
-node scripts/serve.js
+npm run serve
 ```
 
 La consola muestra la URL local y las URLs de red (`http://192.168.x.x:8080/`).
 Abre la URL de LAN desde el teléfono conectado al mismo Wi-Fi.
 
-**Panel de administración:** `admin.html`
+**Panel de administración:** `public/admin.html`
 
 | Usuario | Contraseña | Rol |
 | --- | --- | --- |
@@ -26,14 +26,14 @@ Abre la URL de LAN desde el teléfono conectado al mismo Wi-Fi.
 | `ventas` | `ventas123` | Catálogo y stock (sin borrar productos ni gestionar usuarios) |
 
 Las credenciales demo se muestran en el login solo mientras `demoMode` sea `true`
-en `js/config.js`. **Antes de entregar a un cliente real, cambia las contraseñas y pon
+en `public/js/config.js`. **Antes de entregar a un cliente real, cambia las contraseñas y pon
 `demoMode: false`.**
 
 ---
 
 ## 2. Configurar la tienda (un solo archivo)
 
-Todo lo específico del cliente vive en **`js/config.js`**:
+Todo lo específico del cliente vive en **`public/js/config.js`**:
 
 | Opción | Qué hace |
 | --- | --- |
@@ -125,41 +125,51 @@ Para multiusuario real hace falta un backend (ver punto 10).
 
 ## 7. Despliegue
 
-Es un sitio estático: no hay build ni variables de entorno.
+Es un sitio estático: no hay compilación ni variables de entorno. Los archivos publicables
+viven en **`public/`**; el resto (`tests/`, `scripts/`, `docs/`, `package.json`) es tooling y
+no se publica.
 
-1. Sube `index.html`, `admin.html`, `css/`, `js/` (y opcionalmente `img/`) al hosting.
-2. `admin.html` incluye `noindex, nofollow`, y `robots.txt` + `_headers` refuerzan que no se
-   indexe.
-3. Recomendado: HTTPS. El login funciona igual sin él (hay un SHA-256 de respaldo en JS), pero
-   HTTPS es lo correcto.
-4. Si actualizas `js/config.js`, fuerza recarga en los dispositivos que ya visitaron la tienda.
+1. `public/` contiene `index.html`, `admin.html`, `css/`, `js/`, `_headers` y `robots.txt`.
+2. `wrangler.jsonc` declara `assets.directory: "./public"`.
+3. `public/admin.html` incluye `noindex, nofollow`; `robots.txt` y `_headers` lo refuerzan.
+4. Recomendado: HTTPS. El login funciona igual sin él (hay un SHA-256 de respaldo en JS).
+5. Si actualizas `public/js/config.js`, fuerza recarga en los dispositivos que ya visitaron la tienda.
 
-### Cloudflare Pages
+### Cloudflare Workers (producción actual)
 
-La página de producción está en Cloudflare. Configuración correcta del proyecto:
+El sitio se despliega como **Worker con static assets**, no como Pages.
 
 | Ajuste | Valor |
 | --- | --- |
-| Framework preset | **None** |
-| Build command | **(vacío)** |
-| Build output directory | **`/`** (raíz del repo) |
+| Worker name | `tiendaramiro` |
+| Build command | `npm run build` (opcional, solo valida que existan los archivos) |
+| Deploy command | `npx wrangler deploy` |
+| Assets directory | `public` (lo define `wrangler.jsonc`) |
 | Production branch | `main` |
 
-Con el repo conectado, cada `git push` a `main` publica automáticamente. Si el proyecto se creó
-como *Direct Upload*, hay que conectarlo al repositorio en **Settings → Build & deployments** o
-subir los archivos a mano.
+Con el repo conectado, cada `git push` a `main` dispara el build y el deploy.
+
+**Por qué falló el build anterior:** sin `wrangler.jsonc`, Wrangler tomaba la raíz del repo
+(`assets.directory: "."`), leía 3.611 archivos e intentaba subir
+`node_modules/workerd/bin/workerd` (134 MiB), por encima del límite de 25 MiB por archivo.
+Ahora el deploy solo mira `public/`, así que `node_modules`, tests y documentación quedan fuera.
+
+Nota: Cloudflare ejecuta `bun install` porque hay `package.json`; instala `jsdom` (devDependency)
+en el entorno de build, pero **no se publica** porque está fuera de `public/`.
 
 Archivos incluidos para producción:
 
-- `_headers`: cabeceras de seguridad y `noindex` para el panel.
-- `robots.txt`: bloquea `/admin.html` en buscadores.
-- `docs/` y `tests/` también se publican como archivos estáticos; no contienen secretos.
+- `public/_headers`: cabeceras de seguridad y `noindex` para el panel.
+- `public/robots.txt`: bloquea `/admin.html` en buscadores.
+
+Si en el dashboard aparece un campo de *output directory*, ponlo en `public` (o déjalo vacío:
+manda `wrangler.jsonc`).
 
 ### Proteger el panel (importante)
 
-Hoy `admin.html` es accesible desde la URL pública y las credenciales demo están en el código
-(la autenticación es del lado del cliente). Como los datos son de cada navegador, nadie puede
-leer los pedidos del dueño, pero cualquiera puede abrir un panel que parece real.
+Hoy `public/admin.html` es accesible desde la URL pública y las credenciales demo están en el
+código (la autenticación es del lado del cliente). Como los datos son de cada navegador, nadie
+puede leer los pedidos del dueño, pero cualquiera puede abrir un panel que parece real.
 
 Opciones, de mejor a peor:
 
@@ -168,15 +178,16 @@ Opciones, de mejor a peor:
    backend.
 2. **Quitar `admin.html` del despliegue** hasta tener Supabase Auth (el panel no es útil en
    producción si los datos son locales).
-3. **Mínimo:** `demoMode: false` en `js/config.js` para no mostrar las contraseñas en pantalla.
-   Ojo: la contraseña por defecto sigue funcionando en un navegador nuevo; esto no es seguridad.
+3. **Mínimo:** `demoMode: false` en `public/js/config.js` para no mostrar las contraseñas en
+   pantalla. Ojo: la contraseña por defecto sigue funcionando en un navegador nuevo; esto no es
+   seguridad.
 
 ### Supabase (si decides migrar)
 
 El análisis completo está en [`docs/SUPABASE.md`](docs/SUPABASE.md): latencia esperada desde
 Cuba, beneficios, límites del plan gratuito, esquema SQL con RLS y plan de migración.
 
-Opciones gratuitas de hosting: Cloudflare Pages, Netlify, GitHub Pages.
+Opciones gratuitas de hosting: Cloudflare Workers, Netlify, GitHub Pages.
 
 ---
 
@@ -189,8 +200,9 @@ npm test           # utilidades + integración
 
 - `tests/utils.test.js`: SHA-256 (Web Crypto y respaldo JS), escape de HTML, dinero en centavos,
   almacenamiento tolerante a fallos y límite de auditoría.
-- `tests/integration.test.js`: carga `index.html` y `admin.html` en jsdom y simula clics,
-  formularios y login. Cubre XSS, stock, checkout único, roles, auditoría y edición de usuarios.
+- `tests/integration.test.js`: carga `public/index.html` y `public/admin.html` en jsdom y simula
+  clics, formularios y login. Cubre XSS, stock, checkout único, roles, auditoría y edición de
+  usuarios.
 
 Estado actual: **21 + 27 comprobaciones en verde**.
 
@@ -199,18 +211,23 @@ Estado actual: **21 + 27 comprobaciones en verde**.
 ## 9. Estructura
 
 ```
-index.html            Tienda
-admin.html            Panel de administración
-css/store.css         Estilos de la tienda (tokens y componentes compartidos)
-css/admin.css         Estilos del panel (carga store.css antes)
-js/config.js          Configuración del cliente (editar solo esto)
-js/utils.js           Escape HTML, storage seguro, dinero, hashing, foco, toasts
-js/data.js            Productos semilla y normalización del catálogo
-js/cart.js            Carrito, stock, checkout y WhatsApp
-js/store.js           Catálogo, filtros, búsqueda y modal
-js/admin.js           Login, roles, CRUD de catálogo, pedidos, usuarios y auditoría
-scripts/serve.js      Servidor estático para probar en la LAN
-tests/                Pruebas con Node + jsdom
+public/index.html         Tienda (archivo publicable)
+public/admin.html         Panel de administración (archivo publicable)
+public/css/store.css      Estilos de la tienda (tokens y componentes compartidos)
+public/css/admin.css      Estilos del panel (carga store.css antes)
+public/js/config.js       Configuración del cliente (editar solo esto)
+public/js/utils.js        Escape HTML, storage seguro, dinero, hashing, foco, toasts
+public/js/data.js         Productos semilla y normalización del catálogo
+public/js/cart.js         Carrito, stock, checkout y WhatsApp
+public/js/store.js        Catálogo, filtros, búsqueda y modal
+public/js/admin.js        Login, roles, CRUD de catálogo, pedidos, usuarios y auditoría
+public/_headers           Cabeceras de Cloudflare
+public/robots.txt         Bloqueo de /admin.html
+wrangler.jsonc            Configuración del Worker (assets: ./public)
+scripts/serve.js          Servidor estático para probar en la LAN
+scripts/build.js          Verificación previa al deploy
+tests/                    Pruebas con Node + jsdom
+docs/SUPABASE.md          Análisis de la migración a Supabase
 ```
 
 ---

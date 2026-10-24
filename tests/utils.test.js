@@ -7,7 +7,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 
 const root = path.join(__dirname, '..');
-const source = ['js/config.js', 'js/utils.js']
+const source = ['public/js/config.js', 'public/js/utils.js']
   .map((file) => fs.readFileSync(path.join(root, file), 'utf8'))
   .join('\n');
 
