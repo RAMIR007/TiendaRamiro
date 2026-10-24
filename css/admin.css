@@ -73,6 +73,11 @@ body {
   margin-bottom: 1.75rem;
 }
 
+/* La tarjeta centra el título, pero los campos se alinean a la izquierda. */
+.login-card form {
+  text-align: left;
+}
+
 /* Panel Principal de Administración */
 .admin-layout {
   display: none;

@@ -99,7 +99,7 @@
       </button>
       <button type="button" id="tabBtnOrders" class="btn btn-secondary" role="tab"
         aria-selected="false" aria-controls="tabContentOrders" data-action="switch-tab" data-tab="orders" tabindex="-1">
-        💰 Pedidos y Ventas (<span id="ordersBadgeCount">0</span>)
+        <span>💰 Pedidos y Ventas (<span id="ordersBadgeCount">0</span>)</span>
       </button>
       <button type="button" id="tabBtnAudit" class="btn btn-secondary" role="tab"
         aria-selected="false" aria-controls="tabContentAudit" data-action="switch-tab" data-tab="audit" tabindex="-1">
@@ -272,9 +272,10 @@
           <div class="form-group">
             <label for="uRole">Rol de Usuario *</label>
             <select id="uRole" class="form-control" required>
-              <option value="staff">Ventas &amp; Stock (editar existencias/precios)</option>
-              <option value="admin">Administrador (control total)</option>
+              <option value="staff">Ventas &amp; Stock</option>
+              <option value="admin">Administrador</option>
             </select>
+            <small class="form-hint">Ventas edita catálogo y stock; el administrador también usuarios y borrados.</small>
           </div>
         </div>
 
