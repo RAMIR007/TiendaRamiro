@@ -187,6 +187,10 @@ Opciones, de mejor a peor:
 El análisis completo está en [`docs/SUPABASE.md`](docs/SUPABASE.md): latencia esperada desde
 Cuba, beneficios, límites del plan gratuito, esquema SQL con RLS y plan de migración.
 
+La puesta en marcha paso a paso está en [`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md), y
+el esquema listo para pegar en el SQL Editor en
+[`supabase/migrations/20261024120000_init.sql`](supabase/migrations/20261024120000_init.sql).
+
 Opciones gratuitas de hosting: Cloudflare Workers, Netlify, GitHub Pages.
 
 ---
@@ -226,8 +230,10 @@ public/robots.txt         Bloqueo de /admin.html
 wrangler.jsonc            Configuración del Worker (assets: ./public)
 scripts/serve.js          Servidor estático para probar en la LAN
 scripts/build.js          Verificación previa al deploy
+supabase/migrations/      Esquema SQL, RLS y función create_order()
 tests/                    Pruebas con Node + jsdom
 docs/SUPABASE.md          Análisis de la migración a Supabase
+docs/SUPABASE-SETUP.md    Guía de puesta en marcha
 ```
 
 ---
