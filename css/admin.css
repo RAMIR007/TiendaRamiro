@@ -1,18 +1,16 @@
 /* css/admin.css - Panel de Administración Tienda Paquete 3 */
+/* Los tokens compartidos (colores, tipografía, radios) viven en css/store.css,
+   que se carga ANTES que este archivo. Aquí solo se sobreescriben los que
+   cambian en el panel y se declaran los que solo usa el panel. */
 :root {
-  --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --bg-primary: #0a0d14;
   --bg-secondary: #111726;
   --bg-card: rgba(17, 23, 38, 0.85);
   --border-color: rgba(255, 255, 255, 0.1);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
   --danger: #ef4444;
   --danger-hover: #dc2626;
   --success: #10b981;
+
+  /* Radios algo más compactos que en la tienda. */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -128,11 +126,16 @@ body {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary-strong);
   color: #fff;
 }
 .btn-primary:hover {
   background: var(--primary-hover);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -263,10 +266,395 @@ tr:hover td {
 .form-control:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--border-focus);
 }
 
 .form-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+
+.form-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+/* ------------------------------------------------------------------ */
+/* Login                                                               */
+/* ------------------------------------------------------------------ */
+
+.login-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.demo-credentials {
+  margin-top: 1.25rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-align: left;
+}
+
+.demo-credentials ul {
+  margin: 0.4rem 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.demo-credentials code {
+  color: var(--primary-text);
+}
+
+.login-back {
+  margin-top: 1.5rem;
+}
+
+.login-back a {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Cabecera y pestañas                                                 */
+/* ------------------------------------------------------------------ */
+
+.admin-title-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-user-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-text);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Paneles (pedidos y auditoría)                                       */
+/* ------------------------------------------------------------------ */
+
+.panel-pad {
+  padding: 1.5rem;
+  overflow: visible;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.panel-header h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+}
+
+.panel-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.panel-total {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.panel-total strong {
+  color: #34d399;
+  font-size: 1.1rem;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-dim);
+}
+
+.empty-state p {
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Pedidos                                                             */
+/* ------------------------------------------------------------------ */
+
+.order-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.order-card-header strong {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.order-address {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+.order-amount {
+  text-align: right;
+}
+
+.order-amount strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #34d399;
+}
+
+.order-amount span {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.order-items {
+  list-style: none;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.order-notes {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  margin-top: 0.4rem;
+}
+
+.order-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.6rem;
+}
+
+.order-status {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Auditoría                                                           */
+/* ------------------------------------------------------------------ */
+
+.audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.audit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+  font-size: 0.82rem;
+}
+
+.audit-row strong {
+  color: var(--primary-text);
+}
+
+.audit-row time {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabla                                                               */
+/* ------------------------------------------------------------------ */
+
+.table-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-dim);
+}
+
+.table-id {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.table-category {
+  text-transform: capitalize;
+}
+
+.stock-cell.low {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.stock-cell.out {
+  color: #f87171;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ */
+/* Usuarios                                                            */
+/* ------------------------------------------------------------------ */
+
+.users-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.users-box h4 {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.user-row code {
+  color: var(--primary-text);
+  margin-left: 4px;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.user-you {
+  font-size: 0.72rem;
+  color: #34d399;
+}
+
+.user-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.users-form {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.25rem;
+}
+
+.users-form h4 {
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Modales                                                             */
+/* ------------------------------------------------------------------ */
+
+.modal-content--form {
+  max-width: 600px;
+  padding: 2rem;
+}
+
+#usersModal .modal-content {
+  max-width: 650px;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.modal-subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: -0.75rem 0 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
 }
