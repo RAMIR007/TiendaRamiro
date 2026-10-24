@@ -1,0 +1,15 @@
+{
+  "name": "tienda-ramiro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Catálogo y pedidos por WhatsApp — sitio estático sin build",
+  "scripts": {
+    "test": "node tests/utils.test.js && node tests/integration.test.js",
+    "test:utils": "node tests/utils.test.js",
+    "test:integration": "node tests/integration.test.js",
+    "serve": "node scripts/serve.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}
