@@ -137,6 +137,13 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 
+-- Cualquier perfil existente (admin o staff) puede leer pedidos.
+-- Security definer evita que la política de profiles filtre la subconsulta.
+create or replace function public.is_staff()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid());
+$$;
+
 -- Catálogo
 create table public.products (
   id uuid primary key default gen_random_uuid(),
@@ -194,8 +201,7 @@ create policy "cualquiera crea pedido" on public.orders
   for insert to anon, authenticated with check (true);
 
 create policy "staff lee pedidos" on public.orders
-  for select to authenticated
-  using (exists (select 1 from public.profiles p where p.id = auth.uid()));
+  for select to authenticated using (public.is_staff());
 
 create policy "admin borra pedidos" on public.orders
   for delete to authenticated using (public.is_admin());
