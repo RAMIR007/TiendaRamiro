@@ -4,6 +4,10 @@
   X-Frame-Options: SAMEORIGIN
   Permissions-Policy: geolocation=(), camera=(), microphone=()
 
+/admin
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
 /admin.html
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
