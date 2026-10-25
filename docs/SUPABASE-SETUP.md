@@ -32,6 +32,10 @@ El script crea las tablas, activa RLS, define los roles y agrega la función
 `create_order()`, que valida stock y precios en el servidor y descuenta inventario
 en una sola transacción.
 
+> **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutarlo completo.
+> Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a `pending`.
+> No duplica los productos.
+
 ---
 
 ## 3. Crear el usuario administrador
@@ -39,23 +43,27 @@ en una sola transacción.
 1. Ve a **Authentication → Users → Add user → Create new user**.
 2. Correo: el que uses para administrar (ej. `ramiro@tudominio.com`).
 3. Contraseña: una fuerte. Deja activado **Auto Confirm User**.
-4. Copia el correo y ejecuta en el SQL Editor, cambiando el correo:
+4. Copia el correo y ejecuta en el SQL Editor, cambiando el correo. El `insert … on
+   conflict` funciona aunque el perfil no se haya creado automáticamente:
 
 ```sql
-update public.profiles
-set role = 'admin', name = 'Administrador'
-where id = (select id from auth.users where email = 'ramiro@tudominio.com');
+insert into public.profiles (id, name, role)
+select id, split_part(email, '@', 1), 'admin'
+from auth.users
+where email = 'ramiro@tudominio.com'
+on conflict (id) do update set role = 'admin';
 ```
 
 5. Verifica en **Table Editor → profiles** que tu fila tenga `role = admin`.
 
-Para un empleado de ventas, repite el paso 1 y ejecuta también el `update`, pero con
-`role = 'staff'`:
+Para un empleado de ventas, repite el paso 1 y ejecuta lo mismo con `role = 'staff'`:
 
 ```sql
-update public.profiles
-set role = 'staff', name = 'Ventas'
-where id = (select id from auth.users where email = 'ventas@tudominio.com');
+insert into public.profiles (id, name, role)
+select id, split_part(email, '@', 1), 'staff'
+from auth.users
+where email = 'ventas@tudominio.com'
+on conflict (id) do update set role = 'staff';
 ```
 
 > Toda cuenta nueva nace como **`pending`**: puede iniciar sesión, pero no ve pedidos ni

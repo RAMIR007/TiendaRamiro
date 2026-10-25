@@ -422,6 +422,8 @@ on conflict (id) do nothing;
 -- 8. Después de crear el usuario administrador en Authentication → Users,
 --    ejecuta esta sentencia cambiando el correo:
 -- ---------------------------------------------------------------------------
--- update public.profiles
--- set role = 'admin', name = 'Administrador'
--- where id = (select id from auth.users where email = 'admin@tudominio.com');
+-- insert into public.profiles (id, name, role)
+-- select id, split_part(email, '@', 1), 'admin'
+-- from auth.users
+-- where email = 'admin@tudominio.com'
+-- on conflict (id) do update set role = 'admin';

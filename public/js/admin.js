@@ -129,7 +129,11 @@ async function handleLogin(event) {
   } catch (error) {
     console.error('[login]', error);
 
-    if (error.status === 400 || error.status === 401) {
+    const errorCode = error.payload && (error.payload.error_code || error.payload.code);
+
+    if (errorCode === 'email_not_confirmed') {
+      setLoginError('Tu correo aún no está confirmado. Confírmalo en Supabase o crea el usuario con Auto Confirm.');
+    } else if (error.status === 400 || error.status === 401) {
       setLoginError('Correo o contraseña incorrectos.');
     } else {
       setLoginError(error.message || 'No se pudo iniciar sesión.');
