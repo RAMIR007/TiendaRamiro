@@ -663,3 +663,74 @@ tr:hover td {
   margin-top: 1.5rem;
   flex-wrap: wrap;
 }
+
+/* ------------------------------------------------------------------ */
+/* Cuenta y estados nuevos                                             */
+/* ------------------------------------------------------------------ */
+
+.login-note {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.account-box {
+  display: grid;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.account-box div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.account-box span {
+  color: var(--text-dim);
+}
+
+.account-box strong {
+  color: var(--text-main);
+  text-align: right;
+  word-break: break-word;
+}
+
+.order-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.order-status-select {
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-size: 0.78rem;
+  text-transform: capitalize;
+}
+
+.state-pill {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fca5a5;
+  background: rgba(127, 29, 29, 0.35);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+tr.is-inactive td {
+  opacity: 0.65;
+}

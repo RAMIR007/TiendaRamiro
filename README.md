@@ -20,14 +20,9 @@ Abre la URL de LAN desde el teléfono conectado al mismo Wi-Fi.
 
 **Panel de administración:** `public/admin.html`
 
-| Usuario | Contraseña | Rol |
-| --- | --- | --- |
-| `admin` | `admin123` | Acceso total (catálogo, usuarios, pedidos, auditoría) |
-| `ventas` | `ventas123` | Catálogo y stock (sin borrar productos ni gestionar usuarios) |
-
-Las credenciales demo se muestran en el login solo mientras `demoMode` sea `true`
-en `public/js/config.js`. **Antes de entregar a un cliente real, cambia las contraseñas y pon
-`demoMode: false`.**
+El acceso usa **Supabase Auth** con correo y contraseña. Las cuentas se crean en
+Supabase → **Authentication → Users**; no hay contraseñas ni usuarios en el código.
+La puesta en marcha está en [`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md).
 
 ---
 
@@ -44,10 +39,12 @@ Todo lo específico del cliente vive en **`public/js/config.js`**:
 | `currency` / `locale` | Moneda y formato de números/fechas. |
 | `categories` | Categorías del catálogo. Agregar una la hace aparecer en la tienda, el filtro y el panel. |
 | `checkout.minNameLength` / `minAddressLength` | Validación mínima de los datos de entrega. |
-| `demoMode` | Muestra u oculta las credenciales de demostración. |
 
 Cambiar el número de WhatsApp **no requiere tocar ningún otro archivo**. Después de editar,
 recarga con `Ctrl+F5` (o borra la caché) para ver los cambios.
+
+La conexión a Supabase vive en **`public/js/supabase-config.js`** (URL del proyecto y clave
+`publishable`). Esa clave es pública por diseño: la seguridad la dan las políticas RLS.
 
 ---
 
@@ -56,52 +53,47 @@ recarga con `Ctrl+F5` (o borra la caché) para ver los cambios.
 1. El cliente abre el catálogo, filtra y añade productos (el carrito se guarda en su navegador).
 2. Completa nombre, municipio/dirección y una nota opcional.
 3. Pulsa **Completar Pedido en WhatsApp**:
-   - se valida el stock contra el catálogo actual,
-   - se registra el pedido en el historial local,
-   - se descuenta el stock,
+   - el servidor valida precio y stock con `create_order()`,
+   - se guarda el pedido en Supabase y se descuenta el inventario en una transacción,
    - se abre WhatsApp con el mensaje ya redactado (productos, cantidades, variantes, total y datos del cliente).
 4. El dueño confirma por WhatsApp y coordina pago/entrega.
 
-> **Ojo:** el pedido se registra al pulsar el botón, aunque el cliente no llegue a enviar el
-> mensaje de WhatsApp. Revisa la pestaña **Pedidos** y ajusta el stock si un pedido quedó sin
-> confirmar. Es el precio de no tener backend.
+> **Sin conexión:** si el pedido no se puede guardar, la tienda ofrece enviarlo igual por
+> WhatsApp para no perder la venta y avisa que quedó sin registrar. Revisa la pestaña
+> **Pedidos** y ajústalo manualmente si hace falta.
 
 ---
 
 ## 4. Datos y copias de seguridad
 
-Los datos viven en `localStorage` del navegador:
+El catálogo, los pedidos, los perfiles y la auditoría viven en **Supabase** (Postgres).
+En el navegador solo quedan dos claves de caché:
 
 | Clave | Contenido |
 | --- | --- |
-| `rx_store_products` | Catálogo |
+| `rx_store_products` | Última copia del catálogo (para pintar sin esperar a la red) |
 | `rx_store_cart` | Carrito del visitante |
-| `rx_store_orders` | Pedidos registrados |
-| `rx_store_audit_logs` | Auditoría (máximo 150 eventos) |
-| `rx_store_admin_users` | Usuarios y hashes SHA-256 |
-| `rx_store_admin_user` | Sesión (en `sessionStorage`, se borra al cerrar pestaña) |
+| `rx_sb_session` | Sesión del panel en `sessionStorage` (se borra al cerrar la pestaña) |
 
 **Backup:** panel → *Exportar JSON* (catálogo) y *Pedidos → Exportar pedidos*.
-**Restaurar:** panel → *Importar JSON* (reemplaza el catálogo; valida el archivo y descarta imágenes no seguras).
+**Restaurar:** panel → *Importar JSON* (agrega los productos del archivo al catálogo actual).
 
-Haz una copia antes de *Restablecer* o de limpiar la auditoría: esas acciones no se pueden deshacer.
+Para un respaldo completo de la base (incluidos pedidos y auditoría) usa el panel de Supabase
+o `pg_dump` con la cadena de conexión del proyecto.
 
 ---
 
 ## 5. Límites de esta versión (importante)
 
-- **Los datos son del navegador, no del servidor.** El panel del dueño solo muestra los pedidos
-  hechos *en ese mismo navegador*. Un cliente que compra desde su teléfono no aparece en el panel.
-  La función de "pedidos" es útil como demo y para ventas presenciales (mostrador), no como
-  sistema multiusuario.
-- **La autenticación es del lado del cliente.** El SHA-256 evita guardar contraseñas en claro,
-  pero no protege contra alguien con acceso al dispositivo. No es un control de acceso real.
+- **Depende de Supabase.** El catálogo se cachea, pero el panel, el checkout y la sincronización
+  necesitan conexión. Si el proyecto está pausado (plan gratuito inactivo ~1 semana), hay que
+  reactivarlo desde el panel de Supabase.
+- **Las cuentas se gestionan en Supabase.** Crear empleados, cambiar roles o recuperar contraseñas
+  se hace en **Authentication → Users**; el panel solo permite cambiar la propia contraseña.
 - **No hay pagos, envíos ni facturación.** El cierre es por WhatsApp.
-- **El stock puede desincronizarse** si un pedido no se confirma o si se vende por otro canal.
+- **El stock puede desincronizarse** si se vende por otro canal; ajústalo desde el panel.
 - **Las imágenes son externas (Unsplash).** Para producción conviene reemplazarlas por fotos
   propias optimizadas (ver punto 6).
-
-Para multiusuario real hace falta un backend (ver punto 10).
 
 ---
 
@@ -118,8 +110,6 @@ Para multiusuario real hace falta un backend (ver punto 10).
 - **Compartir el catálogo:** publica el sitio (Netlify, GitHub Pages, hosting estático) y comparte
   el enlace o un QR por WhatsApp/Telegram. El pedido siempre llega al chat del negocio.
 - **Backup semanal:** exporta el catálogo y los pedidos a un archivo y guárdalo fuera del teléfono.
-- **Un solo dispositivo para administrar:** como los datos son locales, define qué teléfono o PC
-  se usa para gestionar el catálogo y evita editar desde varios a la vez.
 
 ---
 
@@ -132,7 +122,8 @@ no se publica.
 1. `public/` contiene `index.html`, `admin.html`, `css/`, `js/`, `_headers` y `robots.txt`.
 2. `wrangler.jsonc` declara `assets.directory: "./public"`.
 3. `public/admin.html` incluye `noindex, nofollow`; `robots.txt` y `_headers` lo refuerzan.
-4. Recomendado: HTTPS. El login funciona igual sin él (hay un SHA-256 de respaldo en JS).
+4. Recomendado: HTTPS. Es obligatorio para que el navegador envíe las peticiones a Supabase sin
+   advertencias de contenido mixto.
 5. Si actualizas `public/js/config.js`, fuerza recarga en los dispositivos que ya visitaron la tienda.
 
 ### Cloudflare Workers (producción actual)
@@ -165,30 +156,24 @@ Archivos incluidos para producción:
 Si en el dashboard aparece un campo de *output directory*, ponlo en `public` (o déjalo vacío:
 manda `wrangler.jsonc`).
 
-### Proteger el panel (importante)
+### Proteger el panel
 
-Hoy `public/admin.html` es accesible desde la URL pública y las credenciales demo están en el
-código (la autenticación es del lado del cliente). Como los datos son de cada navegador, nadie
-puede leer los pedidos del dueño, pero cualquiera puede abrir un panel que parece real.
+El panel ya no guarda credenciales en el código: el login lo valida **Supabase Auth** y las
+políticas RLS limitan qué puede leer y escribir cada rol. Aun así, conviene:
 
-Opciones, de mejor a peor:
+1. **Cloudflare Access** (Zero Trust): política sobre `/admin` y `/admin.html` para que solo pase
+   el correo del dueño. El plan gratuito cubre hasta 50 usuarios. Es una capa extra, no un
+   sustituto del login.
+2. **Registro público cerrado** en Supabase (Authentication → Providers → Email). Ya está
+   documentado en la guía.
+3. **Cerrar sesión** en equipos compartidos: la sesión vive en `sessionStorage` y se borra al
+   cerrar la pestaña.
 
-1. **Cloudflare Access** (Zero Trust): política sobre `/admin.html` que solo deje pasar el correo
-   del dueño. El plan gratuito cubre hasta 50 usuarios. Es la solución correcta mientras no haya
-   backend.
-2. **Quitar `admin.html` del despliegue** hasta tener Supabase Auth (el panel no es útil en
-   producción si los datos son locales).
-3. **Mínimo:** `demoMode: false` en `public/js/config.js` para no mostrar las contraseñas en
-   pantalla. Ojo: la contraseña por defecto sigue funcionando en un navegador nuevo; esto no es
-   seguridad.
+### Supabase
 
-### Supabase (si decides migrar)
-
-El análisis completo está en [`docs/SUPABASE.md`](docs/SUPABASE.md): latencia esperada desde
-Cuba, beneficios, límites del plan gratuito, esquema SQL con RLS y plan de migración.
-
-La puesta en marcha paso a paso está en [`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md), y
-el esquema listo para pegar en el SQL Editor en
+El proyecto ya está integrado. El análisis de rendimiento y límites está en
+[`docs/SUPABASE.md`](docs/SUPABASE.md); la puesta en marcha y el esquema, en
+[`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md) y
 [`supabase/migrations/20261024120000_init.sql`](supabase/migrations/20261024120000_init.sql).
 
 Opciones gratuitas de hosting: Cloudflare Workers, Netlify, GitHub Pages.
@@ -202,13 +187,13 @@ npm install        # solo para desarrollo (jsdom)
 npm test           # utilidades + integración
 ```
 
-- `tests/utils.test.js`: SHA-256 (Web Crypto y respaldo JS), escape de HTML, dinero en centavos,
-  almacenamiento tolerante a fallos y límite de auditoría.
-- `tests/integration.test.js`: carga `public/index.html` y `public/admin.html` en jsdom y simula
-  clics, formularios y login. Cubre XSS, stock, checkout único, roles, auditoría y edición de
-  usuarios.
+- `tests/utils.test.js`: escape de HTML, dinero en centavos, almacenamiento tolerante a fallos,
+  normalización de productos y caché del catálogo.
+- `tests/integration.test.js`: carga `public/index.html` y `public/admin.html` en jsdom con un
+  **Supabase simulado** (fetch interceptado). Cubre catálogo, stock, checkout RPC, XSS, login,
+  usuario pendiente, roles, CRUD, pedidos, auditoría y cambio de contraseña.
 
-Estado actual: **21 + 27 comprobaciones en verde**.
+Estado actual: **16 + 21 comprobaciones en verde**.
 
 ---
 
@@ -220,11 +205,13 @@ public/admin.html         Panel de administración (archivo publicable)
 public/css/store.css      Estilos de la tienda (tokens y componentes compartidos)
 public/css/admin.css      Estilos del panel (carga store.css antes)
 public/js/config.js       Configuración del cliente (editar solo esto)
-public/js/utils.js        Escape HTML, storage seguro, dinero, hashing, foco, toasts
-public/js/data.js         Productos semilla y normalización del catálogo
+public/js/supabase-config.js  URL y clave publishable de Supabase
+public/js/supabase.js     Cliente Auth + REST y acceso a datos
+public/js/utils.js        Escape HTML, storage seguro, dinero, foco, toasts
+public/js/data.js         Normalización de productos y caché del catálogo
 public/js/cart.js         Carrito, stock, checkout y WhatsApp
 public/js/store.js        Catálogo, filtros, búsqueda y modal
-public/js/admin.js        Login, roles, CRUD de catálogo, pedidos, usuarios y auditoría
+public/js/admin.js        Login, roles, CRUD de catálogo, pedidos y auditoría
 public/_headers           Cabeceras de Cloudflare
 public/robots.txt         Bloqueo de /admin.html
 wrangler.jsonc            Configuración del Worker (assets: ./public)
@@ -240,35 +227,32 @@ docs/SUPABASE-SETUP.md    Guía de puesta en marcha
 
 ## 10. Próximos pasos sugeridos
 
-1. **Backend real** (Supabase es la opción más rápida y tiene plan gratuito): tabla de pedidos,
-   auth con RLS y catálogo compartido. Esto resuelve el límite del punto 5.
-2. **Estado de pedidos** (pendiente → contactado → entregado) y filtros por fecha.
-3. **Fotos propias optimizadas** en `img/` con un script de conversión a WebP.
-4. **Costo de envío** por municipio y total desglosado.
-5. **Tests E2E** con Playwright sobre el navegador real (hoy jsdom no valida layout ni CSS).
+1. **“Olvidé mi contraseña”** en el login usando el correo de recuperación de Supabase.
+2. **Fotos propias optimizadas** en `img/` con un script de conversión a WebP.
+3. **Costo de envío** por municipio y total desglosado.
+4. **Filtros y paginación** de pedidos por fecha/estado (hoy se listan los últimos 100).
+5. **Protección anti-spam** en `create_order()`: Cloudflare Turnstile o límite por IP.
+6. **WhatsApp Cloud API** en una Edge Function para enviar la confirmación automática.
+7. **Tests E2E** con Playwright sobre el navegador real (jsdom no valida layout ni CSS).
 
 ---
 
 ## 11. Cambios de esta revisión
 
-- **Seguridad:** todo el HTML dinámico se escapa (XSS almacenado eliminado), sin `onclick` inline,
-  URLs de imagen validadas y `JSON.parse` protegido.
-- **Login:** corregido el hash de `ventas` (antes correspondía a otra contraseña), eliminado el
-  fallback en texto plano, manejo de errores visible y SHA-256 de respaldo para contextos sin
-  Web Crypto o navegadores viejos (`TextEncoder` incluido).
-- **Carrito:** valida stock real, no permite superarlo, revalida al cerrar el pedido, registra una
-  sola vez, limpia el carrito y descuenta inventario de forma consistente.
-- **Dinero:** cálculo en centavos enteros y formato con `Intl` (adiós a `$321.99999`).
-- **Roles:** `staff` ya no ve ni puede ejecutar acciones de administrador; se valida dentro de cada
-  función, no solo en la interfaz.
-- **Auditoría:** registra creación, edición, borrado y restablecimiento de productos, además de
-  accesos, usuarios y pedidos.
-- **Usuarios:** se puede editar nombre/rol sin cambiar contraseña; no se puede borrar el último
-  administrador ni la propia cuenta.
-- **Accesibilidad:** catálogo navegable por teclado, diálogos con foco atrapado y retorno de foco,
-  `aria-live` en avisos, contraste AA corregido y respeto a `prefers-reduced-motion`.
-- **UI/UX:** scroll bloqueado con diálogos abiertos, toast que no tapa el carrito, validación con
-  mensajes por campo, importación/exportación de respaldos y mensajes de estado claros.
-- **Rendimiento/SEO:** imágenes con `srcset`, favicon, Open Graph, `noscript`, sin handlers inline.
-- **Mantenimiento:** configuración centralizada, códigos de almacenamiento únicos, sin duplicación
-  de tokens CSS, pruebas automatizadas y este README.
+- **Backend:** migración a Supabase. Catálogo, pedidos, perfiles y auditoría en Postgres con RLS.
+  `create_order()` valida precio/stock y descuenta inventario en una transacción.
+- **Autenticación:** Supabase Auth con correo y contraseña. Se eliminaron los usuarios locales,
+  los hashes SHA-256, `sessionStorage` casero y las credenciales demo del código.
+- **Roles:** `admin`/`staff` desde la tabla `profiles`; las cuentas nuevas nacen `pending` y no
+  ven nada hasta que un administrador las aprueba. RLS aplica los permisos en el servidor.
+- **Pedidos:** visibles desde cualquier dispositivo, con estado (pendiente/contactado/entregado/
+  cancelado), exportación y eliminación.
+- **Seguridad:** todo el HTML dinámico se escapa, sin `onclick` inline, URLs de imagen validadas
+  y `JSON.parse` protegido. La clave `publishable` es pública; la `service_role` no se usa.
+- **Carrito:** valida stock real, no permite superarlo, revalida al cerrar el pedido y contempla
+  el envío por WhatsApp si no hay conexión.
+- **Dinero:** cálculo en centavos enteros y formato con `Intl`.
+- **Accesibilidad:** catálogo navegable por teclado, diálogos con foco atrapado, `aria-live`,
+  contraste AA y `prefers-reduced-motion`.
+- **Rendimiento/SEO:** caché del catálogo, `srcset`, favicon, Open Graph, `noscript`.
+- **Mantenimiento:** configuración centralizada, pruebas automatizadas, guía de Supabase y README.

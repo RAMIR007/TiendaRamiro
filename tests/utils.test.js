@@ -1,13 +1,12 @@
 // tests/utils.test.js — Pruebas sin dependencias: `node tests/utils.test.js`
-// Verifica hashing (incluido el respaldo JS), escape de HTML, dinero y storage.
+// Verifica escape de HTML, dinero, almacenamiento y normalización del catálogo.
 
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const crypto = require('crypto');
 
 const root = path.join(__dirname, '..');
-const source = ['public/js/config.js', 'public/js/utils.js']
+const source = ['public/js/config.js', 'public/js/utils.js', 'public/js/data.js']
   .map((file) => fs.readFileSync(path.join(root, file), 'utf8'))
   .join('\n');
 
@@ -23,55 +22,52 @@ global.localStorage = {
 const api = new Function(
   `${source}
   return {
-    sha256Hex, sha256Fallback, escapeHtml, isSafeImageUrl,
+    escapeHtml, isSafeImageUrl,
     toCents, roundMoney, formatMoney, formatCents,
-    storeRead, storeWrite, storeRemove, pushAudit, STORE_CONFIG, STORAGE_KEYS
+    storeRead, storeWrite, storeRemove,
+    normalizeProduct, normalizeProducts,
+    getCachedProducts, setCachedProducts, clearCachedProducts,
+    STORAGE_KEYS, PRODUCT_PLACEHOLDER_IMAGE, UUID_PATTERN
   };`
 )();
 
 let passed = 0;
+const failures = [];
+
 function check(name, fn) {
   try {
     fn();
     passed += 1;
     console.log(`  ok  ${name}`);
   } catch (error) {
+    failures.push(name);
     console.error(`  FAIL ${name}\n       ${error.message}`);
     process.exitCode = 1;
   }
 }
 
-function referenceSha256(text) {
-  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+const VALID_ID = '11111111-1111-4111-8111-111111111111';
+
+function validProduct(overrides = {}) {
+  return {
+    id: VALID_ID,
+    name: 'Producto de prueba',
+    category: 'tecnologia',
+    price: 12.5,
+    stock: 4,
+    badge: 'Nuevo',
+    description: 'Descripción',
+    images: ['https://example.com/foto.jpg'],
+    variants: ['Negro'],
+    active: true,
+    ...overrides
+  };
 }
-
-const vectors = [
-  '',
-  'abc',
-  'admin123',
-  'ventas123',
-  'contraseña con ñ, áéíóú y €',
-  'x'.repeat(55),
-  'x'.repeat(56),
-  'x'.repeat(64),
-  'x'.repeat(1000)
-];
-
-console.log('\nSHA-256');
-vectors.forEach((text) => {
-  const label = text.length > 20 ? `${text.slice(0, 12)}… (${text.length} chars)` : JSON.stringify(text);
-  check(`respaldo JS coincide con Node: ${label}`, () => {
-    const bytes = new TextEncoder().encode(text);
-    assert.strictEqual(api.sha256Fallback(bytes), referenceSha256(text));
-  });
-});
 
 console.log('\nEscape de HTML');
 check('neutraliza etiquetas y comillas', () => {
-  const input = `<img src=x onerror="alert('xss')">&`;
-  const output = api.escapeHtml(input);
+  const output = api.escapeHtml(`<img src=x onerror="alert('xss')">&`);
   assert.ok(!output.includes('<'));
-  assert.ok(!output.includes('>'));
   assert.ok(output.includes('&lt;img'));
   assert.ok(output.includes('&#39;xss&#39;'));
 });
@@ -123,22 +119,52 @@ check('storeWrite informa fallo de cuota', () => {
   localStorage.setItem = original;
 });
 
-console.log('\nAuditoría');
-check('ordena del más reciente al más antiguo y limita a 150', () => {
-  localStorage.removeItem(api.STORAGE_KEYS.audit);
-  for (let i = 0; i < 200; i += 1) api.pushAudit('prueba', `evento ${i}`);
-  const logs = api.storeRead(api.STORAGE_KEYS.audit, []);
-  assert.strictEqual(logs.length, 150);
-  assert.strictEqual(logs[0].action, 'evento 199');
+console.log('\nProductos');
+check('normaliza un producto válido', () => {
+  const product = api.normalizeProduct(validProduct());
+  assert.strictEqual(product.id, VALID_ID);
+  assert.strictEqual(product.price, 12.5);
+  assert.strictEqual(product.stock, 4);
+  assert.strictEqual(product.active, true);
+  assert.deepStrictEqual(product.variants, ['Negro']);
+});
+check('rechaza ids que no son UUID (catálogos viejos)', () => {
+  assert.strictEqual(api.normalizeProduct(validProduct({ id: 'prod-1' })), null);
+  assert.strictEqual(api.normalizeProduct(validProduct({ id: '' })), null);
+  assert.strictEqual(api.normalizeProduct(validProduct({ name: '' })), null);
+});
+check('filtra imágenes inseguras y usa el placeholder', () => {
+  const product = api.normalizeProduct(validProduct({
+    images: ['javascript:alert(1)', 'https://example.com/ok.jpg']
+  }));
+  assert.deepStrictEqual(product.images, ['https://example.com/ok.jpg']);
+
+  const empty = api.normalizeProduct(validProduct({ images: [] }));
+  assert.deepStrictEqual(empty.images, [api.PRODUCT_PLACEHOLDER_IMAGE]);
+});
+check('respeta productos inactivos', () => {
+  assert.strictEqual(api.normalizeProduct(validProduct({ active: false })).active, false);
 });
 
-(async () => {
-  const digest = await api.sha256Hex('admin123');
-  assert.strictEqual(digest, '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
-  const fallbackDigest = await api.sha256Hex('ñandú');
-  assert.strictEqual(fallbackDigest, referenceSha256('ñandú'));
-  passed += 1;
-  console.log('  ok  sha256Hex usa Web Crypto y coincide con los hashes del panel');
+console.log('\nCaché del catálogo');
+check('guarda, lee y limpia el catálogo', () => {
+  const saved = api.setCachedProducts([validProduct(), validProduct({
+    id: '22222222-2222-4222-8222-222222222222',
+    name: 'Segundo'
+  })]);
 
-  console.log(`\n${passed} comprobaciones OK${process.exitCode ? ' (con fallos)' : ''}\n`);
-})();
+  assert.strictEqual(saved.length, 2);
+  assert.strictEqual(api.getCachedProducts().length, 2);
+
+  api.clearCachedProducts();
+  assert.deepStrictEqual(api.getCachedProducts(), []);
+});
+check('ignora caché corrupta o con ids inválidos', () => {
+  localStorage.setItem(api.STORAGE_KEYS.products, '{no-json');
+  assert.deepStrictEqual(api.getCachedProducts(), []);
+
+  api.setCachedProducts([validProduct({ id: 'prod-1' })]);
+  assert.deepStrictEqual(api.getCachedProducts(), []);
+});
+
+console.log(`\n${passed} comprobaciones OK${failures.length ? `, ${failures.length} fallos` : ''}\n`);

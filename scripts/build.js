@@ -17,6 +17,8 @@ const requiredFiles = [
   'css/admin.css',
   'js/config.js',
   'js/utils.js',
+  'js/supabase-config.js',
+  'js/supabase.js',
   'js/data.js',
   'js/cart.js',
   'js/store.js',

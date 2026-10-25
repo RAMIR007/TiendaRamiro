@@ -18,6 +18,12 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- Actualiza bases creadas con una versión anterior del esquema.
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('admin', 'staff', 'pending'));
+alter table public.profiles alter column role set default 'pending';
+
 alter table public.profiles enable row level security;
 
 -- ¿El usuario autenticado es administrador?
@@ -220,6 +226,10 @@ create policy "audit_staff_read" on public.audit_logs
 drop policy if exists "audit_staff_insert" on public.audit_logs;
 create policy "audit_staff_insert" on public.audit_logs
   for insert to authenticated with check (true);
+
+drop policy if exists "audit_admin_delete" on public.audit_logs;
+create policy "audit_admin_delete" on public.audit_logs
+  for delete to authenticated using (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- 6. Función transaccional de creación de pedido

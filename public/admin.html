@@ -28,24 +28,24 @@
         </svg>
       </div>
       <h2>Acceso Administrativo</h2>
-      <p>Gestiona el catálogo y los pedidos de este dispositivo.</p>
+      <p>Gestiona el catálogo y los pedidos desde cualquier dispositivo.</p>
 
       <form id="loginForm">
         <div class="form-group">
-          <label for="adminUser">Usuario</label>
-          <input type="text" id="adminUser" class="form-control" placeholder="admin o ventas"
+          <label for="adminEmail">Correo electrónico</label>
+          <input type="email" id="adminEmail" class="form-control" placeholder="tu-correo@ejemplo.com"
             autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </div>
         <div class="form-group">
           <label for="adminPassword">Contraseña</label>
-          <input type="password" id="adminPassword" class="form-control" placeholder="Contraseña de acceso"
+          <input type="password" id="adminPassword" class="form-control" placeholder="Tu contraseña"
             autocomplete="current-password" required>
         </div>
         <p id="loginError" class="field-error" role="alert"></p>
         <button type="submit" id="loginSubmit" class="btn btn-primary login-submit">Ingresar al Panel</button>
       </form>
 
-      <div id="demoCredentials" class="demo-credentials" hidden></div>
+      <p class="login-note">Acceso con Supabase Auth. Las cuentas se crean desde el panel de Supabase.</p>
 
       <div class="login-back">
         <a href="index.html">← Volver a la Tienda</a>
@@ -76,11 +76,8 @@
         <button type="button" class="btn btn-secondary" data-action="import-json" data-admin-only hidden>
           Importar JSON
         </button>
-        <button type="button" class="btn btn-secondary" data-action="open-users" data-admin-only hidden>
-          Usuarios
-        </button>
-        <button type="button" class="btn btn-secondary" data-action="reset-catalog" data-admin-only hidden>
-          Restablecer
+        <button type="button" class="btn btn-secondary" data-action="open-account">
+          Mi cuenta
         </button>
         <a href="index.html" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
           Ver Tienda ↗
@@ -132,8 +129,8 @@
       aria-labelledby="tabBtnOrders" hidden>
       <div class="panel-header">
         <div>
-          <h3>Registro de Pedidos Generados</h3>
-          <span class="panel-subtitle">Pedidos cerrados desde la tienda en este navegador.</span>
+          <h3>Registro de Pedidos</h3>
+          <span class="panel-subtitle">Pedidos guardados en Supabase, visibles desde cualquier dispositivo.</span>
         </div>
         <div class="panel-actions">
           <span class="panel-total">Total vendido: <strong id="ordersTotalAmount">$0 USD</strong></span>
@@ -151,10 +148,12 @@
       <div class="panel-header">
         <div>
           <h3>Auditoría de Cambios</h3>
-          <span class="panel-subtitle">Historial de accesos, cambios de catálogo y usuarios.</span>
+          <span class="panel-subtitle">Historial de accesos, cambios de catálogo y pedidos.</span>
         </div>
         <div class="panel-actions">
-          <button type="button" class="btn btn-secondary btn-sm" data-action="clear-audit">Limpiar Historial</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-action="clear-audit" data-admin-only hidden>
+            Limpiar Historial
+          </button>
         </div>
       </div>
       <div id="auditListContainer" class="audit-list">
@@ -168,6 +167,7 @@
     aria-labelledby="formModalTitle" aria-hidden="true">
     <div class="modal-content modal-content--form">
       <h2 id="formModalTitle" class="modal-title">Añadir Producto</h2>
+      <p class="modal-subtitle">Los cambios se guardan en Supabase y se ven en la tienda al instante.</p>
 
       <form id="productForm">
         <input type="hidden" id="productId">
@@ -230,58 +230,36 @@
     </div>
   </div>
 
-  <!-- Modal Gestión de Usuarios y Cambio de Contraseñas -->
-  <div id="usersModal" class="modal-overlay" role="dialog" aria-modal="true"
-    aria-labelledby="usersModalTitle" aria-hidden="true">
+  <!-- Modal Mi Cuenta -->
+  <div id="accountModal" class="modal-overlay" role="dialog" aria-modal="true"
+    aria-labelledby="accountModalTitle" aria-hidden="true">
     <div class="modal-content modal-content--form">
-      <h2 id="usersModalTitle" class="modal-title">Gestión de Usuarios &amp; Accesos</h2>
-      <p class="modal-subtitle">Crea operadores de ventas o actualiza la contraseña del administrador.</p>
+      <h2 id="accountModalTitle" class="modal-title">Mi cuenta</h2>
+      <p class="modal-subtitle">Los usuarios se gestionan en Supabase → Authentication. Aquí puedes cambiar tu contraseña.</p>
 
-      <!-- Lista de usuarios existentes -->
-      <div class="users-box">
-        <h4>Usuarios actuales:</h4>
-        <div id="usersListContainer" class="users-list">
-          <!-- Inyectado por js/admin.js -->
-        </div>
+      <div class="account-box">
+        <div><span>Correo</span><strong id="accountEmail"></strong></div>
+        <div><span>Nombre</span><strong id="accountName"></strong></div>
+        <div><span>Rol</span><strong id="accountRole"></strong></div>
       </div>
 
-      <!-- Formulario para agregar / editar usuario -->
-      <form id="userForm" class="users-form">
-        <input type="hidden" id="uEditing" value="">
-        <h4 id="userFormTitle">Crear Nuevo Usuario</h4>
-
+      <form id="accountForm">
         <div class="form-grid-2">
           <div class="form-group">
-            <label for="uName">Nombre Completo *</label>
-            <input type="text" id="uName" class="form-control" placeholder="ej. María López" required maxlength="60">
+            <label for="newPassword">Nueva contraseña *</label>
+            <input type="password" id="newPassword" class="form-control" minlength="8"
+              autocomplete="new-password" required placeholder="Mínimo 8 caracteres">
           </div>
           <div class="form-group">
-            <label for="uUsername">Nombre de Usuario (Login) *</label>
-            <input type="text" id="uUsername" class="form-control" placeholder="ej. maria_ventas"
-              autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="20">
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label for="uPassword">Contraseña</label>
-            <input type="password" id="uPassword" class="form-control" placeholder="Mínimo 4 caracteres"
-              autocomplete="new-password">
-            <small class="form-hint">Al editar, deja en blanco para mantener la actual.</small>
-          </div>
-          <div class="form-group">
-            <label for="uRole">Rol de Usuario *</label>
-            <select id="uRole" class="form-control" required>
-              <option value="staff">Ventas &amp; Stock</option>
-              <option value="admin">Administrador</option>
-            </select>
-            <small class="form-hint">Ventas edita catálogo y stock; el administrador también usuarios y borrados.</small>
+            <label for="confirmPassword">Repetir contraseña *</label>
+            <input type="password" id="confirmPassword" class="form-control" minlength="8"
+              autocomplete="new-password" required placeholder="Repite la contraseña">
           </div>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" data-action="close-users-modal">Cerrar</button>
-          <button type="submit" class="btn btn-primary">Guardar Usuario</button>
+          <button type="button" class="btn btn-secondary" data-action="close-account-modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
         </div>
       </form>
     </div>
@@ -289,6 +267,8 @@
 
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/admin.js"></script>
 </body>

@@ -1,5 +1,6 @@
 // js/cart.js — Carrito, validación de stock y cierre de pedido por WhatsApp.
-// El total se calcula en centavos enteros y el pedido se registra una sola vez.
+// El pedido se crea en Supabase con create_order(): el servidor valida precio
+// y stock. localStorage solo guarda el carrito del visitante.
 
 let cart = [];
 let checkoutInProgress = false;
@@ -23,7 +24,9 @@ function normalizeCart(raw) {
 
       const id = String(item.id || '').trim();
       const quantity = Math.floor(Number(item.quantity));
-      if (!id || !Number.isFinite(quantity) || quantity <= 0) return null;
+
+      // Descarta carritos viejos con ids locales ("prod-1").
+      if (!UUID_PATTERN.test(id) || !Number.isFinite(quantity) || quantity <= 0) return null;
 
       const variant = item.variant ? String(item.variant) : null;
       return {
@@ -42,7 +45,11 @@ function normalizeCart(raw) {
 // Sincroniza el carrito con el catálogo real: elimina productos borrados,
 // refresca precios/nombres/imágenes y recorta cantidades al stock disponible.
 function reconcileWithCatalog() {
-  const products = getStoredProducts();
+  const products = getCachedProducts();
+
+  // Si el catálogo todavía no cargó, no tocamos el carrito.
+  if (products.length === 0) return;
+
   const byId = new Map(products.map((product) => [product.id, product]));
   const used = new Map();
 
@@ -98,6 +105,13 @@ function reconcileWithCatalog() {
   });
 }
 
+// Se llama desde store.js después de refrescar el catálogo.
+function syncCartWithCatalog() {
+  reconcileWithCatalog();
+  persistCart();
+  updateCartUI();
+}
+
 function persistCart() {
   return storeWrite(STORAGE_KEYS.cart, cart);
 }
@@ -109,7 +123,11 @@ function saveCart() {
 
 function initCart() {
   cart = normalizeCart(storeRead(STORAGE_KEYS.cart, []));
-  reconcileWithCatalog();
+
+  if (getCachedProducts().length > 0) {
+    reconcileWithCatalog();
+  }
+
   persistCart();
   updateCartUI();
 
@@ -121,9 +139,7 @@ function initCart() {
     }
 
     if (event.key === STORAGE_KEYS.products) {
-      reconcileWithCatalog();
-      persistCart();
-      updateCartUI();
+      syncCartWithCatalog();
     }
   });
 }
@@ -132,10 +148,15 @@ function initCart() {
 /* Operaciones                                                         */
 /* ------------------------------------------------------------------ */
 
+function findProduct(productId) {
+  return getCachedProducts().find((product) => product.id === productId) || null;
+}
+
 function addToCart(productId, quantity = 1, variant = null) {
-  const product = getStoredProducts().find((item) => item.id === productId);
+  const product = findProduct(productId);
+
   if (!product) {
-    showToast('Ese producto ya no está disponible');
+    showToast('El catálogo está cargando o el producto ya no existe');
     return false;
   }
 
@@ -191,7 +212,7 @@ function updateCartItemQty(cartKey, delta) {
   const item = cart.find((candidate) => candidate.key === cartKey);
   if (!item) return;
 
-  const product = getStoredProducts().find((candidate) => candidate.id === item.id);
+  const product = findProduct(item.id);
   if (!product) {
     removeFromCart(cartKey);
     return;
@@ -433,14 +454,14 @@ function setCheckoutBusy(busy) {
   const button = document.getElementById('checkoutBtn');
   if (!button) return;
 
-  button.disabled = busy;
+  button.disabled = Boolean(busy) || cart.length === 0;
   const label = button.querySelector('span');
   if (label) {
     label.textContent = busy ? 'Procesando…' : 'Completar Pedido en WhatsApp';
   }
 }
 
-function checkoutWhatsApp() {
+async function checkoutWhatsApp() {
   if (checkoutInProgress) return;
 
   if (cart.length === 0) {
@@ -459,58 +480,46 @@ function checkoutWhatsApp() {
   setCheckoutBusy(true);
 
   try {
-    const products = getStoredProducts();
-    const byId = new Map(products.map((product) => [product.id, product]));
+    const localTotalCents = getCartTotals().totalCents;
+    let registered = false;
+    let totalCents = localTotalCents;
 
-    // Revalidar stock justo antes de cerrar el pedido (pudo cambiar en otra pestaña).
-    cart.forEach((item) => {
-      const product = byId.get(item.id);
-      if (!product) {
-        throw new Error(`"${item.name}" ya no está en el catálogo. Elimínalo del carrito.`);
-      }
-      if (product.stock < item.quantity) {
-        throw new Error(`Solo quedan ${product.stock} de "${item.name}". Ajusta la cantidad.`);
-      }
-    });
+    try {
+      const result = await createOrderInApi({
+        name: data.name,
+        address: data.address,
+        notes: data.notes,
+        items: cart.map((item) => ({
+          product_id: item.id,
+          variant: item.variant,
+          quantity: item.quantity
+        }))
+      });
 
-    const { count, totalCents } = getCartTotals();
+      registered = true;
+      totalCents = result.totalCents || localTotalCents;
+    } catch (error) {
+      console.error('[checkout]', error);
+
+      if (error && error.status === 0) {
+        // Sin conexión: no se pierde la venta; se ofrece enviar igual por WhatsApp.
+        const proceed = window.confirm(
+          'No se pudo registrar el pedido en el sistema. ¿Quieres enviarlo igual por WhatsApp?'
+        );
+        if (!proceed) return;
+      } else {
+        showToast(error.message || 'No se pudo registrar el pedido');
+
+        if (typeof refreshProductsFromServer === 'function') {
+          await refreshProductsFromServer({ silent: true });
+        }
+        syncCartWithCatalog();
+        return;
+      }
+    }
+
     const message = buildWhatsAppMessage(data, totalCents);
-
-    const orders = storeRead(STORAGE_KEYS.orders, []);
-    const orderList = Array.isArray(orders) ? orders : [];
-    const order = {
-      id: `ord-${Date.now()}`,
-      date: formatDateShort(new Date()),
-      timestamp: Date.now(),
-      status: 'pendiente',
-      clientName: data.name,
-      clientAddress: data.address,
-      clientNotes: data.notes,
-      items: cart.map((item) => ({ ...item })),
-      total: roundMoney(totalCents),
-      totalCents,
-      count
-    };
-
-    orderList.unshift(order);
-    if (orderList.length > 500) orderList.length = 500;
-
-    if (!storeWrite(STORAGE_KEYS.orders, orderList)) {
-      throw new Error('No se pudo guardar el pedido en este dispositivo (almacenamiento lleno).');
-    }
-
-    cart.forEach((item) => {
-      const product = byId.get(item.id);
-      product.stock = Math.max(0, product.stock - item.quantity);
-    });
-
-    if (!saveProducts(Array.from(byId.values()))) {
-      // Revertir el pedido si el inventario no se pudo actualizar.
-      storeWrite(STORAGE_KEYS.orders, orderList.filter((item) => item.id !== order.id));
-      throw new Error('No se pudo actualizar el inventario.');
-    }
-
-    pushAudit('Cliente (Web)', `Pedido por ${formatCents(totalCents)} (${count} art.) — ${data.name}`);
+    openWhatsApp(buildWhatsAppUrl(message));
 
     clearCart();
     closeCartDrawer();
@@ -518,15 +527,9 @@ function checkoutWhatsApp() {
     const notesInput = document.getElementById('clientNotes');
     if (notesInput) notesInput.value = '';
 
-    openWhatsApp(buildWhatsAppUrl(message));
-    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.');
-  } catch (error) {
-    console.error('[checkout]', error);
-    showToast(error.message || 'No se pudo completar el pedido.');
-    // El stock o el catálogo cambiaron: reajustar el carrito a la realidad.
-    reconcileWithCatalog();
-    persistCart();
-    updateCartUI();
+    showToast(registered
+      ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
+      : 'Pedido enviado por WhatsApp. No se pudo registrar en el panel.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);

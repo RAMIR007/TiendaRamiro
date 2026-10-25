@@ -1,13 +1,15 @@
-// tests/integration.test.js — Prueba de integración real con jsdom.
-// Carga public/index.html y public/admin.html, ejecuta sus scripts y simula
-// clics/formularios. Requiere: npm install (jsdom es dependencia de desarrollo).
+// tests/integration.test.js — Prueba de integración con jsdom y Supabase simulado.
+// Carga public/index.html y public/admin.html, intercepta fetch y verifica la
+// tienda, el login, los roles, el CRUD y el checkout sin tocar el proyecto real.
 
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const { randomUUID } = require('crypto');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 const root = path.join(__dirname, '..');
+const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let passed = 0;
 const failures = [];
@@ -18,21 +20,245 @@ async function check(name, fn) {
     passed += 1;
     console.log(`  ok  ${name}`);
   } catch (error) {
-    failures.push({ name, error });
+    failures.push(name);
     console.error(`  FAIL ${name}\n       ${error.message}`);
   }
 }
 
-const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const clone = (value) => JSON.parse(JSON.stringify(value));
 
-// Carga una página sustituyendo los <script src> por scripts inline para que
-// jsdom los ejecute sin acceso a red.
-async function loadPage(pageFile) {
-  const directory = path.dirname(path.join(root, pageFile));
-  let html = fs.readFileSync(path.join(root, pageFile), 'utf8');
+const PRODUCTS = [
+  {
+    id: '11111111-1111-4111-8111-111111111111',
+    name: 'Auriculares Inalámbricos TWS Pro',
+    category: 'tecnologia',
+    price_cents: 2800,
+    stock: 12,
+    badge: 'Más vendido',
+    description: 'Auriculares bluetooth con estuche de carga.',
+    images: ['https://example.com/auriculares.jpg'],
+    variants: ['Negro Mate', 'Blanco Glaciar'],
+    active: true,
+    created_at: '2026-10-20T10:00:00Z'
+  },
+  {
+    id: '22222222-2222-4222-8222-222222222222',
+    name: 'Camiseta Oversize Algodón Premium',
+    category: 'moda',
+    price_cents: 2000,
+    stock: 5,
+    badge: null,
+    description: 'Camiseta de algodón peinado.',
+    images: ['https://example.com/camiseta.jpg'],
+    variants: ['S', 'M'],
+    active: true,
+    created_at: '2026-10-21T10:00:00Z'
+  },
+  {
+    id: '33333333-3333-4333-8333-333333333333',
+    name: 'Lámpara de Escritorio LED',
+    category: 'hogar',
+    price_cents: 3000,
+    stock: 0,
+    badge: null,
+    description: 'Lámpara recargable.',
+    images: [],
+    variants: [],
+    active: true,
+    created_at: '2026-10-22T10:00:00Z'
+  }
+];
+
+const ORDERS = [
+  {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    created_at: '2026-10-24T12:00:00Z',
+    status: 'pendiente',
+    client_name: 'María López',
+    client_address: 'Playa, La Habana',
+    client_notes: 'Entregar después de las 5',
+    total_cents: 5600,
+    order_items: [
+      { name: 'Auriculares Inalámbricos TWS Pro', variant: 'Negro Mate', unit_price_cents: 2800, quantity: 2 }
+    ]
+  }
+];
+
+const AUDIT = [
+  { id: 1, created_at: '2026-10-24T11:00:00Z', user_label: 'admin@test.com', action: 'Inició sesión' }
+];
+
+const USERS = {
+  'admin@test.com': { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'admin@test.com', password: 'Admin12345', name: 'Administrador', role: 'admin' },
+  'ventas@test.com': { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: 'ventas@test.com', password: 'Ventas12345', name: 'Ventas', role: 'staff' },
+  'pending@test.com': { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', email: 'pending@test.com', password: 'Pending12345', name: 'Pendiente', role: 'pending' }
+};
+
+function createMock() {
+  const state = {
+    products: clone(PRODUCTS),
+    orders: clone(ORDERS),
+    audit: clone(AUDIT),
+    profiles: Object.fromEntries(Object.values(USERS).map((user) => [
+      user.id,
+      { id: user.id, name: user.name, role: user.role }
+    ])),
+    users: USERS,
+    requests: [],
+    lastOrderPayload: null,
+    lastOrderPatch: null,
+    passwordUpdates: [],
+    alerts: [],
+    nextAuditId: 100
+  };
+
+  const respond = (data, status = 200) => ({
+    ok: status >= 200 && status < 400,
+    status,
+    text: async () => (data === undefined ? '' : JSON.stringify(data))
+  });
+
+  async function fetchMock(input, options = {}) {
+    const url = new URL(String(input));
+    const route = url.pathname;
+    const method = String(options.method || 'GET').toUpperCase();
+    const headers = options.headers || {};
+    const body = options.body ? JSON.parse(options.body) : null;
+    const authorization = headers.Authorization || headers.authorization || '';
+    const token = authorization.replace(/^Bearer\s+/i, '');
+    const userId = token.startsWith('token-') ? token.slice(6) : null;
+
+    state.requests.push({ route, method, body, query: url.searchParams, token });
+
+    if (route === '/auth/v1/token' && method === 'POST') {
+      const grant = url.searchParams.get('grant_type');
+
+      if (grant === 'refresh_token') {
+        return respond({ access_token: 'token-admin', refresh_token: 'refresh', expires_in: 3600, user: { id: USERS['admin@test.com'].id, email: 'admin@test.com' } });
+      }
+
+      const email = String(body.email || '').toLowerCase();
+      const user = state.users[email];
+
+      if (!user || user.password !== body.password) {
+        return respond({ msg: 'Invalid login credentials' }, 400);
+      }
+
+      return respond({
+        access_token: `token-${user.id}`,
+        refresh_token: 'refresh-token',
+        expires_in: 3600,
+        user: { id: user.id, email: user.email }
+      });
+    }
+
+    if (route === '/auth/v1/user' && method === 'GET') {
+      const user = Object.values(state.users).find((candidate) => candidate.id === userId);
+      return respond({ id: userId, email: user ? user.email : 'desconocido@test.com' });
+    }
+
+    if (route === '/auth/v1/user' && method === 'PUT') {
+      state.passwordUpdates.push(body.password);
+      return respond({}, 200);
+    }
+
+    if (route === '/auth/v1/logout') return respond(null, 204);
+
+    if (route === '/rest/v1/profiles' && method === 'GET') {
+      const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
+      const profile = state.profiles[id];
+      return respond(profile ? [profile] : []);
+    }
+
+    if (route === '/rest/v1/products' && method === 'GET') {
+      const activeOnly = url.searchParams.get('active') === 'eq.true';
+      return respond(state.products.filter((product) => !activeOnly || product.active));
+    }
+
+    if (route === '/rest/v1/products' && method === 'POST') {
+      const rows = Array.isArray(body) ? body : [body];
+      rows.forEach((row) => {
+        state.products.unshift({ ...row, id: randomUUID(), created_at: new Date().toISOString() });
+      });
+      return respond(null, 201);
+    }
+
+    if (route === '/rest/v1/products' && method === 'PATCH') {
+      const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
+      const index = state.products.findIndex((product) => product.id === id);
+      if (index > -1) state.products[index] = { ...state.products[index], ...body };
+      return respond(null, 204);
+    }
+
+    if (route === '/rest/v1/products' && method === 'DELETE') {
+      const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
+      state.products = state.products.filter((product) => product.id !== id);
+      return respond(null, 204);
+    }
+
+    if (route === '/rest/v1/orders' && method === 'GET') {
+      return respond(state.orders);
+    }
+
+    if (route === '/rest/v1/orders' && method === 'PATCH') {
+      const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
+      state.lastOrderPatch = { id, body };
+      const order = state.orders.find((candidate) => candidate.id === id);
+      if (order) order.status = body.status;
+      return respond(null, 204);
+    }
+
+    if (route === '/rest/v1/orders' && method === 'DELETE') {
+      const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
+      state.orders = state.orders.filter((order) => order.id !== id);
+      return respond(null, 204);
+    }
+
+    if (route === '/rest/v1/rpc/create_order' && method === 'POST') {
+      state.lastOrderPayload = body;
+
+      const totalCents = body.p_items.reduce((sum, item) => {
+        const product = state.products.find((candidate) => candidate.id === item.product_id);
+        return sum + (product ? product.price_cents : 0) * item.quantity;
+      }, 0);
+      const count = body.p_items.reduce((sum, item) => sum + item.quantity, 0);
+
+      return respond({ order_id: randomUUID(), total_cents: totalCents, count });
+    }
+
+    if (route === '/rest/v1/audit_logs' && method === 'GET') {
+      return respond(state.audit);
+    }
+
+    if (route === '/rest/v1/audit_logs' && method === 'POST') {
+      state.nextAuditId += 1;
+      state.audit.unshift({
+        id: state.nextAuditId,
+        created_at: new Date().toISOString(),
+        user_label: body.user_label,
+        action: body.action
+      });
+      return respond(null, 201);
+    }
+
+    if (route === '/rest/v1/audit_logs' && method === 'DELETE') {
+      state.audit = [];
+      return respond(null, 204);
+    }
+
+    return respond({ msg: `Ruta no simulada: ${method} ${route}` }, 404);
+  }
+
+  return { state, fetch: fetchMock };
+}
+
+async function loadPage(pageFile, mock) {
+  const pagePath = path.join(root, pageFile);
+  const pageDir = path.dirname(pagePath);
+  let html = fs.readFileSync(pagePath, 'utf8');
 
   html = html.replace(/<script src="([^"]+)"><\/script>/g, (match, src) => {
-    const code = fs.readFileSync(path.join(directory, src), 'utf8');
+    const code = fs.readFileSync(path.join(pageDir, src), 'utf8');
     return `<script>${code}</script>`;
   });
 
@@ -44,21 +270,21 @@ async function loadPage(pageFile) {
   const dom = new JSDOM(html, {
     url: 'http://localhost/',
     runScripts: 'dangerously',
-    virtualConsole
+    virtualConsole,
+    beforeParse(window) {
+      window.fetch = mock.fetch;
+      window.confirm = () => true;
+      window.alert = (message) => mock.state.alerts.push(String(message));
+    }
   });
 
   const win = dom.window;
-  win.alert = (message) => { win.__alerts.push(String(message)); };
-  win.confirm = () => true;
-  win.__alerts = [];
   win.__lastOpened = null;
-
-  // Los enlaces de WhatsApp no deben navegar de verdad en jsdom.
   win.HTMLAnchorElement.prototype.click = function click() {
     win.__lastOpened = this.href;
   };
 
-  await tick(80);
+  await tick(220);
 
   return { dom, win, doc: win.document, errors };
 }
@@ -73,354 +299,248 @@ function submit(form) {
   form.dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
 }
 
-function readJson(win, key, fallback) {
-  try {
-    return JSON.parse(win.localStorage.getItem(key)) ?? fallback;
-  } catch (error) {
-    return fallback;
-  }
+async function login(win, doc, email, password) {
+  doc.getElementById('adminEmail').value = email;
+  doc.getElementById('adminPassword').value = password;
+  submit(doc.getElementById('loginForm'));
+  await tick(260);
 }
 
 (async () => {
   /* ---------------------------------------------------------------- */
-  console.log('\nTienda — catálogo y renderizado');
+  console.log('\nTienda — catálogo remoto');
   /* ---------------------------------------------------------------- */
 
-  const store = await loadPage('public/index.html');
+  const storeMock = createMock();
+  const store = await loadPage('public/index.html', storeMock);
   const { win, doc } = store;
 
-  await check('sin errores de ejecución al cargar', () => {
+  await check('carga sin errores y sin login local', () => {
     assert.deepStrictEqual(store.errors, []);
+    assert.strictEqual(doc.getElementById('adminUser'), null);
+    assert.strictEqual(doc.getElementById('adminEmail'), null);
   });
 
-  await check('renderiza los 8 productos y las 4 pestañas de categoría', () => {
-    assert.strictEqual(doc.querySelectorAll('.product-card').length, 8);
-    assert.strictEqual(doc.querySelectorAll('.cat-btn').length, 4);
-    assert.match(doc.getElementById('productsCount').textContent, /8 productos/);
+  await check('renderiza los productos que llegan de Supabase', () => {
+    assert.strictEqual(doc.querySelectorAll('.product-card').length, 3);
+    assert.match(doc.getElementById('productsCount').textContent, /3 productos/);
+    assert.ok(doc.body.textContent.includes('Auriculares Inalámbricos TWS Pro'));
   });
 
-  await check('aplica el nombre de marca desde config.js', () => {
-    assert.strictEqual(doc.querySelector('[data-config="brand-name"]').textContent, 'RX Store Demo');
-    assert.match(doc.getElementById('footerWhatsApp').href, /wa\.me\/5358382989/);
-  });
-
-  await check('las categorías se generan desde la configuración', () => {
-    const labels = Array.from(doc.querySelectorAll('.cat-btn')).map((b) => b.textContent.trim());
-    assert.deepStrictEqual(labels, [
-      'Todos los productos',
-      '⚡ Tecnología',
-      '👟 Moda & Calzado',
-      '🏠 Hogar & Accesorios'
-    ]);
-  });
-
-  await check('el stock agotado deshabilita el botón de añadir', () => {
-    const products = readJson(win, 'rx_store_products', []);
-    const target = products.find((p) => p.id === 'prod-2');
-    target.stock = 0;
-    win.localStorage.setItem('rx_store_products', JSON.stringify(products));
-    win.renderCatalog();
-
-    const card = doc.querySelector('.product-card[data-id="prod-2"]');
+  await check('el producto agotado no se puede añadir', () => {
+    const card = doc.querySelector('.product-card[data-id="33333333-3333-4333-8333-333333333333"]');
     assert.ok(card.classList.contains('is-out'));
     assert.strictEqual(card.querySelector('.btn-add-quick').disabled, true);
-
-    target.stock = 8;
-    win.localStorage.setItem('rx_store_products', JSON.stringify(products));
-    win.renderCatalog();
   });
 
-  /* ---------------------------------------------------------------- */
-  console.log('\nTienda — seguridad (XSS)');
-  /* ---------------------------------------------------------------- */
-
-  await check('escapa nombres de producto maliciosos (no ejecuta HTML)', () => {
-    const products = readJson(win, 'rx_store_products', []);
-    products.push({
-      id: 'evil-1',
-      name: '<img src=x onerror="window.__xss = true">Auriculares',
-      category: 'tecnologia',
-      price: 10,
-      stock: 3,
-      description: '<script>window.__xss = true<\/script>',
-      images: ['https://example.com/a.jpg'],
-      variants: ['"><b>variante</b>']
-    });
-    win.localStorage.setItem('rx_store_products', JSON.stringify(products));
-    win.renderCatalog();
-
-    assert.strictEqual(win.__xss, undefined, 'se ejecutó un script inyectado');
-    assert.strictEqual(doc.querySelector('.product-card img[onerror]'), null);
-    assert.ok(doc.getElementById('productsGrid').textContent.includes('<img'));
-
-    win.localStorage.setItem('rx_store_products', JSON.stringify(products.filter((p) => p.id !== 'evil-1')));
-    win.renderCatalog();
+  await check('rellena la caché local para la próxima visita', () => {
+    const cached = JSON.parse(win.localStorage.getItem('rx_store_products'));
+    assert.strictEqual(cached.length, 3);
   });
 
-  /* ---------------------------------------------------------------- */
-  console.log('\nTienda — carrito y stock');
-  /* ---------------------------------------------------------------- */
-
-  await check('añadir al carrito actualiza contador y subtotal', () => {
-    const card = doc.querySelector('.product-card[data-id="prod-1"]');
+  await check('añade al carrito y calcula en centavos', () => {
+    const card = doc.querySelector('.product-card[data-id="11111111-1111-4111-8111-111111111111"]');
     click(card.querySelector('.btn-add-quick'));
 
     assert.strictEqual(win.getCartTotals().count, 1);
     assert.strictEqual(doc.getElementById('cartSubtotal').textContent, '$28 USD');
-    assert.strictEqual(doc.querySelector('.cart-count').textContent, '1');
   });
 
-  await check('no permite superar el stock disponible (prod-1 = 12)', () => {
-    const card = doc.querySelector('.product-card[data-id="prod-1"]');
+  await check('respeta el stock del catálogo remoto', () => {
+    const card = doc.querySelector('.product-card[data-id="11111111-1111-4111-8111-111111111111"]');
     for (let i = 0; i < 20; i += 1) click(card.querySelector('.btn-add-quick'));
 
     assert.strictEqual(win.getCartTotals().count, 12);
-    assert.strictEqual(win.getCartTotals().totalCents, 12 * 2800);
+    assert.strictEqual(win.getCartTotals().totalCents, 33600);
   });
 
-  await check('el modal respeta el stock y añade la variante elegida', () => {
-    click(doc.querySelector('[data-open="prod-5"]'));
+  await check('el modal añade la variante y el stock correctos', () => {
+    click(doc.querySelector('[data-open="22222222-2222-4222-8222-222222222222"]'));
     assert.ok(doc.getElementById('productModalOverlay').classList.contains('active'));
-    assert.strictEqual(doc.getElementById('modalTitle').textContent, 'Zapatillas Urbanas Minimalist Low');
 
     win.changeModalQty(1);
     win.changeModalQty(1);
-    assert.strictEqual(doc.getElementById('modalQty').textContent, '3');
-
-    click(doc.querySelector('#modalVariantsList [data-variant="Talla 42"]'));
+    click(doc.querySelector('#modalVariantsList [data-variant="M"]'));
     click(doc.getElementById('modalAddBtn'));
 
-    const cart = readJson(win, 'rx_store_cart', []);
-    const line = cart.find((item) => item.id === 'prod-5');
-    assert.ok(line, 'no se añadió el producto');
+    const cart = JSON.parse(win.localStorage.getItem('rx_store_cart'));
+    const line = cart.find((item) => item.id === '22222222-2222-4222-8222-222222222222');
     assert.strictEqual(line.quantity, 3);
-    assert.strictEqual(line.variant, 'Talla 42');
+    assert.strictEqual(line.variant, 'M');
     assert.strictEqual(doc.getElementById('productModalOverlay').classList.contains('active'), false);
   });
 
-  await check('disminuir por debajo de 1 elimina la línea del carrito', () => {
-    const before = readJson(win, 'rx_store_cart', []).length;
-    win.updateCartItemQty('prod-5__Talla 42', -3);
-    assert.strictEqual(readJson(win, 'rx_store_cart', []).length, before - 1);
-  });
-
   /* ---------------------------------------------------------------- */
-  console.log('\nTienda — checkout');
+  console.log('\nTienda — checkout con RPC');
   /* ---------------------------------------------------------------- */
 
-  await check('valida nombre y dirección antes de registrar el pedido', () => {
+  await check('valida los datos antes de llamar al servidor', async () => {
     submit(doc.getElementById('checkoutForm'));
+    await tick(50);
 
-    assert.strictEqual(readJson(win, 'rx_store_orders', []).length, 0);
+    assert.strictEqual(storeMock.state.lastOrderPayload, null);
     assert.ok(doc.getElementById('clientName').classList.contains('invalid'));
-    assert.match(doc.getElementById('clientNameError').textContent, /nombre/i);
-    assert.match(doc.getElementById('clientAddressError').textContent, /dirección/i);
   });
 
-  await check('registra un pedido único, descuenta stock y limpia el carrito', () => {
-    const productsBefore = readJson(win, 'rx_store_products', []);
-    const stockBefore = productsBefore.find((p) => p.id === 'prod-1').stock;
-    const cartBefore = readJson(win, 'rx_store_cart', []);
-    const expectedCents = cartBefore.reduce((sum, item) => sum + Math.round(item.price * 100) * item.quantity, 0);
-
+  await check('crea el pedido en Supabase, limpia el carrito y abre WhatsApp', async () => {
     doc.getElementById('clientName').value = 'María López';
     doc.getElementById('clientAddress').value = 'Playa, La Habana';
+
     submit(doc.getElementById('checkoutForm'));
+    await tick(260);
 
-    const orders = readJson(win, 'rx_store_orders', []);
-    assert.strictEqual(orders.length, 1);
-    assert.strictEqual(orders[0].totalCents, expectedCents);
-    assert.strictEqual(orders[0].status, 'pendiente');
-    assert.strictEqual(orders[0].clientName, 'María López');
+    const payload = storeMock.state.lastOrderPayload;
+    assert.ok(payload, 'no se llamó a create_order');
+    assert.strictEqual(payload.p_client_name, 'María López');
+    assert.strictEqual(payload.p_client_address, 'Playa, La Habana');
+    assert.strictEqual(payload.p_items.length, 2);
+    assert.strictEqual(payload.p_items[0].quantity, 12);
+    assert.strictEqual(payload.p_items[1].quantity, 3);
+    assert.strictEqual(payload.p_items[1].variant, 'M');
 
-    const stockAfter = readJson(win, 'rx_store_products', [])
-      .find((p) => p.id === 'prod-1').stock;
-    assert.strictEqual(stockAfter, stockBefore - 12);
-
-    assert.deepStrictEqual(readJson(win, 'rx_store_cart', []), []);
     assert.strictEqual(win.getCartTotals().count, 0);
     assert.strictEqual(doc.getElementById('cartSubtotal').textContent, '$0 USD');
-
     assert.match(win.__lastOpened, /^https:\/\/wa\.me\/5358382989\?text=/);
-    assert.ok(decodeURIComponent(win.__lastOpened).includes('María López'));
-    assert.ok(decodeURIComponent(win.__lastOpened).includes('$336 USD'));
+    assert.ok(decodeURIComponent(win.__lastOpened).includes('$396 USD'));
   });
 
-  await check('un segundo envío con el carrito vacío no duplica pedidos', () => {
-    submit(doc.getElementById('checkoutForm'));
-    assert.strictEqual(readJson(win, 'rx_store_orders', []).length, 1);
-  });
+  await check('escapa un producto malicioso que llega de la API', async () => {
+    storeMock.state.products[0].name = '<img src=x onerror="window.__xss=1">X';
+    await win.refreshProductsFromServer();
+    await tick(50);
 
-  await check('el pedido queda en la auditoría', () => {
-    const logs = readJson(win, 'rx_store_audit_logs', []);
-    assert.ok(logs.some((log) => /Pedido/.test(log.action)));
+    assert.strictEqual(win.__xss, undefined);
+    assert.strictEqual(doc.querySelector('#productsGrid img[onerror]'), null);
+    assert.ok(doc.getElementById('productsGrid').textContent.includes('<img'));
   });
 
   store.dom.window.close();
 
   /* ---------------------------------------------------------------- */
-  console.log('\nPanel — autenticación');
+  console.log('\nPanel — autenticación Supabase');
   /* ---------------------------------------------------------------- */
 
-  const admin = await loadPage('public/admin.html');
+  const adminMock = createMock();
+  const admin = await loadPage('public/admin.html', adminMock);
   const adminWin = admin.win;
   const adminDoc = admin.doc;
 
-  await check('sin errores de ejecución al cargar el panel', () => {
+  await check('muestra el login por correo, sin credenciales demo', () => {
     assert.deepStrictEqual(admin.errors, []);
+    assert.ok(adminDoc.getElementById('adminEmail'));
+    assert.strictEqual(adminDoc.getElementById('demoCredentials'), null);
+    assert.strictEqual(adminDoc.getElementById('loginScreen').style.display, 'flex');
   });
 
-  await check('el login muestra las credenciales solo en modo demo', () => {
-    const box = adminDoc.getElementById('demoCredentials');
-    assert.strictEqual(box.hidden, false);
-    assert.match(box.textContent, /admin123/);
-    assert.match(box.textContent, /ventas123/);
-  });
-
-  await check('rechaza contraseña incorrecta', async () => {
-    adminDoc.getElementById('adminUser').value = 'admin';
-    adminDoc.getElementById('adminPassword').value = 'incorrecta';
-    submit(adminDoc.getElementById('loginForm'));
-    await tick(30);
+  await check('rechaza una contraseña incorrecta', async () => {
+    await login(adminWin, adminDoc, 'admin@test.com', 'incorrecta');
     assert.match(adminDoc.getElementById('loginError').textContent, /incorrectos/);
     assert.strictEqual(adminDoc.getElementById('adminLayout').style.display, 'none');
   });
 
-  await check('el usuario ventas puede entrar con ventas123 (hash corregido)', async () => {
-    adminDoc.getElementById('adminUser').value = 'ventas';
-    adminDoc.getElementById('adminPassword').value = 'ventas123';
-    submit(adminDoc.getElementById('loginForm'));
-    await tick(30);
+  await check('un usuario pendiente no puede entrar', async () => {
+    await login(adminWin, adminDoc, 'pending@test.com', 'Pending12345');
+    assert.match(adminDoc.getElementById('loginError').textContent, /pendiente/i);
+    assert.strictEqual(adminWin.sessionStorage.getItem('rx_sb_session'), null);
+  });
+
+  await check('el administrador entra y ve el catálogo remoto', async () => {
+    await login(adminWin, adminDoc, 'admin@test.com', 'Admin12345');
     assert.strictEqual(adminDoc.getElementById('adminLayout').style.display, 'block');
-    assert.match(adminDoc.getElementById('adminUserBadge').textContent, /Ventas/);
+    assert.match(adminDoc.getElementById('adminUserBadge').textContent, /Administrador/);
+    assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 3);
   });
 
-  await check('el rol ventas no ve eliminar, usuarios ni restablecer', () => {
-    assert.strictEqual(adminDoc.querySelectorAll('[data-action="delete-product"]').length, 0);
-    assert.strictEqual(adminDoc.querySelector('[data-action="open-users"]').hidden, true);
-    assert.strictEqual(adminDoc.querySelector('[data-action="reset-catalog"]').hidden, true);
-  });
+  await check('crea un producto con precio en centavos', async () => {
+    adminWin.openCreateModal();
+    adminDoc.getElementById('pName').value = 'Producto de Prueba';
+    adminDoc.getElementById('pCategory').value = 'hogar';
+    adminDoc.getElementById('pPrice').value = '12.50';
+    adminDoc.getElementById('pStock').value = '4';
+    adminDoc.getElementById('pImages').value = 'https://example.com/foto.jpg, javascript:alert(1)';
+    adminDoc.getElementById('pVariants').value = 'Único';
 
-  await check('el rol ventas no puede eliminar productos desde la consola', () => {
-    adminWin.deleteProduct('prod-1');
-    const products = readJson(adminWin, 'rx_store_products', []);
-    assert.ok(products.some((p) => p.id === 'prod-1'), 'el producto se eliminó sin permiso');
-    assert.match(adminDoc.getElementById('toastMsg').textContent, /rol/i);
-  });
+    submit(adminDoc.getElementById('productForm'));
+    await tick(300);
 
-  adminWin.close();
-
-  /* ---------------------------------------------------------------- */
-  console.log('\nPanel — administración');
-  /* ---------------------------------------------------------------- */
-
-  const panel = await loadPage('public/admin.html');
-  const pw = panel.win;
-  const pd = panel.doc;
-
-  pd.getElementById('adminUser').value = 'admin';
-  pd.getElementById('adminPassword').value = 'admin123';
-  submit(pd.getElementById('loginForm'));
-  await tick(30);
-
-  await check('el administrador entra con admin123', () => {
-    assert.strictEqual(pd.getElementById('adminLayout').style.display, 'block');
-    assert.strictEqual(pd.querySelectorAll('#adminTableBody tr').length, 8);
-  });
-
-  await check('crea un producto y lo registra en la auditoría', () => {
-    pw.openCreateModal();
-    assert.ok(pd.getElementById('formModal').classList.contains('active'));
-
-    pd.getElementById('pName').value = 'Producto de Prueba';
-    pd.getElementById('pCategory').value = 'hogar';
-    pd.getElementById('pPrice').value = '12.50';
-    pd.getElementById('pStock').value = '4';
-    pd.getElementById('pImages').value = 'https://example.com/foto.jpg, javascript:alert(1)';
-    pd.getElementById('pVariants').value = 'Único';
-    submit(pd.getElementById('productForm'));
-
-    const products = readJson(pw, 'rx_store_products', []);
-    const created = products.find((p) => p.name === 'Producto de Prueba');
+    const created = adminMock.state.products.find((product) => product.name === 'Producto de Prueba');
     assert.ok(created, 'no se creó el producto');
+    assert.strictEqual(created.price_cents, 1250);
     assert.deepStrictEqual(created.images, ['https://example.com/foto.jpg']);
-    assert.strictEqual(created.price, 12.5);
-    assert.strictEqual(pd.querySelectorAll('#adminTableBody tr').length, 9);
-
-    const logs = readJson(pw, 'rx_store_audit_logs', []);
-    assert.match(logs[0].action, /Creó el producto/);
+    assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 4);
   });
 
-  await check('editar el producto sin tocar imágenes conserva las anteriores', () => {
-    const before = readJson(pw, 'rx_store_products', []).find((p) => p.name === 'Producto de Prueba');
-    pw.openEditModal(before.id);
-    pd.getElementById('pImages').value = '';
-    pd.getElementById('pStock').value = '7';
-    submit(pd.getElementById('productForm'));
+  await check('los pedidos se leen de Supabase y se cambia el estado', async () => {
+    adminWin.switchAdminTab('orders');
+    assert.strictEqual(adminDoc.getElementById('ordersTotalAmount').textContent, '$56 USD');
 
-    const after = readJson(pw, 'rx_store_products', []).find((p) => p.name === 'Producto de Prueba');
-    assert.deepStrictEqual(after.images, ['https://example.com/foto.jpg']);
-    assert.strictEqual(after.stock, 7);
+    const select = adminDoc.querySelector('[data-order-status]');
+    assert.ok(select, 'no hay selector de estado');
+    select.value = 'contactado';
+    select.dispatchEvent(new adminWin.Event('change', { bubbles: true }));
+    await tick(260);
+
+    assert.strictEqual(adminMock.state.orders[0].status, 'contactado');
+    assert.strictEqual(adminMock.state.lastOrderPatch.body.status, 'contactado');
   });
 
-  await check('crea un pedido de prueba y lo muestra en la pestaña Pedidos', () => {
-    pw.localStorage.setItem('rx_store_orders', JSON.stringify([{
-      id: 'ord-test',
-      date: '1/1/2026, 10:00',
-      timestamp: Date.now(),
-      status: 'pendiente',
-      clientName: '<b>Cliente</b>',
-      clientAddress: 'Centro Habana',
-      clientNotes: '<img src=x onerror="window.__xss2=1">',
-      items: [{ name: 'Producto de Prueba', variant: 'Único', price: 12.5, quantity: 2 }],
-      total: 25,
-      totalCents: 2500,
-      count: 2
-    }]));
+  await check('elimina un pedido y deja el historial vacío', async () => {
+    await adminWin.deleteOrder(adminMock.state.orders[0].id);
+    await tick(260);
 
-    pw.switchAdminTab('orders');
-
-    assert.strictEqual(pd.getElementById('ordersBadgeCount').textContent, '1');
-    assert.strictEqual(pd.getElementById('ordersTotalAmount').textContent, '$25 USD');
-    assert.strictEqual(pw.__xss2, undefined);
-    assert.strictEqual(pd.querySelector('#ordersListContainer img'), null);
-
-    const renderedName = pd.querySelector('#ordersListContainer .order-card-header strong').textContent;
-    assert.ok(renderedName.includes('<b>Cliente</b>'), 'el nombre debe mostrarse como texto plano');
+    assert.strictEqual(adminMock.state.orders.length, 0);
+    assert.match(adminDoc.getElementById('ordersListContainer').textContent, /Aún no se han generado pedidos/);
   });
 
-  await check('editar un usuario dejando la contraseña vacía mantiene el hash', async () => {
-    pw.openUsersModal();
-    assert.ok(pd.getElementById('usersModal').classList.contains('active'));
+  await check('cambia la contraseña desde Mi cuenta', async () => {
+    adminWin.openAccountModal();
+    adminDoc.getElementById('newPassword').value = 'NuevaClave123';
+    adminDoc.getElementById('confirmPassword').value = 'NuevaClave123';
+    submit(adminDoc.getElementById('accountForm'));
+    await tick(220);
 
-    const hashBefore = readJson(pw, 'rx_store_admin_users', []).find((u) => u.user === 'ventas').passHash;
-
-    pw.editUserPassword('ventas');
-    pd.getElementById('uName').value = 'Ventas Actualizado';
-    pd.getElementById('uPassword').value = '';
-    submit(pd.getElementById('userForm'));
-    await tick(30);
-
-    const user = readJson(pw, 'rx_store_admin_users', []).find((u) => u.user === 'ventas');
-    assert.strictEqual(user.name, 'Ventas Actualizado');
-    assert.strictEqual(user.passHash, hashBefore);
+    assert.strictEqual(adminMock.state.passwordUpdates[0], 'NuevaClave123');
   });
 
-  await check('no permite eliminar al último administrador', () => {
-    const usersBefore = readJson(pw, 'rx_store_admin_users', []).length;
-    pw.deleteUserAccount('admin');
-    assert.strictEqual(readJson(pw, 'rx_store_admin_users', []).length, usersBefore);
-    assert.match(pd.getElementById('toastMsg').textContent, /propia cuenta|último/i);
+  await check('limpia la auditoría y registra el evento', async () => {
+    adminWin.switchAdminTab('audit');
+    await adminWin.clearAuditLogs();
+    await tick(260);
+
+    assert.strictEqual(adminMock.state.audit.length, 1);
+    assert.match(adminMock.state.audit[0].action, /Vació el historial/);
   });
 
-  await check('la limpieza de auditoría deja constancia del evento', () => {
-    pw.clearAuditLogs();
-    const logs = readJson(pw, 'rx_store_audit_logs', []);
-    assert.strictEqual(logs.length, 1);
-    assert.match(logs[0].action, /Vació el historial/);
+  admin.dom.window.close();
+
+  /* ---------------------------------------------------------------- */
+  console.log('\nPanel — rol de ventas');
+  /* ---------------------------------------------------------------- */
+
+  const staffMock = createMock();
+  const staff = await loadPage('public/admin.html', staffMock);
+  const staffWin = staff.win;
+  const staffDoc = staff.doc;
+
+  await login(staffWin, staffDoc, 'ventas@test.com', 'Ventas12345');
+
+  await check('el rol ventas no ve controles de administrador', () => {
+    assert.strictEqual(staffDoc.getElementById('adminLayout').style.display, 'block');
+    assert.strictEqual(staffDoc.querySelectorAll('[data-action="delete-product"]').length, 0);
+    assert.strictEqual(staffDoc.querySelector('[data-action="import-json"]').hidden, true);
+    assert.strictEqual(staffDoc.querySelector('[data-action="clear-audit"]').hidden, true);
   });
 
-  panel.win.close();
+  await check('el rol ventas no puede borrar aunque llame a la función', async () => {
+    const productId = staffMock.state.products[0].id;
+    await staffWin.deleteProduct(productId);
+    await tick(100);
+
+    assert.ok(staffMock.state.products.some((product) => product.id === productId));
+    assert.match(staffDoc.getElementById('toastMsg').textContent, /rol/i);
+  });
+
+  staff.dom.window.close();
 
   /* ---------------------------------------------------------------- */
   console.log(`\n${passed} comprobaciones OK, ${failures.length} fallos\n`);

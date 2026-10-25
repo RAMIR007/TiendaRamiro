@@ -1,5 +1,5 @@
 // js/store.js — Catálogo, búsqueda, filtros y modal de producto.
-// Todo el contenido dinámico se escapa antes de entrar al DOM.
+// La fuente es Supabase; localStorage solo acelera la primera pintura.
 
 let currentCategory = 'all';
 let searchQuery = '';
@@ -7,17 +7,70 @@ let selectedVariant = null;
 let currentModalProduct = null;
 let currentModalQty = 1;
 let modalLastFocused = null;
+let catalogState = 'loading';
+let catalogError = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   applyStoreConfig();
   renderCategories();
-  renderCatalog();
   setupCategoryEvents();
   setupCatalogEvents();
   setupSearchEvents();
   setupModalEvents();
   window.addEventListener('storage', handleStorageChange);
+
+  catalogState = getCachedProducts().length > 0 ? 'ready' : 'loading';
+  renderCatalog();
+  refreshProductsFromServer();
 });
+
+/* ------------------------------------------------------------------ */
+/* Sincronización con Supabase                                         */
+/* ------------------------------------------------------------------ */
+
+async function refreshProductsFromServer(options = {}) {
+  const silent = Boolean(options.silent);
+  const cached = getCachedProducts();
+
+  if (!silent && cached.length === 0) {
+    catalogState = 'loading';
+    catalogError = '';
+    renderCatalog();
+  }
+
+  try {
+    const products = await fetchProductsFromApi();
+    setCachedProducts(products);
+    catalogState = 'ready';
+    catalogError = '';
+
+    if (typeof syncCartWithCatalog === 'function') syncCartWithCatalog();
+    renderCatalog();
+
+    if (currentModalProduct) {
+      const stillExists = products.find((product) => product.id === currentModalProduct.id);
+      if (stillExists) {
+        openProductModal(stillExists.id);
+      } else {
+        closeProductModal();
+        showToast('El producto que estabas viendo ya no está disponible');
+      }
+    }
+
+    return products;
+  } catch (error) {
+    console.error('[catalog]', error);
+    catalogError = error.message || 'No se pudo cargar el catálogo';
+    catalogState = getCachedProducts().length > 0 ? 'ready' : 'error';
+    renderCatalog();
+
+    if (catalogState === 'ready') {
+      showToast('Sin conexión: mostrando el catálogo guardado');
+    }
+
+    return [];
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Categorías                                                          */
@@ -114,12 +167,47 @@ function renderProductCard(product) {
   `;
 }
 
+function renderCatalogStatus(html) {
+  const container = document.getElementById('productsGrid');
+  const countEl = document.getElementById('productsCount');
+  if (countEl) countEl.textContent = '';
+  if (container) container.innerHTML = `<div class="catalog-status">${html}</div>`;
+}
+
 function renderCatalog() {
   const container = document.getElementById('productsGrid');
   const countEl = document.getElementById('productsCount');
   if (!container) return;
 
-  const products = getStoredProducts();
+  const products = getCachedProducts().filter((product) => product.active !== false);
+
+  if (products.length === 0 && catalogState === 'loading') {
+    renderCatalogStatus(`
+      <div class="catalog-spinner" aria-hidden="true"></div>
+      <h3>Cargando catálogo…</h3>
+      <p>Estamos consultando los productos disponibles.</p>
+    `);
+    return;
+  }
+
+  if (products.length === 0 && catalogState === 'error') {
+    renderCatalogStatus(`
+      <h3>No se pudo cargar el catálogo</h3>
+      <p>${escapeHtml(catalogError || 'Revisa tu conexión e inténtalo de nuevo.')}</p>
+      <button type="button" class="btn-retry" data-action="retry-products">Reintentar</button>
+    `);
+    return;
+  }
+
+  if (products.length === 0) {
+    renderCatalogStatus(`
+      <h3>Catálogo vacío</h3>
+      <p>Todavía no hay productos publicados.</p>
+      <button type="button" class="btn-retry" data-action="retry-products">Actualizar</button>
+    `);
+    return;
+  }
+
   const query = searchQuery.toLowerCase();
 
   const filtered = products.filter((product) => {
@@ -157,7 +245,7 @@ function renderCatalog() {
 
   container.innerHTML = filtered.map(renderProductCard).join('');
 
-  // Respaldo visual si una URL de imagen del panel está rota o ya no existe.
+  // Respaldo visual si una URL de imagen está rota o ya no existe.
   container.querySelectorAll('.product-thumb-wrap img').forEach((image) => {
     image.addEventListener('error', () => {
       image.removeAttribute('srcset');
@@ -172,12 +260,11 @@ function handleStorageChange(event) {
   renderCatalog();
 
   if (currentModalProduct) {
-    const stillExists = getStoredProducts().find((product) => product.id === currentModalProduct.id);
+    const stillExists = getCachedProducts().find((product) => product.id === currentModalProduct.id);
     if (stillExists) {
       openProductModal(stillExists.id);
     } else {
       closeProductModal();
-      showToast('El producto que estabas viendo ya no está disponible');
     }
   }
 }
@@ -187,6 +274,12 @@ function setupCatalogEvents() {
   if (!container) return;
 
   container.addEventListener('click', (event) => {
+    const retryButton = event.target.closest('[data-action="retry-products"]');
+    if (retryButton) {
+      refreshProductsFromServer();
+      return;
+    }
+
     const addButton = event.target.closest('[data-add]');
     if (addButton) {
       event.stopPropagation();
@@ -269,7 +362,7 @@ function setModalVariants(product) {
 }
 
 function openProductModal(productId) {
-  const product = getStoredProducts().find((item) => item.id === productId);
+  const product = getCachedProducts().find((item) => item.id === productId);
   if (!product) {
     showToast('Ese producto ya no está disponible');
     return;

@@ -95,24 +95,28 @@ No me envíes la contraseña de la base ni la `service_role`.
 
 ---
 
-## 5. Qué haré con eso
+## 5. Cómo queda la integración
 
-1. Crear `public/js/supabase-config.js` con la URL y la clave pública.
-2. Reescribir el login del panel para usar Supabase Auth (correo + contraseña,
-   sesión con refresh token, cierre de sesión real).
-3. Eliminar del frontend los usuarios, hashes y la sesión en `sessionStorage`.
-4. Leer el catálogo desde Supabase con caché local (la tienda sigue siendo rápida).
-5. Enviar los pedidos con `create_order()` y mostrarlos en el panel para cualquier
-   dispositivo.
-6. Dejar la gestión de usuarios en el panel de Supabase (o una Edge Function con
-   `service_role`, nunca en el navegador).
-7. Probar todo contra tu proyecto real y desplegar en Cloudflare.
+Esta versión ya está migrada. Los archivos que intervienen son:
+
+| Archivo | Función |
+| --- | --- |
+| `public/js/supabase-config.js` | URL del proyecto y clave `publishable` |
+| `public/js/supabase.js` | Cliente de Auth y REST (sin SDK) |
+| `public/js/admin.js` | Login con Supabase Auth, perfiles/roles, CRUD y pedidos |
+| `public/js/cart.js` | Checkout con la RPC `create_order()` |
+| `public/js/store.js` | Catálogo desde Supabase con caché local |
+| `supabase/migrations/…_init.sql` | Tablas, RLS, trigger de perfiles y `create_order()` |
+
+La gestión de usuarios (crear empleados, cambiar roles) se hace desde **Authentication → Users**
+y **Table Editor → profiles**. El panel solo permite cambiar la propia contraseña; así la
+`service_role` nunca toca el navegador.
 
 ---
 
 ## 6. Notas de seguridad
 
-- La clave `anon` es pública. Lo que protege los datos son las **políticas RLS**, no
+- La clave `publishable` es pública. Lo que protege los datos son las **políticas RLS**, no
   esconder la clave.
 - `service_role` salta RLS: solo puede vivir en una Edge Function o en tu máquina.
 - RLS ya limita: el público solo ve productos activos, no puede leer pedidos ajenos,

@@ -1340,3 +1340,59 @@ body {
     transform: none;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Estados del catálogo (carga, error, vacío)                          */
+/* ------------------------------------------------------------------ */
+
+.catalog-status {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.catalog-status h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.catalog-status p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.catalog-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 1rem;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--primary-text);
+  border-radius: 50%;
+  animation: catalog-spin 0.9s linear infinite;
+}
+
+@keyframes catalog-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-retry {
+  background: var(--primary-strong);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-retry:hover {
+  background: var(--primary-hover);
+}
