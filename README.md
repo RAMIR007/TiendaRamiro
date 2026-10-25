@@ -271,6 +271,7 @@ tests/                    Pruebas con Node + jsdom
 docs/SUPABASE.md          Análisis de la migración a Supabase
 docs/SUPABASE-SETUP.md    Guía de puesta en marcha
 docs/PASSWORD-RESET.md    Configurar recuperación de contraseña
+docs/SMTP.md              Configurar SMTP (Gmail, SMTP2GO, Brevo)
 docs/CLOUDFLARE-ACCESS.md Proteger /admin con Cloudflare Access
 ```
 
@@ -279,7 +280,8 @@ docs/CLOUDFLARE-ACCESS.md Proteger /admin con Cloudflare Access
 ## 10. Próximos pasos sugeridos
 
 1. **Configurar SMTP propio y las URLs de Supabase** para que el correo de recuperación
-   llegue a cualquier destinatario (ver [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)).
+   llegue a cualquier destinatario (ver [`docs/SMTP.md`](docs/SMTP.md) y
+   [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)).
 2. **Cloudflare Access** sobre `/admin` (ver [`docs/CLOUDFLARE-ACCESS.md`](docs/CLOUDFLARE-ACCESS.md)).
 3. **Reemplazar las fotos de demo** por fotos reales del negocio en `public/img/products/`.
 4. **Costo de envío** por municipio y total desglosado.

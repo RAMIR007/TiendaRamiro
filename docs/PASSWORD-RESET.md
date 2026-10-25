@@ -49,15 +49,21 @@ Sin esto, el enlace del correo vuelve a `localhost:3000` o a una URL no permitid
 
 ## 3. Envío de correos
 
-El servicio de correo integrado de Supabase es **solo para pruebas**: tiene límites muy
-bajos (unos pocos correos por hora) y puede no entregar a destinatarios que no sean
-miembros del proyecto.
+El servicio de correo integrado de Supabase es **solo para pruebas**: entrega únicamente
+a los miembros del equipo del proyecto y limita a **2 correos por hora**. Para que
+cualquier cliente reciba el enlace hay que configurar **SMTP propio**.
 
-Para producción configura **SMTP propio**:
+La guía completa, con proveedores recomendados para Cuba, está en
+[`docs/SMTP.md`](SMTP.md). Resumen:
 
-- **Authentication → SMTP Settings**.
-- Proveedores habituales: Resend, Brevo, Mailgun, Amazon SES.
-- Verifica el dominio remitente (SPF/DKIM) para no caer en spam.
+| Proveedor | Costo | Dominio | Límite gratis |
+| --- | --- | --- | --- |
+| **Gmail SMTP** | Gratis | No | ~500/día |
+| **SMTP2GO** | Gratis | No | 1.000/mes |
+| **Brevo** | Gratis | Recomendado | 300/día |
+
+Para empezar sin dominio ni tarjeta: **Gmail SMTP** (cuenta dedicada + contraseña de
+aplicación). Para algo más serio sin dominio: **SMTP2GO**. Con dominio propio: **Brevo**.
 
 Sin SMTP propio, el botón puede responder correctamente y el correo no llegar.
 
