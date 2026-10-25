@@ -120,7 +120,15 @@ function setupCategoryEvents() {
 /* ------------------------------------------------------------------ */
 
 function buildSrcset(url) {
-  if (typeof url !== 'string' || !/^https:\/\/images\.unsplash\.com\//i.test(url)) return '';
+  if (typeof url !== 'string') return '';
+
+  // Imágenes locales: pN-M-800.webp + pN-M-400.webp
+  if (/^\/img\/.+-800\.webp$/.test(url)) {
+    return `${url.replace(/-800\.webp$/, '-400.webp')} 400w, ${url} 800w`;
+  }
+
+  // Compatibilidad con imágenes externas de Unsplash.
+  if (!/^https:\/\/images\.unsplash\.com\//i.test(url)) return '';
   if (!/[?&]w=\d+/.test(url)) return '';
   return [320, 640, 800]
     .map((width) => `${url.replace(/([?&])w=\d+/, `$1w=${width}`)} ${width}w`)
@@ -332,7 +340,7 @@ function setModalGallery(product) {
         <button type="button" class="thumb-item${index === 0 ? ' active' : ''}"
           data-thumb="${escapeHtml(url)}" aria-pressed="${index === 0}"
           aria-label="Ver imagen ${index + 1} de ${product.images.length}">
-          <img src="${escapeHtml(url)}" alt="" width="65" height="65" loading="lazy" decoding="async">
+          <img src="${escapeHtml(smallImageUrl(url))}" alt="" width="65" height="65" loading="lazy" decoding="async">
         </button>
       `)
       .join('');

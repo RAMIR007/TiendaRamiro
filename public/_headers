@@ -12,6 +12,17 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
 
+/reset-password
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/reset-password.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/img/*
+  Cache-Control: public, max-age=31536000, immutable
+
 /README.md
   X-Robots-Tag: noindex
 

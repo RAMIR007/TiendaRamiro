@@ -270,7 +270,7 @@ function renderCartItem(item) {
 
   return `
     <div class="cart-item" role="listitem">
-      <img class="cart-item-thumb" src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">
+      <img class="cart-item-thumb" src="${escapeHtml(smallImageUrl(item.image))}" alt="" loading="lazy" decoding="async">
       <div class="cart-item-details">
         <div class="cart-item-title" title="${name}">${name}</div>
         ${item.variant ? `<div class="cart-item-variant">Opción: ${escapeHtml(item.variant)}</div>` : ''}

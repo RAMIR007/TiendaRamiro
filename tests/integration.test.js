@@ -108,6 +108,7 @@ function createMock() {
     lastOrderPayload: null,
     lastOrderPatch: null,
     passwordUpdates: [],
+    recoveries: [],
     alerts: [],
     nextAuditId: 100
   };
@@ -150,6 +151,11 @@ function createMock() {
         expires_in: 3600,
         user: { id: user.id, email: user.email }
       });
+    }
+
+    if (route === '/auth/v1/recover' && method === 'POST') {
+      state.recoveries.push(body.email);
+      return respond({}, 200);
     }
 
     if (route === '/auth/v1/user' && method === 'GET') {
@@ -252,7 +258,7 @@ function createMock() {
   return { state, fetch: fetchMock };
 }
 
-async function loadPage(pageFile, mock) {
+async function loadPage(pageFile, mock, options = {}) {
   const pagePath = path.join(root, pageFile);
   const pageDir = path.dirname(pagePath);
   let html = fs.readFileSync(pagePath, 'utf8');
@@ -268,7 +274,7 @@ async function loadPage(pageFile, mock) {
   virtualConsole.on('error', (message) => errors.push(String(message)));
 
   const dom = new JSDOM(html, {
-    url: 'http://localhost/',
+    url: options.url || 'http://localhost/',
     runScripts: 'dangerously',
     virtualConsole,
     beforeParse(window) {
@@ -432,6 +438,15 @@ async function login(win, doc, email, password) {
     assert.strictEqual(adminDoc.getElementById('loginScreen').style.display, 'flex');
   });
 
+  await check('envía el correo de recuperación de contraseña', async () => {
+    adminDoc.getElementById('adminEmail').value = 'admin@test.com';
+    click(adminDoc.getElementById('forgotPasswordBtn'));
+    await tick(160);
+
+    assert.deepStrictEqual(adminMock.state.recoveries, ['admin@test.com']);
+    assert.match(adminDoc.getElementById('loginNotice').textContent, /enlace/i);
+  });
+
   await check('rechaza una contraseña incorrecta', async () => {
     await login(adminWin, adminDoc, 'admin@test.com', 'incorrecta');
     assert.match(adminDoc.getElementById('loginError').textContent, /incorrectos/);
@@ -548,6 +563,33 @@ async function login(win, doc, email, password) {
   });
 
   staff.dom.window.close();
+
+  /* ---------------------------------------------------------------- */
+  console.log('\nRestablecer contraseña');
+  /* ---------------------------------------------------------------- */
+
+  const resetMock = createMock();
+  const reset = await loadPage('public/reset-password.html', resetMock, {
+    url: 'http://localhost/reset-password#access_token=token-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa&refresh_token=refresh&type=recovery'
+  });
+  const resetDoc = reset.doc;
+
+  await check('valida el enlace y muestra el formulario', () => {
+    assert.strictEqual(resetDoc.getElementById('resetForm').hidden, false);
+    assert.match(resetDoc.getElementById('resetEmail').textContent, /admin@test\.com/);
+  });
+
+  await check('actualiza la contraseña con el token del enlace', async () => {
+    resetDoc.getElementById('resetPassword').value = 'OtraClave123';
+    resetDoc.getElementById('resetConfirm').value = 'OtraClave123';
+    submit(resetDoc.getElementById('resetForm'));
+    await tick(220);
+
+    assert.strictEqual(resetMock.state.passwordUpdates[0], 'OtraClave123');
+    assert.strictEqual(resetDoc.getElementById('resetSuccess').hidden, false);
+  });
+
+  reset.dom.window.close();
 
   /* ---------------------------------------------------------------- */
   console.log(`\n${passed} comprobaciones OK, ${failures.length} fallos\n`);

@@ -11,6 +11,7 @@ const publicDir = path.join(__dirname, '..', 'public');
 const requiredFiles = [
   'index.html',
   'admin.html',
+  'reset-password.html',
   'robots.txt',
   '_headers',
   'css/store.css',
@@ -22,7 +23,11 @@ const requiredFiles = [
   'js/data.js',
   'js/cart.js',
   'js/store.js',
-  'js/admin.js'
+  'js/admin.js',
+  'js/reset-password.js',
+  'img/placeholder-800.webp',
+  'img/placeholder-400.webp',
+  'img/products/p1-1-800.webp'
 ];
 
 const missing = requiredFiles.filter((file) => !fs.existsSync(path.join(publicDir, file)));

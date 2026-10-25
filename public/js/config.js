@@ -39,8 +39,8 @@ const STORAGE_KEYS = {
 };
 
 // Imagen de respaldo cuando un producto no tiene ninguna válida.
-const PRODUCT_PLACEHOLDER_IMAGE =
-  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
+// Imagen de respaldo cuando un producto no tiene ninguna válida.
+const PRODUCT_PLACEHOLDER_IMAGE = '/img/placeholder-800.webp';
 
 // Etiqueta legible de una categoría a partir de su clave.
 function getCategoryLabel(categoryKey) {

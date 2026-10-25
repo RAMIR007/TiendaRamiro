@@ -25,16 +25,19 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
 2. Copia **todo** el contenido de
    [`supabase/migrations/20261024120000_init.sql`](../supabase/migrations/20261024120000_init.sql).
 3. Pega y pulsa **Run** (`Ctrl+Enter`). Debe terminar sin errores.
-4. En **Table Editor** deberías ver: `profiles`, `products` (8 filas), `orders`,
+4. **Solo la primera vez**, ejecuta también
+   [`supabase/seed.sql`](../supabase/seed.sql) para cargar los 8 productos de demostración.
+5. En **Table Editor** deberías ver: `profiles`, `products` (8 filas), `orders`,
    `order_items` y `audit_logs`.
 
 El script crea las tablas, activa RLS, define los roles y agrega la función
 `create_order()`, que valida stock y precios en el servidor y descuenta inventario
 en una sola transacción.
 
-> **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutarlo completo.
-> Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a `pending`.
-> No duplica los productos.
+> **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutar la migración
+> completa. Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a
+> `pending`. **No vuelve a insertar productos**: los datos de demo están separados en
+> `seed.sql` precisamente para que un producto borrado no reaparezca.
 
 ---
 

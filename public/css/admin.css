@@ -675,6 +675,62 @@ tr:hover td {
   color: var(--text-dim);
 }
 
+.login-notice {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #34d399;
+}
+
+.login-notice:empty {
+  display: none;
+}
+
+.login-notice.is-error {
+  color: #fca5a5;
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0.35rem;
+  color: var(--primary-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.forgot-row {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.reset-email {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: -0.5rem 0 1.25rem;
+  word-break: break-word;
+}
+
+.reset-invalid-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+a.login-submit {
+  display: inline-flex;
+  text-decoration: none;
+}
+
 .account-box {
   display: grid;
   gap: 0.5rem;

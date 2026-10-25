@@ -17,10 +17,23 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-// Solo permite URLs http(s) o data:image. Se usa al normalizar imágenes.
+// Solo permite URLs http(s), data:image o rutas locales /img/....
 function isSafeImageUrl(url) {
   if (typeof url !== 'string' || !url.trim()) return false;
-  return /^https?:\/\//i.test(url.trim()) || /^data:image\//i.test(url.trim());
+
+  const value = url.trim();
+
+  if (/^https?:\/\//i.test(value) || /^data:image\//i.test(value)) return true;
+  if (/^\/img\/[A-Za-z0-9._/-]+$/.test(value) && !value.includes('..')) return true;
+
+  return false;
+}
+
+// Versión de 400 px para miniaturas (las imágenes locales usan -800/-400).
+function smallImageUrl(url) {
+  return typeof url === 'string' && /-800\.webp$/.test(url)
+    ? url.replace(/-800\.webp$/, '-400.webp')
+    : url;
 }
 
 /* ------------------------------------------------------------------ */

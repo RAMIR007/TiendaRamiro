@@ -215,6 +215,16 @@ async function changePassword(newPassword) {
   });
 }
 
+// Envía el correo de recuperación. Supabase responde igual exista o no la
+// cuenta, para no revelar qué correos están registrados.
+async function requestPasswordReset(email, redirectTo) {
+  const query = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : '';
+  await supabaseRequest(`/auth/v1/recover${query}`, {
+    method: 'POST',
+    body: { email: String(email).trim() }
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Catálogo                                                            */
 /* ------------------------------------------------------------------ */

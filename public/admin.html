@@ -42,8 +42,13 @@
             autocomplete="current-password" required>
         </div>
         <p id="loginError" class="field-error" role="alert"></p>
+        <p id="loginNotice" class="login-notice" role="status"></p>
         <button type="submit" id="loginSubmit" class="btn btn-primary login-submit">Ingresar al Panel</button>
       </form>
+
+      <div class="forgot-row">
+        <button type="button" id="forgotPasswordBtn" class="link-button">¿Olvidaste tu contraseña?</button>
+      </div>
 
       <p class="login-note">Acceso con Supabase Auth. Las cuentas se crean desde el panel de Supabase.</p>
 

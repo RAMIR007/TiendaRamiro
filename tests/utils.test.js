@@ -22,7 +22,7 @@ global.localStorage = {
 const api = new Function(
   `${source}
   return {
-    escapeHtml, isSafeImageUrl,
+    escapeHtml, isSafeImageUrl, smallImageUrl,
     toCents, roundMoney, formatMoney, formatCents,
     storeRead, storeWrite, storeRemove,
     normalizeProduct, normalizeProducts,
@@ -84,6 +84,15 @@ check('solo acepta URLs http(s) y data:image', () => {
   assert.strictEqual(api.isSafeImageUrl('javascript:alert(1)'), false);
   assert.strictEqual(api.isSafeImageUrl(''), false);
 });
+check('acepta rutas locales /img y rechaza traversal', () => {
+  assert.strictEqual(api.isSafeImageUrl('/img/products/p1-1-800.webp'), true);
+  assert.strictEqual(api.isSafeImageUrl('/img/../secret.webp'), false);
+  assert.strictEqual(api.isSafeImageUrl('//evil.com/foto.jpg'), false);
+});
+check('smallImageUrl usa la versión de 400 px', () => {
+  assert.strictEqual(api.smallImageUrl('/img/products/p1-1-800.webp'), '/img/products/p1-1-400.webp');
+  assert.strictEqual(api.smallImageUrl('https://example.com/a.jpg'), 'https://example.com/a.jpg');
+});
 
 console.log('\nDinero');
 check('toCents redondea sin errores de coma flotante', () => {
@@ -138,6 +147,11 @@ check('filtra imágenes inseguras y usa el placeholder', () => {
     images: ['javascript:alert(1)', 'https://example.com/ok.jpg']
   }));
   assert.deepStrictEqual(product.images, ['https://example.com/ok.jpg']);
+
+  const local = api.normalizeProduct(validProduct({
+    images: ['/img/products/p1-1-800.webp']
+  }));
+  assert.deepStrictEqual(local.images, ['/img/products/p1-1-800.webp']);
 
   const empty = api.normalizeProduct(validProduct({ images: [] }));
   assert.deepStrictEqual(empty.images, [api.PRODUCT_PLACEHOLDER_IMAGE]);

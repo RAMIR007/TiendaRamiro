@@ -58,6 +58,11 @@ function setLoginError(message) {
   if (errorEl) errorEl.textContent = message || '';
 }
 
+function setLoginNotice(message) {
+  const noticeEl = document.getElementById('loginNotice');
+  if (noticeEl) noticeEl.textContent = message || '';
+}
+
 function showLoginScreen(message) {
   const loginScreen = document.getElementById('loginScreen');
   const layout = document.getElementById('adminLayout');
@@ -67,6 +72,7 @@ function showLoginScreen(message) {
 
   currentUser = null;
   setLoginError(message || '');
+  setLoginNotice('');
 }
 
 function showAdminPanel() {
@@ -77,6 +83,7 @@ function showAdminPanel() {
   if (layout) layout.style.display = 'block';
 
   setLoginError('');
+  setLoginNotice('');
   applyRolePermissions();
   switchAdminTab('products');
   refreshAll();
@@ -84,6 +91,39 @@ function showAdminPanel() {
 
 async function refreshAll() {
   await Promise.allSettled([loadProducts(), loadOrders(), loadAudit()]);
+}
+
+async function handleForgotPassword() {
+  const emailInput = document.getElementById('adminEmail');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const button = document.getElementById('forgotPasswordBtn');
+
+  setLoginError('');
+  setLoginNotice('');
+
+  if (!email) {
+    setLoginError('Escribe tu correo para enviarte el enlace.');
+    if (emailInput) emailInput.focus();
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Enviando…';
+  }
+
+  try {
+    await requestPasswordReset(email, `${window.location.origin}/reset-password`);
+    setLoginNotice('Si el correo está registrado, recibirás un enlace para restablecer la contraseña.');
+  } catch (error) {
+    console.error('[recover]', error);
+    setLoginError(error.message || 'No se pudo enviar el correo. Inténtalo más tarde.');
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = '¿Olvidaste tu contraseña?';
+    }
+  }
 }
 
 async function handleLogin(event) {
@@ -95,6 +135,7 @@ async function handleLogin(event) {
   const submitButton = document.getElementById('loginSubmit');
 
   setLoginError('');
+  setLoginNotice('');
 
   if (!email || !password) {
     setLoginError('Completa correo y contraseña.');
@@ -292,7 +333,7 @@ function renderAdminTable() {
       <tr class="${inactive ? 'is-inactive' : ''}">
         <td>
           <div class="prod-table-info">
-            <img class="table-thumb" src="${escapeHtml(product.images[0])}" alt="" loading="lazy" decoding="async" width="48" height="48">
+            <img class="table-thumb" src="${escapeHtml(smallImageUrl(product.images[0]))}" alt="" loading="lazy" decoding="async" width="48" height="48">
             <div>
               <strong>${name}</strong>
               <div class="table-id">${id}</div>
@@ -837,6 +878,7 @@ function closeTopModal() {
 
 function setupAdminEvents() {
   document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+  document.getElementById('forgotPasswordBtn')?.addEventListener('click', handleForgotPassword);
   document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
   document.getElementById('accountForm')?.addEventListener('submit', handleChangePassword);
   document.getElementById('importFile')?.addEventListener('change', handleImportFile);

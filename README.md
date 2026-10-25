@@ -22,6 +22,8 @@ Abre la URL de LAN desde el teléfono conectado al mismo Wi-Fi.
 
 El acceso usa **Supabase Auth** con correo y contraseña. Las cuentas se crean en
 Supabase → **Authentication → Users**; no hay contraseñas ni usuarios en el código.
+Si olvidas la contraseña, el login tiene **¿Olvidaste tu contraseña?** (requiere configurar
+las URLs y el SMTP en Supabase, ver [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)).
 La puesta en marcha está en [`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md).
 
 ---
@@ -92,8 +94,8 @@ o `pg_dump` con la cadena de conexión del proyecto.
   se hace en **Authentication → Users**; el panel solo permite cambiar la propia contraseña.
 - **No hay pagos, envíos ni facturación.** El cierre es por WhatsApp.
 - **El stock puede desincronizarse** si se vende por otro canal; ajústalo desde el panel.
-- **Las imágenes son externas (Unsplash).** Para producción conviene reemplazarlas por fotos
-  propias optimizadas (ver punto 6).
+- **Las imágenes de demo son locales** (`public/img/`, WebP de 800/400 px). Reemplázalas por
+  fotos reales del negocio cuando las tengas.
 
 ### Roles y permisos
 
@@ -146,9 +148,9 @@ on conflict (id) do update set role = 'staff';
 - **Prueba el enlace en el móvil**, no solo en la computadora: abre la tienda desde Chrome,
   desde el navegador interno de Instagram/Facebook y desde el de WhatsApp. El código usa un
   enlace real (`<a>`) en lugar de `window.open` justamente para esos navegadores.
-- **Datos móviles:** las imágenes usan `srcset` (320/640/800 px) y `loading="lazy"`, así el
-  teléfono descarga la versión pequeña. Para mejorarlo aún más, reemplaza las URLs de Unsplash
-  por fotos propias en WebP de ~600 px y guárdalas en una carpeta `img/`.
+- **Datos móviles:** las imágenes son WebP locales de 800 y 400 px, con `srcset` y
+  `loading="lazy"`. El teléfono descarga la versión de 400 px en las tarjetas y la de 800 px
+  solo al abrir el detalle.
 - **Compartir el catálogo:** publica el sitio (Netlify, GitHub Pages, hosting estático) y comparte
   el enlace o un QR por WhatsApp/Telegram. El pedido siempre llega al chat del negocio.
 - **Backup semanal:** exporta el catálogo y los pedidos a un archivo y guárdalo fuera del teléfono.
@@ -205,7 +207,7 @@ políticas RLS limitan qué puede leer y escribir cada rol. Aun así, conviene:
 
 1. **Cloudflare Access** (Zero Trust): política sobre `/admin` y `/admin.html` para que solo pase
    el correo del dueño. El plan gratuito cubre hasta 50 usuarios. Es una capa extra, no un
-   sustituto del login.
+   sustituto del login. Guía: [`docs/CLOUDFLARE-ACCESS.md`](docs/CLOUDFLARE-ACCESS.md).
 2. **Registro público cerrado** en Supabase (Authentication → Providers → Email). Ya está
    documentado en la guía.
 3. **Cerrar sesión** en equipos compartidos: la sesión vive en `sessionStorage` y se borra al
@@ -231,11 +233,12 @@ npm test           # utilidades + integración
 
 - `tests/utils.test.js`: escape de HTML, dinero en centavos, almacenamiento tolerante a fallos,
   normalización de productos y caché del catálogo.
-- `tests/integration.test.js`: carga `public/index.html` y `public/admin.html` en jsdom con un
-  **Supabase simulado** (fetch interceptado). Cubre catálogo, stock, checkout RPC, XSS, login,
-  usuario pendiente, roles, CRUD, pedidos, auditoría y cambio de contraseña.
+- `tests/integration.test.js`: carga `public/index.html`, `public/admin.html` y
+  `public/reset-password.html` en jsdom con un **Supabase simulado** (fetch interceptado).
+  Cubre catálogo, stock, checkout RPC, XSS, login, usuario pendiente, roles, CRUD, pedidos,
+  auditoría, recuperación y cambio de contraseña.
 
-Estado actual: **16 + 21 comprobaciones en verde**.
+Estado actual: **16 + 25 comprobaciones en verde**.
 
 ---
 
@@ -244,8 +247,10 @@ Estado actual: **16 + 21 comprobaciones en verde**.
 ```
 public/index.html         Tienda (archivo publicable)
 public/admin.html         Panel de administración (archivo publicable)
+public/reset-password.html  Restablecer contraseña desde el correo
 public/css/store.css      Estilos de la tienda (tokens y componentes compartidos)
-public/css/admin.css      Estilos del panel (carga store.css antes)
+public/css/admin.css      Estilos del panel y del login
+public/img/               Imágenes WebP locales (800 y 400 px)
 public/js/config.js       Configuración del cliente (editar solo esto)
 public/js/supabase-config.js  URL y clave publishable de Supabase
 public/js/supabase.js     Cliente Auth + REST y acceso a datos
@@ -254,28 +259,34 @@ public/js/data.js         Normalización de productos y caché del catálogo
 public/js/cart.js         Carrito, stock, checkout y WhatsApp
 public/js/store.js        Catálogo, filtros, búsqueda y modal
 public/js/admin.js        Login, roles, CRUD de catálogo, pedidos y auditoría
-public/_headers           Cabeceras de Cloudflare
-public/robots.txt         Bloqueo de /admin.html
+public/js/reset-password.js  Formulario de nueva contraseña
+public/_headers           Cabeceras de Cloudflare (incluye caché de /img)
+public/robots.txt         Bloqueo de /admin en buscadores
 wrangler.jsonc            Configuración del Worker (assets: ./public)
 scripts/serve.js          Servidor estático para probar en la LAN
 scripts/build.js          Verificación previa al deploy
 supabase/migrations/      Esquema SQL, RLS y función create_order()
+supabase/seed.sql         Productos de demostración (solo base nueva)
 tests/                    Pruebas con Node + jsdom
 docs/SUPABASE.md          Análisis de la migración a Supabase
 docs/SUPABASE-SETUP.md    Guía de puesta en marcha
+docs/PASSWORD-RESET.md    Configurar recuperación de contraseña
+docs/CLOUDFLARE-ACCESS.md Proteger /admin con Cloudflare Access
 ```
 
 ---
 
 ## 10. Próximos pasos sugeridos
 
-1. **“Olvidé mi contraseña”** en el login usando el correo de recuperación de Supabase.
-2. **Fotos propias optimizadas** en `img/` con un script de conversión a WebP.
-3. **Costo de envío** por municipio y total desglosado.
-4. **Filtros y paginación** de pedidos por fecha/estado (hoy se listan los últimos 100).
-5. **Protección anti-spam** en `create_order()`: Cloudflare Turnstile o límite por IP.
-6. **WhatsApp Cloud API** en una Edge Function para enviar la confirmación automática.
-7. **Tests E2E** con Playwright sobre el navegador real (jsdom no valida layout ni CSS).
+1. **Configurar SMTP propio y las URLs de Supabase** para que el correo de recuperación
+   llegue a cualquier destinatario (ver [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)).
+2. **Cloudflare Access** sobre `/admin` (ver [`docs/CLOUDFLARE-ACCESS.md`](docs/CLOUDFLARE-ACCESS.md)).
+3. **Reemplazar las fotos de demo** por fotos reales del negocio en `public/img/products/`.
+4. **Costo de envío** por municipio y total desglosado.
+5. **Filtros y paginación** de pedidos por fecha/estado (hoy se listan los últimos 100).
+6. **Protección anti-spam** en `create_order()`: Cloudflare Turnstile o límite por IP.
+7. **WhatsApp Cloud API** en una Edge Function para enviar la confirmación automática.
+8. **Tests E2E** con Playwright sobre el navegador real (jsdom no valida layout ni CSS).
 
 ---
 
