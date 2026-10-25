@@ -526,9 +526,16 @@ async function login(win, doc, email, password) {
 
   await check('el rol ventas no ve controles de administrador', () => {
     assert.strictEqual(staffDoc.getElementById('adminLayout').style.display, 'block');
+    assert.strictEqual(staffDoc.querySelector('[data-action="create-product"]').hidden, true);
     assert.strictEqual(staffDoc.querySelectorAll('[data-action="delete-product"]').length, 0);
     assert.strictEqual(staffDoc.querySelector('[data-action="import-json"]').hidden, true);
     assert.strictEqual(staffDoc.querySelector('[data-action="clear-audit"]').hidden, true);
+  });
+
+  await check('el rol ventas no puede abrir el formulario de creación', () => {
+    staffWin.openCreateModal();
+    assert.strictEqual(staffDoc.getElementById('formModal').classList.contains('active'), false);
+    assert.match(staffDoc.getElementById('toastMsg').textContent, /rol/i);
   });
 
   await check('el rol ventas no puede borrar aunque llame a la función', async () => {

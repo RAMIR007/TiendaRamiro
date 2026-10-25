@@ -177,7 +177,32 @@ alter table public.audit_logs enable row level security;
 -- 5. Políticas RLS
 -- ---------------------------------------------------------------------------
 
+-- Reset de políticas: elimina las de versiones anteriores, incluidas las
+-- permisivas que permitían a cualquier usuario autenticado editar su perfil
+-- o el catálogo. Sin este bloque, reejecutar el script no cerraría el agujero.
+do $$
+declare
+  policy_row record;
+begin
+  for policy_row in
+    select schemaname, tablename, policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename in ('profiles', 'products', 'orders', 'order_items', 'audit_logs')
+  loop
+    execute format(
+      'drop policy if exists %I on %I.%I',
+      policy_row.policyname,
+      policy_row.schemaname,
+      policy_row.tablename
+    );
+  end loop;
+end;
+$$;
+
 -- Perfiles: cada uno ve el suyo; el admin ve todos.
+-- No hay política de UPDATE: el rol se cambia solo desde el SQL Editor o el
+-- panel de Supabase. Un usuario no puede ascenderse a sí mismo.
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
   for select to authenticated using (id = auth.uid());
@@ -186,10 +211,18 @@ drop policy if exists "profiles_select_admin" on public.profiles;
 create policy "profiles_select_admin" on public.profiles
   for select to authenticated using (public.is_admin());
 
--- Catálogo: público solo productos activos; el admin ve y escribe todo.
+-- Catálogo: público solo productos activos.
 drop policy if exists "products_public_read" on public.products;
 create policy "products_public_read" on public.products
   for select to anon, authenticated using (active);
+
+-- Ventas puede editar stock/precio de productos existentes, pero no crearlos
+-- ni borrarlos (eso queda en products_admin_all).
+drop policy if exists "products_staff_update" on public.products;
+create policy "products_staff_update" on public.products
+  for update to authenticated
+  using (public.is_staff())
+  with check (public.is_staff());
 
 drop policy if exists "products_admin_all" on public.products;
 create policy "products_admin_all" on public.products

@@ -329,6 +329,8 @@ function renderAdminTable() {
 }
 
 function openCreateModal() {
+  if (!requireAdmin('crear productos')) return;
+
   const form = document.getElementById('productForm');
   if (form) form.reset();
 
@@ -401,6 +403,11 @@ async function handleSaveProduct(event) {
     : STORE_CONFIG.categories[0].key;
 
   const existing = id ? productsCache.find((product) => product.id === id) : null;
+
+  if (!existing && !isAdmin()) {
+    showToast('Tu rol no permite crear productos');
+    return;
+  }
 
   const product = {
     name,
