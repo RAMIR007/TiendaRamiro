@@ -81,3 +81,16 @@ values
   )
 on conflict (id) do nothing;
 
+-- Costo de proveedor y comisión de vendedor para los productos de demo.
+insert into public.product_costs (product_id, cost_cents, commission_percent, supplier)
+values
+  ('00000000-0000-0000-0000-000000000001', 1680, 10, 'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000002', 2700, 10, 'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000003', 1900, 8,  'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000004', 1200, 12, 'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000005', 3300, 8,  'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000006', 960, 10,  'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000007', 1320, 10, 'Proveedor Demo'),
+  ('00000000-0000-0000-0000-000000000008', 1800, 12, 'Proveedor Demo')
+on conflict (product_id) do nothing;
+
