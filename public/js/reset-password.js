@@ -30,10 +30,18 @@ function showResetForm(email) {
 function showResetInvalid(message) {
   const invalid = document.getElementById('resetInvalid');
   const form = document.getElementById('resetForm');
+  const intro = document.getElementById('resetIntro');
 
   if (form) form.hidden = true;
-  if (invalid) invalid.hidden = false;
-  setResetStatus(message || '', true);
+  if (intro) intro.hidden = true;
+
+  if (invalid) {
+    const text = invalid.querySelector('.reset-invalid-text');
+    if (text) text.textContent = message || 'El enlace no es válido o ya expiró.';
+    invalid.hidden = false;
+  }
+
+  setResetStatus('');
 }
 
 async function initResetPage() {
@@ -103,7 +111,7 @@ async function handleResetSubmit(event) {
     const form = document.getElementById('resetForm');
     if (form) form.hidden = true;
     document.getElementById('resetSuccess').hidden = false;
-    setResetStatus('Contraseña actualizada. Ya puedes iniciar sesión.', false);
+    setResetStatus('');
     resetAccessToken = null;
   } catch (error) {
     console.error('[reset]', error);
