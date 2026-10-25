@@ -95,6 +95,48 @@ o `pg_dump` con la cadena de conexión del proyecto.
 - **Las imágenes son externas (Unsplash).** Para producción conviene reemplazarlas por fotos
   propias optimizadas (ver punto 6).
 
+### Roles y permisos
+
+| Acción | `admin` | `staff` |
+| --- | :---: | :---: |
+| Ver catálogo y pedidos | ✅ | ✅ |
+| Editar producto (precio, stock, nombre, fotos) | ✅ | ✅ |
+| Crear producto | ✅ | ❌ |
+| Eliminar producto | ✅ | ❌ |
+| Importar catálogo JSON | ✅ | ❌ |
+| Exportar catálogo y pedidos | ✅ | ✅ |
+| Cambiar estado de un pedido | ✅ | ❌ |
+| Eliminar un pedido | ✅ | ❌ |
+| Ver auditoría | ✅ | ✅ |
+| Vaciar auditoría | ✅ | ❌ |
+| Ver productos inactivos | ✅ | ❌ |
+| Cambiar su propia contraseña | ✅ | ✅ |
+| Crear usuarios / asignar roles | Supabase | ❌ |
+
+`admin` y `staff` **no** se diferencian solo por los usuarios: el staff puede vender y ajustar
+stock, pero no puede crear/borrar productos, gestionar pedidos ni vaciar la auditoría. La
+creación de usuarios no está en el panel para ninguno de los dos: se hace en Supabase.
+
+> RLS es seguridad **por fila**, no por columna: `staff` puede editar toda la ficha del producto.
+> Si quieres limitarlo a precio y stock, se hace con un RPC o con permisos por columna.
+
+#### Crear un usuario
+
+1. **Authentication → Users → Add user → Create new user**.
+2. Correo, contraseña y **Auto Confirm User**.
+3. Asignar el rol en `profiles` (SQL Editor o Table Editor):
+
+```sql
+insert into public.profiles (id, name, role)
+select id, split_part(email, '@', 1), 'staff'
+from auth.users
+where email = 'empleado@tudominio.com'
+on conflict (id) do update set role = 'staff';
+```
+
+4. El empleado entra en `/admin` con ese correo. Los cambios de rol se aplican al recargar o
+   volver a iniciar sesión.
+
 ---
 
 ## 6. Recomendaciones para Cuba

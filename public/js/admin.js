@@ -491,6 +491,11 @@ function downloadBlob(blob, filename) {
 }
 
 function handleImportFile(event) {
+  if (!requireAdmin('importar el catálogo')) {
+    event.target.value = '';
+    return;
+  }
+
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
