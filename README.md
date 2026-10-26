@@ -340,10 +340,18 @@ docs/CLOUDFLARE-ACCESS.md Proteger /admin con Cloudflare Access
 - **Vale de pedido:** el checkout captura teléfono obligatorio, método de entrega
   (domicilio/recogida), dirección, código de vendedor y pago en efectivo al recibir.
   El WhatsApp incluye el Nº de vale (`TR-AAMMDD-NNN`); `create_order()` exige teléfono.
-- **Negocio:** costos de proveedor, precio de venta y % de comisión por producto, con
-  vista previa de margen en el panel y comisiones congeladas por línea en cada pedido.
+- **Negocio:** costos de proveedor, precio de venta y comisión del vendedor configurable
+  como **% del precio o $ fijo por unidad**, con vista previa de margen en el panel y
+  comisiones congeladas por línea en cada pedido.
 - **Referidos:** todo usuario del panel tiene código y enlace `?ref=` propio; el vale
   atribuye la venta y "Mi cuenta" muestra la comisión acumulada.
+- **Reportes (admin):** pestaña 📊 con KPIs (facturación, pedidos, artículos, comisiones,
+  ticket promedio), gráfico de ventas por día, ranking por vendedor y productos más vendidos,
+  filtrable a 7/30 días o todo el historial.
+- **Compartir producto:** botón de WhatsApp en cada tarjeta y en el modal para mandarle
+  el producto (nombre, precio y enlace) directamente a un cliente.
+- **Imagen comercial:** marca y textos reales (Tienda Ramiro), hero orientado al cliente
+  (entrega por mensajero, pago en efectivo).
 - **Sin SMTP:** se retiró la recuperación de contraseña por correo del login; los
   restablecimientos se hacen desde Supabase o desde "Mi cuenta".
 - **Backend:** migración a Supabase. Catálogo, pedidos, perfiles y auditoría en Postgres con RLS.

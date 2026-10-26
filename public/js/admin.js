@@ -208,7 +208,7 @@ function renderCategoryOptions() {
 /* ------------------------------------------------------------------ */
 
 function switchAdminTab(tabKey) {
-  const tabs = ['products', 'orders', 'audit'];
+  const tabs = ['products', 'orders', 'reports', 'audit'];
 
   tabs.forEach((tab) => {
     const capitalized = tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -227,7 +227,119 @@ function switchAdminTab(tabKey) {
   });
 
   if (tabKey === 'orders') renderOrdersHistory();
+  if (tabKey === 'reports') renderReports();
   if (tabKey === 'audit') renderAuditLogs();
+}
+
+/* ------------------------------------------------------------------ */
+/* Reportes de ventas (solo admin)                                     */
+/* ------------------------------------------------------------------ */
+
+function filterOrdersByPeriod(orders, periodKey) {
+  if (periodKey === 'all') return [...orders];
+
+  const days = Number(periodKey) || 30;
+  const since = Date.now() - days * 24 * 60 * 60 * 1000;
+  return orders.filter((order) => new Date(order.createdAt).getTime() >= since);
+}
+
+function renderReports() {
+  const periodEl = document.getElementById('reportsPeriod');
+  const period = periodEl ? periodEl.value : '30';
+  const orders = filterOrdersByPeriod(ordersCache.filter((order) => order.status !== 'cancelado'), period);
+
+  const kpis = document.getElementById('reportsKpis');
+  const chart = document.getElementById('reportsDailyChart');
+  const sellers = document.getElementById('reportsSellers');
+  const topProducts = document.getElementById('reportsTopProducts');
+  if (!kpis || !chart || !sellers || !topProducts) return;
+
+  if (!orders.length) {
+    kpis.innerHTML = '<p class="reports-empty">No hay ventas en el período seleccionado.</p>';
+    chart.innerHTML = '';
+    sellers.innerHTML = '';
+    topProducts.innerHTML = '';
+    return;
+  }
+
+  // KPIs: total, pedidos, artículos, comisiones y ticket promedio.
+  const totalCents = orders.reduce((sum, order) => sum + order.totalCents, 0);
+  const commissionCents = orders.reduce((sum, order) => sum + order.commissionCents, 0);
+  const itemCount = orders.reduce((sum, order) =>
+    sum + order.items.reduce((acc, item) => acc + item.quantity, 0), 0);
+  const tandems = [
+    ['💰 Facturación', formatCents(totalCents)],
+    ['🧾 Pedidos', String(orders.length)],
+    ['📦 Artículos', String(itemCount)],
+    ['🤝 Comisiones', formatCents(commissionCents)],
+    ['🎟️ Ticket promedio', formatCents(Math.round(totalCents / orders.length))]
+  ];
+  kpis.innerHTML = tandems.map(([label, value]) => `
+    <div class="reports-kpi">
+      <span class="reports-kpi-label">${label}</span>
+      <strong class="reports-kpi-value">${value}</strong>
+    </div>
+  `).join('');
+
+  // Ventas por día (barras CSS simples, hasta 30 días legibles).
+  const byDay = new Map();
+  orders.forEach((order) => {
+    const day = new Date(order.createdAt);
+    const key = `${String(day.getDate()).padStart(2, '0')}/${String(day.getMonth() + 1).padStart(2, '0')}`;
+    byDay.set(key, (byDay.get(key) || 0) + order.totalCents);
+  });
+  const maxDay = Math.max(...byDay.values(), 1);
+  const entries = Array.from(byDay.entries());
+  const visible = entries.slice(-Math.min(entries.length, 14));
+
+  chart.innerHTML = visible.map(([key, cents]) => `
+    <div class="reports-bar-wrap" title="${key}: ${formatCents(cents)}">
+      <div class="reports-bar" style="height:${Math.max(6, Math.round(cents / maxDay * 100))}%"></div>
+      <span class="reports-bar-label">${key}</span>
+    </div>
+  `).join('');
+
+  // Ventas por vendedor.
+  const bySeller = new Map();
+  orders.forEach((order) => {
+    const key = order.sellerName || order.sellerCode || 'Venta directa (web)';
+    const current = bySeller.get(key) || { cents: 0, commission: 0, count: 0 };
+    current.cents += order.totalCents;
+    current.commission += order.commissionCents;
+    current.count += 1;
+    bySeller.set(key, current);
+  });
+
+  sellers.innerHTML = Array.from(bySeller.entries())
+    .sort((a, b) => b[1].cents - a[1].cents)
+    .map(([name, { cents, commission, count }]) => `
+      <div class="reports-row">
+        <span>${escapeHtml(name)} <small class="table-muted">(${count})</small></span>
+        <strong>${formatCents(cents)} <small class="table-muted">· com. ${formatCents(commission)}</small></strong>
+      </div>
+    `).join('');
+
+  // Productos más vendidos.
+  const byProduct = new Map();
+  orders.forEach((order) => {
+    order.items.forEach((item) => {
+      const key = item.name;
+      const current = byProduct.get(key) || { qty: 0, cents: 0 };
+      current.qty += item.quantity;
+      current.cents += item.unitPriceCents * item.quantity;
+      byProduct.set(key, current);
+    });
+  });
+
+  topProducts.innerHTML = Array.from(byProduct.entries())
+    .sort((a, b) => b[1].qty - a[1].qty)
+    .slice(0, 10)
+    .map(([name, { qty, cents }]) => `
+      <div class="reports-row">
+        <span>${escapeHtml(name)} <small class="table-muted">×${qty}</small></span>
+        <strong>${formatCents(cents)}</strong>
+      </div>
+    `).join('');
 }
 
 /* ------------------------------------------------------------------ */
@@ -324,15 +436,17 @@ function renderAdminTable() {
     const name = escapeHtml(product.name);
     const id = escapeHtml(product.id);
     const margin = marginLabel(product);
-    const commissionPercent = Number(product.commissionPercent) || 0;
-    const commissionUnit = product.price * commissionPercent / 100;
+    const commissionUnit = commissionUnitOf(product, product.price);
+    const commissionCellText = commissionUnit.amount > 0
+      ? `${escapeHtml(formatMoney(commissionUnit.amount))} <span class="table-muted">${commissionUnit.type === 'amount' ? 'fijo' : 'del precio'}</span>`
+      : '—';
 
     const adminCells = adminView ? `
       <td><span class="table-category">${escapeHtml(product.supplier || '—')}</span></td>
       <td>${product.cost === null || product.cost === undefined ? '—' : escapeHtml(formatMoney(product.cost))}</td>
       <td><strong>${escapeHtml(formatMoney(product.price))}</strong></td>
       <td class="${margin.negative ? 'margin-negative' : 'margin-positive'}">${escapeHtml(margin.text)}</td>
-      <td>${commissionPercent > 0 ? `${escapeHtml(formatMoney(commissionUnit))} <span class="table-muted">(${commissionPercent}%)</span>` : '—'}</td>
+      <td>${commissionCellText}</td>
     ` : `
       <td><strong>${escapeHtml(formatMoney(product.price))}</strong></td>
     `;
@@ -376,13 +490,40 @@ function renderAdminTable() {
   }).join('');
 }
 
+function commissionUnitOf(product, price) {
+  if (!product || typeof product !== 'object') return { type: 'percent', amount: 0 };
+
+  const type = product.commissionType === 'amount' ? 'amount' : 'percent';
+  if (type === 'amount') {
+    return { type, amount: Math.max(0, Number(product.commissionFixed) || 0) };
+  }
+
+  const percent = Math.min(100, Math.max(0, Number(product.commissionPercent) || 0));
+  return { type, amount: (Number(price) || 0) * percent / 100 };
+}
+
 function updateMarginPreview() {
   const preview = document.getElementById('marginPreview');
   if (!preview) return;
 
   const price = Number(document.getElementById('pPrice').value);
   const costRaw = document.getElementById('pCost').value.trim();
+  const typeInput = document.getElementById('pCommissionType');
+  const type = typeInput && typeInput.value === 'amount' ? 'amount' : 'percent';
   const commission = Number(document.getElementById('pCommission').value) || 0;
+  const label = document.getElementById('pCommissionLabel');
+  const hint = document.getElementById('pCommissionHint');
+
+  if (label) label.textContent = type === 'amount' ? 'Comisión ($ por unidad)' : 'Comisión (% del precio)';
+  if (hint) {
+    hint.textContent = type === 'amount'
+      ? 'Ej.: $5 por cada unidad vendida, sin importar el precio.'
+      : '10% de un producto de $25 = $2.50 por unidad.';
+  }
+
+  if (document.getElementById('pCommission') instanceof HTMLInputElement) {
+    document.getElementById('pCommission').step = type === 'amount' ? '0.01' : '0.5';
+  }
 
   if (!Number.isFinite(price) || price <= 0 || costRaw === '') {
     preview.textContent = '—';
@@ -397,12 +538,14 @@ function updateMarginPreview() {
     return;
   }
 
+  const commissionAmount = type === 'amount' ? commission : price * commission / 100;
   const margin = price - cost;
+  const netMargin = margin - commissionAmount;
   const marginPercent = Math.round((margin / price) * 100);
-  const commissionAmount = price * commission / 100;
 
-  preview.textContent = `${formatMoney(margin)} (${marginPercent}%) · comisión ${formatMoney(commissionAmount)}`;
-  preview.classList.toggle('negative', margin < 0);
+  preview.textContent =
+    `${formatMoney(margin)} (${marginPercent}%) · comisión ${formatMoney(commissionAmount)} · neto ${formatMoney(netMargin)}`;
+  preview.classList.toggle('negative', netMargin < 0);
 }
 
 function openCreateModal() {
@@ -416,6 +559,7 @@ function openCreateModal() {
   document.getElementById('pSupplier').value = '';
   document.getElementById('pCost').value = '';
   document.getElementById('pCommission').value = '';
+  document.getElementById('pCommissionType').value = 'percent';
   updateMarginPreview();
   openModal(document.getElementById('formModal'));
 }
@@ -439,7 +583,9 @@ function openEditModal(productId) {
   document.getElementById('pDesc').value = product.description;
   document.getElementById('pSupplier').value = product.supplier || '';
   document.getElementById('pCost').value = product.cost === null || product.cost === undefined ? '' : product.cost;
-  document.getElementById('pCommission').value = product.commissionPercent || 0;
+  document.getElementById('pCommissionType').value = product.commissionType === 'amount' ? 'amount' : 'percent';
+  document.getElementById('pCommission').value =
+    product.commissionType === 'amount' ? (product.commissionFixed || 0) : (product.commissionPercent || 0);
   updateMarginPreview();
 
   openModal(document.getElementById('formModal'));
@@ -496,12 +642,15 @@ async function handleSaveProduct(event) {
 
   let cost = null;
   let commissionPercent = 0;
+  let commissionFixed = 0;
+  let commissionTypeFinal = 'percent';
   let supplier = null;
 
   if (isAdmin()) {
     const costRaw = document.getElementById('pCost').value.trim();
     const commissionRaw = document.getElementById('pCommission').value.trim();
     const supplierRaw = document.getElementById('pSupplier').value.trim();
+    const commissionType = document.getElementById('pCommissionType').value === 'amount' ? 'amount' : 'percent';
 
     cost = costRaw === ''
       ? (existing ? existing.cost : null)
@@ -512,15 +661,25 @@ async function handleSaveProduct(event) {
       return;
     }
 
-    commissionPercent = commissionRaw === ''
-      ? (existing ? existing.commissionPercent || 0 : 0)
+    let commissionValue = commissionRaw === ''
+      ? (commissionType === 'amount'
+        ? (existing ? existing.commissionFixed || 0 : 0)
+        : (existing ? existing.commissionPercent || 0 : 0))
       : Number(commissionRaw);
 
-    if (!Number.isFinite(commissionPercent) || commissionPercent < 0 || commissionPercent > 100) {
-      showToast('La comisión debe estar entre 0 y 100');
+    if (!Number.isFinite(commissionValue) || commissionValue < 0) {
+      showToast('La comisión debe ser un número mayor o igual a 0');
       return;
     }
 
+    if (commissionType === 'percent' && commissionValue > 100) {
+      showToast('La comisión porcentual debe estar entre 0 y 100');
+      return;
+    }
+
+    commissionPercent = commissionType === 'amount' ? 0 : commissionValue;
+    commissionFixed = commissionType === 'amount' ? commissionValue : 0;
+    commissionTypeFinal = commissionType;
     supplier = supplierRaw || (existing ? existing.supplier : null);
   }
 
@@ -540,6 +699,8 @@ async function handleSaveProduct(event) {
   if (isAdmin()) {
     product.cost = cost;
     product.commissionPercent = commissionPercent;
+    product.commissionFixed = commissionFixed;
+    product.commissionType = commissionTypeFinal;
     product.supplier = supplier;
   }
 
@@ -696,6 +857,7 @@ async function loadOrders() {
   }
 
   renderOrdersHistory();
+  renderReports();
 }
 
 function renderOrdersHistory() {
@@ -1018,6 +1180,8 @@ function setupAdminEvents() {
   ['pPrice', 'pCost', 'pCommission'].forEach((id) => {
     document.getElementById(id)?.addEventListener('input', updateMarginPreview);
   });
+  document.getElementById('pCommissionType')?.addEventListener('change', updateMarginPreview);
+  document.getElementById('reportsPeriod')?.addEventListener('change', renderReports);
 
   document.addEventListener('click', (event) => {
     const trigger = event.target.closest('[data-action]');
@@ -1057,8 +1221,7 @@ function setupAdminEvents() {
         break;
       case 'switch-tab':
         switchAdminTab(tabKey);
-        break;
-      case 'close-form-modal':
+        break;      case 'close-form-modal':
         closeModal(document.getElementById('formModal'));
         break;
       case 'close-account-modal':

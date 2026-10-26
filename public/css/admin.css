@@ -790,3 +790,106 @@ a.login-submit {
 tr.is-inactive td {
   opacity: 0.65;
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Reportes de ventas                                                  */
+/* ------------------------------------------------------------------ */
+
+.reports-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.reports-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border, #2a2f3a);
+  border-radius: var(--radius, 10px);
+  background: var(--bg-card, #12161f);
+}
+
+.reports-kpi-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.reports-kpi-value {
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.reports-grid .reports-card--wide { grid-column: 1 / -1; }
+
+.reports-card {
+  border: 1px solid var(--border, #2a2f3a);
+  border-radius: var(--radius, 10px);
+  background: var(--bg-card, #12161f);
+  padding: 1rem;
+}
+
+.reports-card h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.reports-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+  padding-top: 0.25rem;
+}
+
+.reports-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.reports-bar {
+  width: 100%;
+  max-width: 26px;
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #6366f1, #4338ca);
+  transition: height 0.3s ease;
+}
+
+.reports-bar-label {
+  font-size: 0.6rem;
+  color: var(--text-secondary, #94a3b8);
+  white-space: nowrap;
+}
+
+.reports-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.82rem;
+}
+
+.reports-row:last-child { border-bottom: none; }
+
+.reports-empty {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.85rem;
+}

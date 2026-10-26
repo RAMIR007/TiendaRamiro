@@ -161,14 +161,22 @@ function renderProductCard(product) {
         <p class="product-desc-snippet">${escapeHtml(product.description)}</p>
         <div class="product-bottom-row">
           <div class="product-price">${escapeHtml(formatMoney(product.price))}</div>
-          <button type="button" class="btn-add-quick" data-add="${escapeHtml(product.id)}"
-            ${outOfStock ? 'disabled' : ''}
-            aria-label="Añadir ${escapeHtml(product.name)} al carrito">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
+          <div class="product-actions">
+            <button type="button" class="btn-share-quick" data-share="${escapeHtml(product.id)}"
+              aria-label="Compartir ${escapeHtml(product.name)} por WhatsApp" title="Compartir por WhatsApp">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.004.577 1.764.846 2.806.847h.005c3.182 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.77-5.773-5.77zm4.565 8.081c-.195.55-1.124 1.056-1.547 1.127-.406.068-.934.096-2.738-.65-1.928-.797-3.17-2.754-3.266-2.883-.095-.128-.781-1.04-1.189-1.579-.408-.538-.216-.807-.024-.999.172-.172.384-.44.576-.632.192-.192.256-.32.384-.544.128-.224.064-.416-.032-.608-.096-.192-.864-2.083-1.184-2.853-.312-.751-.628-.648-.864-.66-.224-.012-.48-.016-.736-.016-.256 0-.672.096-1.024.48-.352.384-1.344 1.312-1.344 3.2 0 1.888 1.376 3.712 1.568 3.968.192.256 2.709 4.137 6.561 5.799 3.852 1.662 3.852 1.108 4.544 1.044.692-.064 2.24-1.08 2.56-2.12.32-1.04.32-1.936.224-2.12-.096-.184-.352-.288-.736-.48z"/>
+              </svg>
+            </button>
+            <button type="button" class="btn-add-quick" data-add="${escapeHtml(product.id)}"
+              ${outOfStock ? 'disabled' : ''}
+              aria-label="Añadir ${escapeHtml(product.name)} al carrito">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </article>
@@ -293,6 +301,13 @@ function setupCatalogEvents() {
       event.stopPropagation();
       if (addButton.disabled) return;
       addToCart(addButton.getAttribute('data-add'), 1);
+      return;
+    }
+
+    const shareButton = event.target.closest('[data-share]');
+    if (shareButton) {
+      event.stopPropagation();
+      openProductShare(shareButton.getAttribute('data-share'));
       return;
     }
 
@@ -458,6 +473,20 @@ function changeModalQty(delta) {
   if (qtyEl) qtyEl.textContent = String(currentModalQty);
 }
 
+function openProductShare(productId) {
+  const product = findProduct(productId);
+  if (!product) return;
+
+  const link = `${window.location.origin}/index.html#${encodeURIComponent(product.id)}`;
+  const message = `🛍️ *${brandNameText(product)}*\n${formatMoney(product.price)}\n\n👀 Mira el detalle: ${link}\n\nPide desde ${window.location.origin} 📱`;
+  openWhatsApp(`https://wa.me/?text=${encodeURIComponent(message)}`);
+  showToast('Abre WhatsApp y elige el contacto');
+}
+
+function brandNameText(product) {
+  return `${product.name}${product.stock > 0 ? '' : ' (agotado)'}`;
+}
+
 function addCurrentModalToCart() {
   if (!currentModalProduct) return;
   if (currentModalProduct.stock <= 0) {
@@ -481,6 +510,7 @@ function setupModalEvents() {
         if (action === 'qty-minus') changeModalQty(-1);
         if (action === 'qty-plus') changeModalQty(1);
         if (action === 'add-modal-to-cart') addCurrentModalToCart();
+        if (action === 'share-modal' && currentModalProduct) openProductShare(currentModalProduct.id);
         return;
       }
 

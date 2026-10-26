@@ -37,6 +37,8 @@ function normalizeProduct(raw) {
 
   const cost = Number(raw.cost);
   const commission = Number(raw.commissionPercent);
+  const commissionFixed = Number(raw.commissionFixed);
+  const commissionType = raw.commissionType === 'amount' ? 'amount' : 'percent';
 
   return {
     id,
@@ -53,6 +55,10 @@ function normalizeProduct(raw) {
     cost: Number.isFinite(cost) && cost >= 0 ? Math.round(cost * 100) / 100 : null,
     commissionPercent: Number.isFinite(commission)
       ? Math.min(100, Math.max(0, commission))
+      : 0,
+    commissionType,
+    commissionFixed: Number.isFinite(commissionFixed) && commissionFixed >= 0
+      ? Math.round(commissionFixed * 100) / 100
       : 0,
     supplier: typeof raw.supplier === 'string' && raw.supplier.trim()
       ? raw.supplier.trim()

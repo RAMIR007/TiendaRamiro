@@ -1430,3 +1430,54 @@ select.checkout-input option {
 .btn-retry:hover {
   background: var(--primary-hover);
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Compartir producto por WhatsApp                                     */
+/* ------------------------------------------------------------------ */
+
+.product-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.btn-share-quick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: #25d366;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-share-quick:hover {
+  background: rgba(37, 211, 102, 0.15);
+  border-color: #25d366;
+  transform: translateY(-2px);
+}
+
+.btn-share-modal {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #25d366;
+  background: transparent;
+  color: #25d366;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-share-modal:hover {
+  background: rgba(37, 211, 102, 0.12);
+}

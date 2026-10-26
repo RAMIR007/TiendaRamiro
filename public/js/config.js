@@ -4,8 +4,8 @@
 
 const STORE_CONFIG = {
   brand: {
-    name: 'RX Store Demo',
-    tagline: 'Catálogo & Pedidos a WhatsApp',
+    name: 'Tienda Ramiro',
+    tagline: 'Tecnología · Moda · Hogar — Pedidos por WhatsApp',
     studio: 'RX Web Studio',
     studioWhatsApp: '5358382989'
   },

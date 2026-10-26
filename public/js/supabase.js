@@ -4,7 +4,7 @@
 
 const SUPABASE_SESSION_KEY = 'rx_sb_session';
 const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at';
-const SUPABASE_PRODUCT_COST_SELECT = 'product_costs(cost_cents,commission_percent,supplier)';
+const SUPABASE_PRODUCT_COST_SELECT = 'product_costs(cost_cents,commission_percent,commission_type,commission_fixed_cents,supplier)';
 const SUPABASE_ORDER_SELECT = [
   'id,created_at,status,client_name,client_phone,client_address,client_notes',
   'total_cents,commission_cents,order_code,delivery_method,payment_method,seller_id,seller_code',
@@ -258,6 +258,8 @@ function mapProductRow(row, includeCosts) {
     variants: Array.isArray(row.variants) ? row.variants : [],
     cost: costRow ? (Number(costRow.cost_cents) || 0) / 100 : null,
     commissionPercent: costRow ? Number(costRow.commission_percent) || 0 : 0,
+    commissionType: costRow && costRow.commission_type === 'amount' ? 'amount' : 'percent',
+    commissionFixed: costRow ? (Number(costRow.commission_fixed_cents) || 0) / 100 : 0,
     supplier: costRow ? costRow.supplier : null
   });
 }
@@ -299,7 +301,9 @@ function productToCostRow(productId, product) {
   return {
     product_id: productId,
     cost_cents: toCents(product.cost),
-    commission_percent: Number(product.commissionPercent) || 0,
+    commission_type: product.commissionType === 'amount' ? 'amount' : 'percent',
+    commission_percent: product.commissionType === 'amount' ? 0 : (Number(product.commissionPercent) || 0),
+    commission_fixed_cents: product.commissionType === 'amount' ? toCents(product.commissionFixed) : 0,
     supplier: product.supplier || null
   };
 }
@@ -402,6 +406,8 @@ function mapOrderRow(row) {
       quantity: Number(item.quantity) || 0,
       costCents: Number(item.cost_cents) || 0,
       commissionPercent: Number(item.commission_percent) || 0,
+      commissionType: item.commission_type === 'amount' ? 'amount' : 'percent',
+      commissionFixed: (Number(item.commission_fixed_cents) || 0) / 100,
       commissionCents: Number(item.commission_cents) || 0,
       supplier: item.supplier || ''
     }))
