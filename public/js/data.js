@@ -35,6 +35,9 @@ function normalizeProduct(raw) {
     ? raw.badge.trim()
     : null;
 
+  const cost = Number(raw.cost);
+  const commission = Number(raw.commissionPercent);
+
   return {
     id,
     name,
@@ -45,7 +48,15 @@ function normalizeProduct(raw) {
     description: typeof raw.description === 'string' ? raw.description.trim() : '',
     images: images.length > 0 ? images : [PRODUCT_PLACEHOLDER_IMAGE],
     variants,
-    active: raw.active !== false
+    active: raw.active !== false,
+    // Datos internos: solo llegan al panel del administrador.
+    cost: Number.isFinite(cost) && cost >= 0 ? Math.round(cost * 100) / 100 : null,
+    commissionPercent: Number.isFinite(commission)
+      ? Math.min(100, Math.max(0, commission))
+      : 0,
+    supplier: typeof raw.supplier === 'string' && raw.supplier.trim()
+      ? raw.supplier.trim()
+      : null
   };
 }
 

@@ -42,15 +42,10 @@
             autocomplete="current-password" required>
         </div>
         <p id="loginError" class="field-error" role="alert"></p>
-        <p id="loginNotice" class="login-notice" role="status"></p>
         <button type="submit" id="loginSubmit" class="btn btn-primary login-submit">Ingresar al Panel</button>
       </form>
 
-      <div class="forgot-row">
-        <button type="button" id="forgotPasswordBtn" class="link-button">¿Olvidaste tu contraseña?</button>
-      </div>
-
-      <p class="login-note">Acceso con Supabase Auth. Las cuentas se crean desde el panel de Supabase.</p>
+      <p class="login-note">Acceso con Supabase Auth. Las cuentas se crean desde el panel de Supabase. Si no puedes entrar, pide al administrador que restablezca tu contraseña.</p>
 
       <div class="login-back">
         <a href="index.html">← Volver a la Tienda</a>
@@ -117,8 +112,11 @@
         <thead>
           <tr>
             <th scope="col">Producto</th>
-            <th scope="col">Categoría</th>
-            <th scope="col">Precio</th>
+            <th scope="col" data-admin-only hidden>Proveedor</th>
+            <th scope="col" data-admin-only hidden>Costo</th>
+            <th scope="col">Precio venta</th>
+            <th scope="col" data-admin-only hidden>Margen</th>
+            <th scope="col" data-admin-only hidden>Comisión</th>
             <th scope="col">Stock</th>
             <th scope="col">Acciones</th>
           </tr>
@@ -139,6 +137,7 @@
         </div>
         <div class="panel-actions">
           <span class="panel-total">Total vendido: <strong id="ordersTotalAmount">$0 USD</strong></span>
+          <span class="panel-total">Comisiones: <strong id="ordersCommissionAmount">$0 USD</strong></span>
           <button type="button" class="btn btn-secondary btn-sm" data-action="export-orders">Exportar pedidos</button>
         </div>
       </div>
@@ -210,6 +209,32 @@
           </div>
         </div>
 
+        <div class="form-section" data-admin-only hidden>
+          <h3 class="form-section-title">Proveedor, costo y comisión</h3>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="pSupplier">Proveedor</label>
+              <input type="text" id="pSupplier" class="form-control" list="suppliersList"
+                placeholder="ej. Proveedor Centro" maxlength="80">
+            </div>
+            <div class="form-group">
+              <label for="pCost">Costo del proveedor ($)</label>
+              <input type="number" id="pCost" class="form-control" min="0" step="0.01" placeholder="ej. 12.00">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="pCommission">Comisión del vendedor (%)</label>
+              <input type="number" id="pCommission" class="form-control" min="0" max="100" step="0.5" placeholder="ej. 10">
+            </div>
+            <div class="form-group">
+              <label>Margen estimado</label>
+              <div id="marginPreview" class="margin-preview">—</div>
+            </div>
+          </div>
+          <datalist id="suppliersList"></datalist>
+        </div>
+
         <div class="form-group">
           <label for="pImages">URLs de Imágenes (separadas por coma)</label>
           <input type="text" id="pImages" class="form-control" placeholder="https://..., https://...">
@@ -246,6 +271,17 @@
         <div><span>Correo</span><strong id="accountEmail"></strong></div>
         <div><span>Nombre</span><strong id="accountName"></strong></div>
         <div><span>Rol</span><strong id="accountRole"></strong></div>
+        <div><span>Código de vendedor</span><strong id="accountReferralCode"></strong></div>
+        <div><span>Comisiones de mis ventas</span><strong id="accountCommission">$0 USD</strong></div>
+      </div>
+
+      <div class="referral-box">
+        <label for="accountReferralLink">Tu enlace para vender</label>
+        <div class="referral-link-row">
+          <input type="text" id="accountReferralLink" class="form-control" readonly>
+          <button type="button" class="btn btn-secondary btn-sm" data-action="copy-referral">Copiar</button>
+        </div>
+        <small class="form-hint">Comparte este enlace. Los pedidos que entren por él se te atribuyen y suman comisión.</small>
       </div>
 
       <form id="accountForm">

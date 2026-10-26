@@ -27,7 +27,9 @@ const STORE_CONFIG = {
 
   checkout: {
     minNameLength: 3,
-    minAddressLength: 5
+    minAddressLength: 5,
+    minPhoneDigits: 8,
+    maxPhoneDigits: 15
   }
 };
 
@@ -35,10 +37,10 @@ const STORE_CONFIG = {
 // solo guarda el catálogo para que la primera pintura sea instantánea.
 const STORAGE_KEYS = {
   products: 'rx_store_products',
-  cart: 'rx_store_cart'
+  cart: 'rx_store_cart',
+  sellerCode: 'rx_seller_code'
 };
 
-// Imagen de respaldo cuando un producto no tiene ninguna válida.
 // Imagen de respaldo cuando un producto no tiene ninguna válida.
 const PRODUCT_PLACEHOLDER_IMAGE = '/img/placeholder-800.webp';
 

@@ -130,6 +130,7 @@ function initCart() {
 
   persistCart();
   updateCartUI();
+  restoreSellerCode();
 
   window.addEventListener('storage', (event) => {
     if (event.key === STORAGE_KEYS.cart) {
@@ -361,6 +362,29 @@ function closeCartDrawer() {
   drawerLastFocused = null;
 }
 
+// Captura el enlace de vendedor (?ref=CODIGO) y recuerda el código entre visitas.
+function restoreSellerCode() {
+  const input = document.getElementById('sellerCodeInput');
+  if (!input) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const refCode = (params.get('ref') || '').trim().toUpperCase();
+  if (refCode) {
+    storeWrite(STORAGE_KEYS.sellerCode, refCode);
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  const saved = String(storeRead(STORAGE_KEYS.sellerCode, '') || '').trim();
+  if (saved && !input.value) {
+    input.value = saved;
+  }
+}
+
+// Al cerrar la venta guarda el código para atribuir futuras compras al vendedor.
+function rememberSellerCode(code) {
+  if (code) storeWrite(STORAGE_KEYS.sellerCode, code);
+}
+
 /* ------------------------------------------------------------------ */
 /* Checkout                                                            */
 /* ------------------------------------------------------------------ */
@@ -373,46 +397,68 @@ function setFieldError(input, message) {
   input.setAttribute('aria-invalid', message ? 'true' : 'false');
 }
 
+function getDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
 function validateCheckout() {
   const nameInput = document.getElementById('clientName');
+  const phoneInput = document.getElementById('clientPhone');
+  const methodInput = document.getElementById('deliveryMethod');
   const addressInput = document.getElementById('clientAddress');
+  const sellerInput = document.getElementById('sellerCodeInput');
   const notesInput = document.getElementById('clientNotes');
 
   const name = nameInput ? nameInput.value.trim() : '';
+  const phone = getDigits(phoneInput ? phoneInput.value : '');
+  const deliveryMethod = methodInput && methodInput.value === 'recogida' ? 'recogida' : 'domicilio';
   const address = addressInput ? addressInput.value.trim() : '';
+  const sellerCode = sellerInput ? sellerInput.value.trim().toUpperCase() : '';
   const notes = notesInput ? notesInput.value.trim() : '';
 
   let ok = true;
   let firstInvalid = null;
 
-  if (name.length < STORE_CONFIG.checkout.minNameLength) {
-    setFieldError(nameInput, 'Escribe tu nombre completo (mínimo 3 letras).');
+  const markInvalid = (input, message) => {
+    setFieldError(input, message);
     ok = false;
-    firstInvalid = firstInvalid || nameInput;
-  } else {
+    firstInvalid = firstInvalid || input;
+  };
+
+  if (name.length >= STORE_CONFIG.checkout.minNameLength) {
     setFieldError(nameInput, '');
+  } else {
+    markInvalid(nameInput, 'Escribe tu nombre completo (mínimo 3 letras).');
   }
 
-  if (address.length < STORE_CONFIG.checkout.minAddressLength) {
-    setFieldError(addressInput, 'Indica municipio y dirección de entrega.');
-    ok = false;
-    firstInvalid = firstInvalid || addressInput;
+  const { minPhoneDigits, maxPhoneDigits } = STORE_CONFIG.checkout;
+  if (phone.length >= minPhoneDigits && phone.length <= maxPhoneDigits) {
+    setFieldError(phoneInput, '');
+  } else {
+    markInvalid(phoneInput, `Teléfono necesario para confirmar el pedido (${minPhoneDigits}–${maxPhoneDigits} dígitos).`);
+  }
+
+  if (deliveryMethod === 'domicilio') {
+    if (address.length >= STORE_CONFIG.checkout.minAddressLength) {
+      setFieldError(addressInput, '');
+    } else {
+      markInvalid(addressInput, 'Indica municipio y dirección para el mensajero.');
+    }
   } else {
     setFieldError(addressInput, '');
   }
 
   if (notes.length > 200) {
-    setFieldError(notesInput, 'Máximo 200 caracteres.');
-    ok = false;
-    firstInvalid = firstInvalid || notesInput;
+    markInvalid(notesInput, 'Máximo 200 caracteres.');
   }
 
-  return { ok, firstInvalid, name, address, notes };
+  return { ok, firstInvalid, name, phone, deliveryMethod, address, sellerCode, notes };
 }
 
-function buildWhatsAppMessage(data, totalCents) {
-  let message = '👋 ¡Hola! Quiero realizar el siguiente pedido en la tienda:\n\n';
-  message += '📦 *PRODUCTOS SOLICITADOS:*\n';
+function buildWhatsAppMessage(data, totalCents, orderCode) {
+  let message = '🧾 *VALE DE PEDIDO*';
+  if (orderCode) message += ` — Nº ${orderCode}`;
+  message += '\n\n📦 *PRODUCTOS SOLICITADOS:*\n';
 
   cart.forEach((item) => {
     const variant = item.variant ? ` (${item.variant})` : '';
@@ -420,11 +466,16 @@ function buildWhatsAppMessage(data, totalCents) {
     message += `• ${item.quantity}x ${item.name}${variant} — ${lineTotal} (${formatCents(toCents(item.price))} c/u)\n`;
   });
 
-  message += `\n💰 *TOTAL A PAGAR:* ${formatCents(totalCents)}\n`;
+  message += `\n💰 *TOTAL A PAGAR:* ${formatCents(totalCents)} (efectivo, al recibir)\n`;
   message += `👤 *Cliente:* ${data.name}\n`;
-  message += `📍 *Entrega / Ubicación:* ${data.address}\n`;
+  message += `📞 *Teléfono:* ${data.phone}\n`;
+  message += data.deliveryMethod === 'recogida'
+    ? '🏬 *Entrega:* Recogida en la tienda\n'
+    : `🛵 *Entrega:* Domicilio — ${data.address}\n`;
+  if (data.deliveryMethod === 'domicilio' && !data.address) message += '📍 *Ubicación:* (sin dirección)\n';
+  if (data.sellerCode) message += `🏷️ *Vendedor:* ${data.sellerCode}\n`;
   if (data.notes) message += `📝 *Nota adicional:* ${data.notes}\n`;
-  message += '\n¿Tienen disponibilidad para coordinar la entrega y el método de pago?';
+  message += '\n✅ Confirmar la disponibilidad y coordinar la entrega por teléfono. ¡Gracias!';
 
   return message;
 }
@@ -483,12 +534,16 @@ async function checkoutWhatsApp() {
     const localTotalCents = getCartTotals().totalCents;
     let registered = false;
     let totalCents = localTotalCents;
+    let orderCode = '';
 
     try {
       const result = await createOrderInApi({
         name: data.name,
+        phone: data.phone,
         address: data.address,
         notes: data.notes,
+        deliveryMethod: data.deliveryMethod,
+        sellerCode: data.sellerCode,
         items: cart.map((item) => ({
           product_id: item.id,
           variant: item.variant,
@@ -498,6 +553,8 @@ async function checkoutWhatsApp() {
 
       registered = true;
       totalCents = result.totalCents || localTotalCents;
+      orderCode = result.orderCode;
+      rememberSellerCode(data.sellerCode);
     } catch (error) {
       console.error('[checkout]', error);
 
@@ -518,14 +575,16 @@ async function checkoutWhatsApp() {
       }
     }
 
-    const message = buildWhatsAppMessage(data, totalCents);
+    const message = buildWhatsAppMessage(data, totalCents, orderCode);
     openWhatsApp(buildWhatsAppUrl(message));
 
     clearCart();
     closeCartDrawer();
 
-    const notesInput = document.getElementById('clientNotes');
-    if (notesInput) notesInput.value = '';
+    ['clientName', 'clientPhone', 'clientAddress', 'sellerCodeInput', 'clientNotes'].forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.value = '';
+    });
 
     showToast(registered
       ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
@@ -583,11 +642,16 @@ function setupCartEvents() {
     });
   }
 
-  ['clientName', 'clientAddress', 'clientNotes'].forEach((id) => {
+  ['clientName', 'clientPhone', 'clientAddress', 'sellerCodeInput', 'clientNotes'].forEach((id) => {
     const input = document.getElementById(id);
     if (!input) return;
     input.addEventListener('input', () => setFieldError(input, ''));
   });
+
+  const methodInput = document.getElementById('deliveryMethod');
+  if (methodInput) {
+    methodInput.addEventListener('change', () => setFieldError(methodInput, ''));
+  }
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {

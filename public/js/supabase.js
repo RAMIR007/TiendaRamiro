@@ -4,7 +4,13 @@
 
 const SUPABASE_SESSION_KEY = 'rx_sb_session';
 const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at';
-const SUPABASE_ORDER_SELECT = 'id,created_at,status,client_name,client_address,client_notes,total_cents,order_items(id,name,variant,unit_price_cents,quantity)';
+const SUPABASE_PRODUCT_COST_SELECT = 'product_costs(cost_cents,commission_percent,supplier)';
+const SUPABASE_ORDER_SELECT = [
+  'id,created_at,status,client_name,client_phone,client_address,client_notes',
+  'total_cents,commission_cents,order_code,delivery_method,payment_method,seller_id,seller_code',
+  'seller:profiles(name,referral_code)',
+  'order_items(id,name,variant,unit_price_cents,quantity,cost_cents,commission_percent,commission_cents,supplier)'
+].join(',');
 
 class SupabaseError extends Error {
   constructor(message, status, payload, cause) {
@@ -181,12 +187,16 @@ async function getProfile() {
   const token = await requireAccessToken();
   const user = await getCurrentUser();
   const rows = await supabaseRequest(
-    `/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=id,name,role`,
+    `/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=id,name,role,referral_code`,
     { token }
   );
 
   if (!Array.isArray(rows) || rows.length === 0) return null;
-  return { ...rows[0], email: user.email };
+  return {
+    ...rows[0],
+    referralCode: rows[0].referral_code || '',
+    email: user.email
+  };
 }
 
 async function signOut() {
@@ -229,8 +239,12 @@ async function requestPasswordReset(email, redirectTo) {
 /* Catálogo                                                            */
 /* ------------------------------------------------------------------ */
 
-function mapProductRow(row) {
+function mapProductRow(row, includeCosts) {
   if (!row) return null;
+
+  const costRow = includeCosts && row.product_costs
+    ? (Array.isArray(row.product_costs) ? row.product_costs[0] : row.product_costs)
+    : null;
 
   return normalizeProduct({
     id: row.id,
@@ -241,7 +255,10 @@ function mapProductRow(row) {
     badge: row.badge,
     description: row.description || '',
     images: Array.isArray(row.images) ? row.images : [],
-    variants: Array.isArray(row.variants) ? row.variants : []
+    variants: Array.isArray(row.variants) ? row.variants : [],
+    cost: costRow ? (Number(costRow.cost_cents) || 0) / 100 : null,
+    commissionPercent: costRow ? Number(costRow.commission_percent) || 0 : 0,
+    supplier: costRow ? costRow.supplier : null
   });
 }
 
@@ -261,25 +278,61 @@ function productToRow(product) {
 
 async function fetchProductsFromApi(options = {}) {
   const includeInactive = Boolean(options.includeInactive);
-  const token = includeInactive ? await requireAccessToken() : null;
+  const includeCosts = Boolean(options.includeCosts);
+  const token = (includeInactive || includeCosts) ? await requireAccessToken() : null;
   const filter = includeInactive ? '' : '&active=eq.true';
+  const select = includeCosts
+    ? `${SUPABASE_PRODUCT_SELECT},${SUPABASE_PRODUCT_COST_SELECT}`
+    : SUPABASE_PRODUCT_SELECT;
 
   const rows = await supabaseRequest(
-    `/rest/v1/products?select=${SUPABASE_PRODUCT_SELECT}&order=created_at.desc${filter}`,
+    `/rest/v1/products?select=${select}&order=created_at.desc${filter}`,
     { token }
   );
 
-  return (Array.isArray(rows) ? rows : []).map(mapProductRow).filter(Boolean);
+  return (Array.isArray(rows) ? rows : [])
+    .map((row) => mapProductRow(row, includeCosts))
+    .filter(Boolean);
+}
+
+function productToCostRow(productId, product) {
+  return {
+    product_id: productId,
+    cost_cents: toCents(product.cost),
+    commission_percent: Number(product.commissionPercent) || 0,
+    supplier: product.supplier || null
+  };
+}
+
+async function upsertProductCost(productId, product) {
+  const token = await requireAccessToken();
+  await supabaseRequest('/rest/v1/product_costs', {
+    method: 'POST',
+    token,
+    body: productToCostRow(productId, product),
+    prefer: 'resolution=merge-duplicates,return=minimal'
+  });
 }
 
 async function createProductInApi(product) {
   const token = await requireAccessToken();
-  await supabaseRequest('/rest/v1/products', {
+  const rows = await supabaseRequest('/rest/v1/products?select=id', {
     method: 'POST',
     token,
     body: productToRow(product),
-    prefer: 'return=minimal'
+    prefer: 'return=representation'
   });
+
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  if (!row || !row.id) {
+    throw new SupabaseError('El servidor no devolvió el producto creado.', 500, rows);
+  }
+
+  if (product.cost !== undefined && product.cost !== null) {
+    await upsertProductCost(row.id, product);
+  }
+
+  return row.id;
 }
 
 async function updateProductInApi(productId, product) {
@@ -290,6 +343,10 @@ async function updateProductInApi(productId, product) {
     body: productToRow(product),
     prefer: 'return=minimal'
   });
+
+  if (product.cost !== undefined && product.cost !== null) {
+    await upsertProductCost(productId, product);
+  }
 }
 
 async function deleteProductInApi(productId) {
@@ -317,21 +374,36 @@ async function importProductsToApi(products) {
 
 function mapOrderRow(row) {
   const items = Array.isArray(row.order_items) ? row.order_items : [];
+  const seller = row.seller
+    ? (Array.isArray(row.seller) ? row.seller[0] : row.seller)
+    : null;
 
   return {
     id: row.id,
     createdAt: row.created_at,
     date: formatDateShort(new Date(row.created_at)),
     status: row.status || 'pendiente',
+    orderCode: row.order_code || '',
     clientName: row.client_name || '',
+    clientPhone: row.client_phone || '',
     clientAddress: row.client_address || '',
     clientNotes: row.client_notes || '',
+    deliveryMethod: row.delivery_method || 'domicilio',
+    paymentMethod: row.payment_method || 'efectivo',
     totalCents: Number(row.total_cents) || 0,
+    commissionCents: Number(row.commission_cents) || 0,
+    sellerId: row.seller_id || (seller ? seller.id : null),
+    sellerCode: row.seller_code || (seller ? seller.referral_code : ''),
+    sellerName: seller ? seller.name : '',
     items: items.map((item) => ({
       name: item.name,
       variant: item.variant || null,
       unitPriceCents: Number(item.unit_price_cents) || 0,
-      quantity: Number(item.quantity) || 0
+      quantity: Number(item.quantity) || 0,
+      costCents: Number(item.cost_cents) || 0,
+      commissionPercent: Number(item.commission_percent) || 0,
+      commissionCents: Number(item.commission_cents) || 0,
+      supplier: item.supplier || ''
     }))
   };
 }
@@ -351,8 +423,11 @@ async function createOrderInApi(order) {
     method: 'POST',
     body: {
       p_client_name: order.name,
-      p_client_address: order.address,
+      p_client_phone: order.phone,
+      p_client_address: order.deliveryMethod === 'recogida' ? null : (order.address || null),
       p_client_notes: order.notes || null,
+      p_delivery_method: order.deliveryMethod || 'domicilio',
+      p_seller_code: order.sellerCode || null,
       p_items: order.items
     }
   });
@@ -363,7 +438,9 @@ async function createOrderInApi(order) {
 
   return {
     orderId: data.order_id,
+    orderCode: data.order_code || '',
     totalCents: Number(data.total_cents) || 0,
+    commissionCents: Number(data.commission_cents) || 0,
     count: Number(data.count) || 0
   };
 }

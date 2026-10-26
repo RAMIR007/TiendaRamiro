@@ -21,9 +21,11 @@ Abre la URL de LAN desde el teléfono conectado al mismo Wi-Fi.
 **Panel de administración:** `public/admin.html`
 
 El acceso usa **Supabase Auth** con correo y contraseña. Las cuentas se crean en
-Supabase → **Authentication → Users**; no hay contraseñas ni usuarios en el código.
-Si olvidas la contraseña, el login tiene **¿Olvidaste tu contraseña?** (requiere configurar
-las URLs y el SMTP en Supabase, ver [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)).
+Supabase → **Authentication → Users** (sin invitación por correo: se crean con contraseña
+temporal creada por el administrador y nacen `pending` hasta que se les asigna rol).
+**No se usa SMTP para recuperar contraseñas:** si un empleado se la olvida, el administrador
+restablece desde Supabase (ver [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)). Cada
+usuario puede cambiar su propia contraseña desde el panel (**Mi cuenta**) estando logueado.
 La puesta en marcha está en [`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md).
 
 ---
@@ -40,7 +42,8 @@ Todo lo específico del cliente vive en **`public/js/config.js`**:
 | `brand.studio` / `brand.studioWhatsApp` | Crédito y enlace del desarrollador en el pie. |
 | `currency` / `locale` | Moneda y formato de números/fechas. |
 | `categories` | Categorías del catálogo. Agregar una la hace aparecer en la tienda, el filtro y el panel. |
-| `checkout.minNameLength` / `minAddressLength` | Validación mínima de los datos de entrega. |
+| `checkout.minNameLength` / `minAddressLength` | Validación mínima de nombre y dirección de entrega. |
+| `checkout.minPhoneDigits` / `maxPhoneDigits` | Validación del teléfono (obligatorio; confirman los pedidos por llamada). |
 
 Cambiar el número de WhatsApp **no requiere tocar ningún otro archivo**. Después de editar,
 recarga con `Ctrl+F5` (o borra la caché) para ver los cambios.
@@ -50,19 +53,61 @@ La conexión a Supabase vive en **`public/js/supabase-config.js`** (URL del proy
 
 ---
 
-## 3. Cómo se cierra un pedido
+## 3. Cómo se cierra un pedido (Vale de pedido)
 
 1. El cliente abre el catálogo, filtra y añade productos (el carrito se guarda en su navegador).
-2. Completa nombre, municipio/dirección y una nota opcional.
+2. Al abrir el carrito llena el **Vale de pedido**: nombre completo, **teléfono (obligatorio)**,
+   método de entrega (🛵 a domicilio por el mensajero / 🏬 recogida en tienda), dirección
+   (solo si es domicilio), código de vendedor si lo tiene y una nota opcional.
 3. Pulsa **Completar Pedido en WhatsApp**:
-   - el servidor valida precio y stock con `create_order()`,
-   - se guarda el pedido en Supabase y se descuenta el inventario en una transacción,
-   - se abre WhatsApp con el mensaje ya redactado (productos, cantidades, variantes, total y datos del cliente).
-4. El dueño confirma por WhatsApp y coordina pago/entrega.
+   - el servidor valida precio, stock, teléfono y dirección con `create_order()`,
+   - se guarda el pedido en Supabase, se descuenta el inventario y se registra el vendedor
+     responsable y sus comisiones en una transacción,
+   - se abre WhatsApp con el **vale ya redactado** (Nº de pedido tipo `TR-AAMMDD-NNN`,
+     productos, total, teléfono, entrega y vendedor).
+4. La tienda llama al teléfono del cliente para confirmar disponibilidad y entrega, envía el
+   mensajero (o prepara la recogida) y cobra **en efectivo al recibir la mercancía**.
 
 > **Sin conexión:** si el pedido no se puede guardar, la tienda ofrece enviarlo igual por
-> WhatsApp para no perder la venta y avisa que quedó sin registrar. Revisa la pestaña
-> **Pedidos** y ajústalo manualmente si hace falta.
+> WhatsApp para no perder la venta y avisa que quedó sin registrar. Si la recogida ya fue
+> confirmada, actualiza el estado en la pestaña **Pedidos** (pendiente → contactado → entregado).
+
+### Precios con proveedores y comisiones
+
+Los **administradores** gestionan los números de negocio de cada producto desde el panel:
+
+| Campo | Para qué sirve |
+| --- | --- |
+| **Costo del proveedor** | Lo que pagas al proveedor local por unidad. Se guarda en `product_costs` (oculto para el público y para vendedores). |
+| **Precio de venta** | Lo que ve el cliente y paga en efectivo. |
+| **Comisión del vendedor (%)** | Porcentaje del precio de venta que gana quien vende (rondas entre 0 y 100%). |
+| **Proveedor** | Nombre del proveedor local; alimenta un autocompletado en el formulario. |
+
+El formulario muestra en vivo el **margen** (precio − costo) y la **comisión en $**.
+En cada pedido se **congelan** costo, comisión, proveedor y precio por línea, para que
+cambios posteriores no alteren ventas ya registradas.
+
+### Vendedores y referidos
+
+Todo usuario del panel (`admin` o `staff`) recibe automáticamente un **código de referido**
+único (p. ej. `a1b2c3d4e5f6`) al crearse su perfil. Desde **Mi cuenta** copia su enlace
+personal `${origin}/?ref=CODIGO` y su **comisión acumulada** de las ventas que le atribuyó
+el sistema.
+
+Cuando un cliente entra con ese enlace (o escribe el código a mano en el vale), el pedido
+queda asociado a ese vendedor: la comisión de cada línea se calcula al precio de venta
+vigente y se suma a su liquidación. **Admin y vendedores comparten el mismo sistema de
+referidos**: un administrador que vende también gana comisión.
+
+### Contraseñas y creación de usuarios (sin SMTP)
+
+- **Crear cuenta:** Supabase → Authentication → Users → *Add user* con contraseña temporal
+  (Auto Confirm). El perfil nace en `pending` con su código de referido; se le asigna rol
+  `admin` o `staff` con SQL (ver "Crear un usuario" más abajo).
+- **Restablecer contraseña de un empleado:** el administrador lo hace desde Supabase
+  (Authentication → Users → … → *Send password recovery*, o actualizándola a mano), o el
+  propio usuario la cambia desde **Mi cuenta** si aún tiene sesión.
+- **No hay correos automáticos** para no depender de servicios de SMTP limitados desde Cuba.
 
 ---
 
@@ -101,8 +146,9 @@ o `pg_dump` con la cadena de conexión del proyecto.
 
 | Acción | `admin` | `staff` |
 | --- | :---: | :---: |
-| Ver catálogo y pedidos | ✅ | ✅ |
+| Ver catálogo y pedidos | ✅ | Solo los suyos (con enlace de referido) |
 | Editar producto (precio, stock, nombre, fotos) | ✅ | ✅ |
+| Ver costo / comisión / proveedor | ✅ | ❌ |
 | Crear producto | ✅ | ❌ |
 | Eliminar producto | ✅ | ❌ |
 | Importar catálogo JSON | ✅ | ❌ |
@@ -235,10 +281,10 @@ npm test           # utilidades + integración
   normalización de productos y caché del catálogo.
 - `tests/integration.test.js`: carga `public/index.html`, `public/admin.html` y
   `public/reset-password.html` en jsdom con un **Supabase simulado** (fetch interceptado).
-  Cubre catálogo, stock, checkout RPC, XSS, login, usuario pendiente, roles, CRUD, pedidos,
-  auditoría, recuperación y cambio de contraseña.
+  Cubre catálogo, stock, checkout RPC con vale (teléfono, entrega y vendedor), XSS, login,
+  usuario pendiente, roles, CRUD con costos y comisiones, pedidos, auditoría y cambio de contraseña.
 
-Estado actual: **16 + 25 comprobaciones en verde**.
+Estado actual: **18 + 25 comprobaciones en verde**.
 
 ---
 
@@ -279,21 +325,27 @@ docs/CLOUDFLARE-ACCESS.md Proteger /admin con Cloudflare Access
 
 ## 10. Próximos pasos sugeridos
 
-1. **Configurar SMTP propio y las URLs de Supabase** para que el correo de recuperación
-   llegue a cualquier destinatario (ver [`docs/SMTP.md`](docs/SMTP.md) y
-   [`docs/PASSWORD-RESET.md`](docs/PASSWORD-RESET.md)).
-2. **Cloudflare Access** sobre `/admin` (ver [`docs/CLOUDFLARE-ACCESS.md`](docs/CLOUDFLARE-ACCESS.md)).
-3. **Reemplazar las fotos de demo** por fotos reales del negocio en `public/img/products/`.
-4. **Costo de envío** por municipio y total desglosado.
-5. **Filtros y paginación** de pedidos por fecha/estado (hoy se listan los últimos 100).
-6. **Protección anti-spam** en `create_order()`: Cloudflare Turnstile o límite por IP.
-7. **WhatsApp Cloud API** en una Edge Function para enviar la confirmación automática.
-8. **Tests E2E** con Playwright sobre el navegador real (jsdom no valida layout ni CSS).
+1. **Cloudflare Access** sobre `/admin` (ver [`docs/CLOUDFLARE-ACCESS.md`](docs/CLOUDFLARE-ACCESS.md)).
+2. **Reemplazar las fotos de demo** por fotos reales del negocio en `public/img/products/`.
+3. **Costo de envío** por municipio y total desglosado.
+4. **Filtros y paginación** de pedidos por fecha/estado (hoy se listan los últimos 100).
+5. **Protección anti-spam** en `create_order()`: Cloudflare Turnstile o límite por IP.
+6. **WhatsApp Cloud API** en una Edge Function para enviar la confirmación automática.
+7. **Tests E2E** con Playwright sobre el navegador real (jsdom no valida layout ni CSS).
 
 ---
 
 ## 11. Cambios de esta revisión
 
+- **Vale de pedido:** el checkout captura teléfono obligatorio, método de entrega
+  (domicilio/recogida), dirección, código de vendedor y pago en efectivo al recibir.
+  El WhatsApp incluye el Nº de vale (`TR-AAMMDD-NNN`); `create_order()` exige teléfono.
+- **Negocio:** costos de proveedor, precio de venta y % de comisión por producto, con
+  vista previa de margen en el panel y comisiones congeladas por línea en cada pedido.
+- **Referidos:** todo usuario del panel tiene código y enlace `?ref=` propio; el vale
+  atribuye la venta y "Mi cuenta" muestra la comisión acumulada.
+- **Sin SMTP:** se retiró la recuperación de contraseña por correo del login; los
+  restablecimientos se hacen desde Supabase o desde "Mi cuenta".
 - **Backend:** migración a Supabase. Catálogo, pedidos, perfiles y auditoría en Postgres con RLS.
   `create_order()` valida precio/stock y descuenta inventario en una transacción.
 - **Autenticación:** Supabase Auth con correo y contraseña. Se eliminaron los usuarios locales,

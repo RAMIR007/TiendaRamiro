@@ -107,6 +107,7 @@ function createMock() {
     requests: [],
     lastOrderPayload: null,
     lastOrderPatch: null,
+    productCosts: [],
     passwordUpdates: [],
     recoveries: [],
     alerts: [],
@@ -182,11 +183,11 @@ function createMock() {
     }
 
     if (route === '/rest/v1/products' && method === 'POST') {
+      const wantsRepresentation = url.searchParams.get('select') !== null;
       const rows = Array.isArray(body) ? body : [body];
-      rows.forEach((row) => {
-        state.products.unshift({ ...row, id: randomUUID(), created_at: new Date().toISOString() });
-      });
-      return respond(null, 201);
+      const inserted = rows.map((row) => ({ ...row, id: randomUUID(), created_at: new Date().toISOString() }));
+      state.products.unshift(...inserted);
+      return wantsRepresentation ? respond(inserted) : respond(null, 201);
     }
 
     if (route === '/rest/v1/products' && method === 'PATCH') {
@@ -200,6 +201,16 @@ function createMock() {
       const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
       state.products = state.products.filter((product) => product.id !== id);
       return respond(null, 204);
+    }
+
+    if (route === '/rest/v1/product_costs' && method === 'POST') {
+      const existing = state.productCosts.findIndex((cost) => cost.product_id === body.product_id);
+      if (existing > -1) {
+        state.productCosts[existing] = { ...state.productCosts[existing], ...body };
+      } else {
+        state.productCosts.unshift({ ...body, updated_at: new Date().toISOString() });
+      }
+      return respond(null, 201);
     }
 
     if (route === '/rest/v1/orders' && method === 'GET') {
@@ -390,6 +401,7 @@ async function login(win, doc, email, password) {
 
   await check('crea el pedido en Supabase, limpia el carrito y abre WhatsApp', async () => {
     doc.getElementById('clientName').value = 'María López';
+    doc.getElementById('clientPhone').value = '+53 5838 2989';
     doc.getElementById('clientAddress').value = 'Playa, La Habana';
 
     submit(doc.getElementById('checkoutForm'));
@@ -398,6 +410,8 @@ async function login(win, doc, email, password) {
     const payload = storeMock.state.lastOrderPayload;
     assert.ok(payload, 'no se llamó a create_order');
     assert.strictEqual(payload.p_client_name, 'María López');
+    assert.strictEqual(payload.p_client_phone, '5358382989');
+    assert.strictEqual(payload.p_delivery_method, 'domicilio');
     assert.strictEqual(payload.p_client_address, 'Playa, La Habana');
     assert.strictEqual(payload.p_items.length, 2);
     assert.strictEqual(payload.p_items[0].quantity, 12);
@@ -438,13 +452,10 @@ async function login(win, doc, email, password) {
     assert.strictEqual(adminDoc.getElementById('loginScreen').style.display, 'flex');
   });
 
-  await check('envía el correo de recuperación de contraseña', async () => {
-    adminDoc.getElementById('adminEmail').value = 'admin@test.com';
-    click(adminDoc.getElementById('forgotPasswordBtn'));
-    await tick(160);
-
-    assert.deepStrictEqual(adminMock.state.recoveries, ['admin@test.com']);
-    assert.match(adminDoc.getElementById('loginNotice').textContent, /enlace/i);
+  await check('sin botón de recuperación SMTP y con aviso de restablecimiento por el admin', async () => {
+    assert.deepStrictEqual(admin.errors, []);
+    assert.strictEqual(adminDoc.getElementById('forgotPasswordBtn'), null);
+    assert.ok(/restablezca/i.test(adminDoc.querySelector('.login-note').textContent));
   });
 
   await check('rechaza una contraseña incorrecta', async () => {

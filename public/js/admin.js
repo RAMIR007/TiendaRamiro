@@ -58,11 +58,6 @@ function setLoginError(message) {
   if (errorEl) errorEl.textContent = message || '';
 }
 
-function setLoginNotice(message) {
-  const noticeEl = document.getElementById('loginNotice');
-  if (noticeEl) noticeEl.textContent = message || '';
-}
-
 function showLoginScreen(message) {
   const loginScreen = document.getElementById('loginScreen');
   const layout = document.getElementById('adminLayout');
@@ -72,7 +67,6 @@ function showLoginScreen(message) {
 
   currentUser = null;
   setLoginError(message || '');
-  setLoginNotice('');
 }
 
 function showAdminPanel() {
@@ -83,7 +77,6 @@ function showAdminPanel() {
   if (layout) layout.style.display = 'block';
 
   setLoginError('');
-  setLoginNotice('');
   applyRolePermissions();
   switchAdminTab('products');
   refreshAll();
@@ -91,39 +84,6 @@ function showAdminPanel() {
 
 async function refreshAll() {
   await Promise.allSettled([loadProducts(), loadOrders(), loadAudit()]);
-}
-
-async function handleForgotPassword() {
-  const emailInput = document.getElementById('adminEmail');
-  const email = emailInput ? emailInput.value.trim() : '';
-  const button = document.getElementById('forgotPasswordBtn');
-
-  setLoginError('');
-  setLoginNotice('');
-
-  if (!email) {
-    setLoginError('Escribe tu correo para enviarte el enlace.');
-    if (emailInput) emailInput.focus();
-    return;
-  }
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = 'Enviando…';
-  }
-
-  try {
-    await requestPasswordReset(email, `${window.location.origin}/reset-password`);
-    setLoginNotice('Si el correo está registrado, recibirás un enlace para restablecer la contraseña.');
-  } catch (error) {
-    console.error('[recover]', error);
-    setLoginError(error.message || 'No se pudo enviar el correo. Inténtalo más tarde.');
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = '¿Olvidaste tu contraseña?';
-    }
-  }
 }
 
 async function handleLogin(event) {
@@ -135,7 +95,6 @@ async function handleLogin(event) {
   const submitButton = document.getElementById('loginSubmit');
 
   setLoginError('');
-  setLoginNotice('');
 
   if (!email || !password) {
     setLoginError('Completa correo y contraseña.');
@@ -277,7 +236,10 @@ function switchAdminTab(tabKey) {
 
 async function loadProducts() {
   try {
-    productsCache = await fetchProductsFromApi({ includeInactive: true });
+    productsCache = await fetchProductsFromApi({
+      includeInactive: true,
+      includeCosts: isAdmin()
+    });
     productsError = '';
   } catch (error) {
     console.error('[products]', error);
@@ -289,13 +251,46 @@ async function loadProducts() {
     }
   }
 
+  renderSuppliersDatalist();
   renderAdminTable();
+}
+
+function renderSuppliersDatalist() {
+  const list = document.getElementById('suppliersList');
+  if (!list) return;
+
+  const suppliers = Array.from(new Set(
+    productsCache.map((product) => product.supplier).filter(Boolean)
+  ));
+
+  list.innerHTML = suppliers
+    .map((supplier) => `<option value="${escapeHtml(supplier)}"></option>`)
+    .join('');
+}
+
+function imageThumb(product) {
+  const first = product.images && product.images[0];
+  return first ? smallImageUrl(first) : PRODUCT_PLACEHOLDER_IMAGE;
+}
+
+function marginLabel(product) {
+  if (product.cost === null || product.cost === undefined) return { text: '—', negative: false };
+
+  const margin = product.price - product.cost;
+  const percent = product.price > 0 ? Math.round((margin / product.price) * 100) : 0;
+  return {
+    text: `${formatMoney(margin)} (${percent}%)`,
+    negative: margin < 0
+  };
 }
 
 function renderAdminTable() {
   const tbody = document.getElementById('adminTableBody');
   const countEl = document.getElementById('adminProdCount');
   if (!tbody) return;
+
+  const adminView = isAdmin();
+  const columnCount = adminView ? 8 : 4;
 
   if (countEl) {
     countEl.textContent = `${productsCache.length} producto${productsCache.length === 1 ? '' : 's'} en catálogo`;
@@ -304,7 +299,7 @@ function renderAdminTable() {
   if (productsError && productsCache.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="table-empty">${escapeHtml(productsError)}</td>
+        <td colspan="${columnCount}" class="table-empty">${escapeHtml(productsError)}</td>
       </tr>
     `;
     return;
@@ -313,7 +308,7 @@ function renderAdminTable() {
   if (productsCache.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="table-empty">
+        <td colspan="${columnCount}" class="table-empty">
           El catálogo está vacío. Crea un producto o importa un JSON de respaldo.
         </td>
       </tr>
@@ -328,21 +323,33 @@ function renderAdminTable() {
     const inactive = product.active === false;
     const name = escapeHtml(product.name);
     const id = escapeHtml(product.id);
+    const margin = marginLabel(product);
+    const commissionPercent = Number(product.commissionPercent) || 0;
+    const commissionUnit = product.price * commissionPercent / 100;
+
+    const adminCells = adminView ? `
+      <td><span class="table-category">${escapeHtml(product.supplier || '—')}</span></td>
+      <td>${product.cost === null || product.cost === undefined ? '—' : escapeHtml(formatMoney(product.cost))}</td>
+      <td><strong>${escapeHtml(formatMoney(product.price))}</strong></td>
+      <td class="${margin.negative ? 'margin-negative' : 'margin-positive'}">${escapeHtml(margin.text)}</td>
+      <td>${commissionPercent > 0 ? `${escapeHtml(formatMoney(commissionUnit))} <span class="table-muted">(${commissionPercent}%)</span>` : '—'}</td>
+    ` : `
+      <td><strong>${escapeHtml(formatMoney(product.price))}</strong></td>
+    `;
 
     return `
       <tr class="${inactive ? 'is-inactive' : ''}">
         <td>
           <div class="prod-table-info">
-            <img class="table-thumb" src="${escapeHtml(smallImageUrl(product.images[0]))}" alt="" loading="lazy" decoding="async" width="48" height="48">
+            <img class="table-thumb" src="${escapeHtml(imageThumb(product))}" alt="" loading="lazy" decoding="async" width="48" height="48">
             <div>
               <strong>${name}</strong>
-              <div class="table-id">${id}</div>
+              <div class="table-id">${escapeHtml(getCategoryLabel(product.category))} · ${id.slice(0, 8)}</div>
               ${inactive ? '<span class="state-pill">Inactivo</span>' : ''}
             </div>
           </div>
         </td>
-        <td><span class="table-category">${escapeHtml(getCategoryLabel(product.category))}</span></td>
-        <td><strong>${escapeHtml(formatMoney(product.price))}</strong></td>
+        ${adminCells}
         <td><span class="stock-cell ${stockClass}">${product.stock} unid.</span></td>
         <td>
           <div class="action-btns">
@@ -353,7 +360,7 @@ function renderAdminTable() {
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
             </button>
-            ${isAdmin() ? `
+            ${adminView ? `
               <button type="button" class="btn-icon del" data-action="delete-product" data-id="${id}"
                 title="Eliminar" aria-label="Eliminar ${name}">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -369,6 +376,35 @@ function renderAdminTable() {
   }).join('');
 }
 
+function updateMarginPreview() {
+  const preview = document.getElementById('marginPreview');
+  if (!preview) return;
+
+  const price = Number(document.getElementById('pPrice').value);
+  const costRaw = document.getElementById('pCost').value.trim();
+  const commission = Number(document.getElementById('pCommission').value) || 0;
+
+  if (!Number.isFinite(price) || price <= 0 || costRaw === '') {
+    preview.textContent = '—';
+    preview.classList.remove('negative');
+    return;
+  }
+
+  const cost = Number(costRaw);
+  if (!Number.isFinite(cost) || cost < 0) {
+    preview.textContent = 'Costo inválido';
+    preview.classList.add('negative');
+    return;
+  }
+
+  const margin = price - cost;
+  const marginPercent = Math.round((margin / price) * 100);
+  const commissionAmount = price * commission / 100;
+
+  preview.textContent = `${formatMoney(margin)} (${marginPercent}%) · comisión ${formatMoney(commissionAmount)}`;
+  preview.classList.toggle('negative', margin < 0);
+}
+
 function openCreateModal() {
   if (!requireAdmin('crear productos')) return;
 
@@ -377,6 +413,10 @@ function openCreateModal() {
 
   document.getElementById('formModalTitle').textContent = 'Añadir Nuevo Producto';
   document.getElementById('productId').value = '';
+  document.getElementById('pSupplier').value = '';
+  document.getElementById('pCost').value = '';
+  document.getElementById('pCommission').value = '';
+  updateMarginPreview();
   openModal(document.getElementById('formModal'));
 }
 
@@ -397,6 +437,10 @@ function openEditModal(productId) {
   document.getElementById('pImages').value = product.images.join(', ');
   document.getElementById('pVariants').value = product.variants.join(', ');
   document.getElementById('pDesc').value = product.description;
+  document.getElementById('pSupplier').value = product.supplier || '';
+  document.getElementById('pCost').value = product.cost === null || product.cost === undefined ? '' : product.cost;
+  document.getElementById('pCommission').value = product.commissionPercent || 0;
+  updateMarginPreview();
 
   openModal(document.getElementById('formModal'));
 }
@@ -413,6 +457,13 @@ async function handleSaveProduct(event) {
   const stock = Number(stockRaw);
   const badge = document.getElementById('pBadge').value.trim() || null;
   const description = document.getElementById('pDesc').value.trim();
+
+  const existing = id ? productsCache.find((product) => product.id === id) : null;
+
+  if (!existing && !isAdmin()) {
+    showToast('Tu rol no permite crear productos');
+    return;
+  }
 
   const images = document.getElementById('pImages').value
     .split(',')
@@ -443,11 +494,34 @@ async function handleSaveProduct(event) {
     ? category
     : STORE_CONFIG.categories[0].key;
 
-  const existing = id ? productsCache.find((product) => product.id === id) : null;
+  let cost = null;
+  let commissionPercent = 0;
+  let supplier = null;
 
-  if (!existing && !isAdmin()) {
-    showToast('Tu rol no permite crear productos');
-    return;
+  if (isAdmin()) {
+    const costRaw = document.getElementById('pCost').value.trim();
+    const commissionRaw = document.getElementById('pCommission').value.trim();
+    const supplierRaw = document.getElementById('pSupplier').value.trim();
+
+    cost = costRaw === ''
+      ? (existing ? existing.cost : null)
+      : Number(costRaw);
+
+    if (cost !== null && (!Number.isFinite(cost) || cost < 0)) {
+      showToast('El costo del proveedor debe ser un número mayor o igual a 0');
+      return;
+    }
+
+    commissionPercent = commissionRaw === ''
+      ? (existing ? existing.commissionPercent || 0 : 0)
+      : Number(commissionRaw);
+
+    if (!Number.isFinite(commissionPercent) || commissionPercent < 0 || commissionPercent > 100) {
+      showToast('La comisión debe estar entre 0 y 100');
+      return;
+    }
+
+    supplier = supplierRaw || (existing ? existing.supplier : null);
   }
 
   const product = {
@@ -462,6 +536,12 @@ async function handleSaveProduct(event) {
     variants,
     active: existing ? existing.active : true
   };
+
+  if (isAdmin()) {
+    product.cost = cost;
+    product.commissionPercent = commissionPercent;
+    product.supplier = supplier;
+  }
 
   try {
     if (existing) {
@@ -622,12 +702,16 @@ function renderOrdersHistory() {
   const container = document.getElementById('ordersListContainer');
   const countBadge = document.getElementById('ordersBadgeCount');
   const totalEl = document.getElementById('ordersTotalAmount');
+  const commissionEl = document.getElementById('ordersCommissionAmount');
   if (!container) return;
 
   if (countBadge) countBadge.textContent = String(ordersCache.length);
 
   const totalCents = ordersCache.reduce((sum, order) => sum + order.totalCents, 0);
+  const commissionCents = ordersCache.reduce((sum, order) => sum + order.commissionCents, 0);
+
   if (totalEl) totalEl.textContent = formatCents(totalCents);
+  if (commissionEl) commissionEl.textContent = formatCents(commissionCents);
 
   if (ordersCache.length === 0) {
     container.innerHTML = `
@@ -644,9 +728,18 @@ function renderOrdersHistory() {
   container.innerHTML = ordersCache.map((order) => {
     const clientName = escapeHtml(order.clientName || 'Cliente');
     const clientAddress = escapeHtml(order.clientAddress || 'A coordinar');
+    const clientPhone = escapeHtml(order.clientPhone || 'Sin teléfono');
+    const orderCode = escapeHtml(order.orderCode || '—');
+    const deliveryLabel = order.deliveryMethod === 'recogida'
+      ? 'Recoge en tienda'
+      : 'Envío a domicilio';
+    const sellerLabel = escapeHtml(order.sellerName || order.sellerCode || 'Venta directa');
 
     const itemsHtml = order.items.map((item) => `
-      <li>${item.quantity}x ${escapeHtml(item.name)}${item.variant ? ` (${escapeHtml(item.variant)})` : ''} — ${escapeHtml(formatCents(item.unitPriceCents * item.quantity))}</li>
+      <li>
+        <span>${item.quantity}x ${escapeHtml(item.name)}${item.variant ? ` (${escapeHtml(item.variant)})` : ''}</span>
+        <span>${escapeHtml(formatCents(item.unitPriceCents * item.quantity))}</span>
+      </li>
     `).join('');
 
     const statusControl = isAdmin()
@@ -662,12 +755,18 @@ function renderOrdersHistory() {
       <article class="order-card">
         <header class="order-card-header">
           <div>
-            <strong>👤 ${clientName}</strong>
-            <span class="order-address">📍 ${clientAddress}</span>
+            <strong>🧾 ${orderCode} · ${clientName}</strong>
+            <span class="order-address">📞 ${clientPhone} · 📍 ${clientAddress}</span>
+            <span class="order-meta">
+              <span class="order-chip">${escapeHtml(deliveryLabel)}</span>
+              <span class="order-chip">💵 Efectivo al recibir</span>
+              ${isAdmin() ? `<span class="order-chip">🧑‍💼 ${sellerLabel}</span>` : ''}
+            </span>
           </div>
           <div class="order-amount">
             <strong>${escapeHtml(formatCents(order.totalCents))}</strong>
             <span>${escapeHtml(order.date)}</span>
+            ${order.commissionCents > 0 ? `<span class="order-commission">Comisión: ${escapeHtml(formatCents(order.commissionCents))}</span>` : ''}
           </div>
         </header>
         <ul class="order-items">${itemsHtml}</ul>
@@ -794,10 +893,44 @@ function openAccountModal() {
   document.getElementById('accountName').textContent = currentUser.name || '—';
   document.getElementById('accountRole').textContent = roleLabel();
 
+  const referralCode = currentUser.referralCode || '';
+  const referralLink = referralCode
+    ? `${window.location.origin}/?ref=${encodeURIComponent(referralCode)}`
+    : '';
+
+  document.getElementById('accountReferralCode').textContent = referralCode || '—';
+  document.getElementById('accountReferralLink').value = referralLink;
+
+  const myCommission = ordersCache
+    .filter((order) => order.sellerId === currentUser.id)
+    .reduce((sum, order) => sum + order.commissionCents, 0);
+
+  document.getElementById('accountCommission').textContent = formatCents(myCommission);
+
   const form = document.getElementById('accountForm');
   if (form) form.reset();
 
   openModal(document.getElementById('accountModal'));
+}
+
+function copyReferralLink() {
+  const input = document.getElementById('accountReferralLink');
+  if (!input || !input.value) return;
+
+  const done = () => showToast('Enlace de vendedor copiado');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(done).catch(() => {
+      input.select();
+      document.execCommand('copy');
+      done();
+    });
+    return;
+  }
+
+  input.select();
+  document.execCommand('copy');
+  done();
 }
 
 async function handleChangePassword(event) {
@@ -878,10 +1011,13 @@ function closeTopModal() {
 
 function setupAdminEvents() {
   document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
-  document.getElementById('forgotPasswordBtn')?.addEventListener('click', handleForgotPassword);
   document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
   document.getElementById('accountForm')?.addEventListener('submit', handleChangePassword);
   document.getElementById('importFile')?.addEventListener('change', handleImportFile);
+
+  ['pPrice', 'pCost', 'pCommission'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', updateMarginPreview);
+  });
 
   document.addEventListener('click', (event) => {
     const trigger = event.target.closest('[data-action]');
@@ -912,6 +1048,9 @@ function setupAdminEvents() {
         break;
       case 'open-account':
         openAccountModal();
+        break;
+      case 'copy-referral':
+        copyReferralLink();
         break;
       case 'logout':
         handleLogout();

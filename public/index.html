@@ -200,23 +200,46 @@
         <!-- Inyectado dinámicamente por cart.js -->
       </div>
 
-      <!-- Checkout / Resumen y Formulario para WhatsApp -->
+      <!-- Checkout / Vale de pedido: confirma la compra y se envía por WhatsApp -->
       <form id="checkoutForm" class="cart-drawer-footer" novalidate>
+        <div class="checkout-vale-title">
+          🧾 <strong>Vale de pedido</strong> — confirma la compra en WhatsApp
+        </div>
+
         <div class="checkout-inputs">
           <label class="sr-only" for="clientName">Nombre completo</label>
           <input type="text" id="clientName" class="checkout-input" placeholder="Tu nombre completo (ej. Carlos Pérez)"
             autocomplete="name" maxlength="80" aria-describedby="clientNameError">
           <p id="clientNameError" class="field-error" role="alert"></p>
 
+          <label class="sr-only" for="clientPhone">Teléfono para confirmar el pedido</label>
+          <input type="tel" id="clientPhone" class="checkout-input" placeholder="Teléfono (te llamamos para confirmar)"
+            autocomplete="tel" inputmode="tel" maxlength="18" aria-describedby="clientPhoneError">
+          <p id="clientPhoneError" class="field-error" role="alert"></p>
+
+          <label class="sr-only" for="deliveryMethod">Entrega</label>
+          <select id="deliveryMethod" class="checkout-input" autocomplete="off">
+            <option value="domicilio">🛵 Entrega a domicilio por nuestro mensajero</option>
+            <option value="recogida">🏬 Recogida en la tienda</option>
+          </select>
+          <p id="deliveryMethodError" class="field-error" role="alert"></p>
+
           <label class="sr-only" for="clientAddress">Municipio y dirección de entrega</label>
           <input type="text" id="clientAddress" class="checkout-input" placeholder="Municipio / Dirección de entrega (ej. Playa, La Habana)"
             autocomplete="street-address" maxlength="120" aria-describedby="clientAddressError">
           <p id="clientAddressError" class="field-error" role="alert"></p>
 
+          <label class="sr-only" for="sellerCodeInput">Código de vendedor</label>
+          <input type="text" id="sellerCodeInput" class="checkout-input" placeholder="Código de vendedor (opcional)"
+            maxlength="20" aria-describedby="sellerCodeError" autocomplete="off">
+          <p id="sellerCodeError" class="field-error" role="alert"></p>
+
           <label class="sr-only" for="clientNotes">Comentarios u horario preferido</label>
           <input type="text" id="clientNotes" class="checkout-input" placeholder="Comentarios / Horario preferido (opcional)"
             maxlength="200" aria-describedby="clientNotesError">
           <p id="clientNotesError" class="field-error" role="alert"></p>
+
+          <p class="checkout-payment-note">💵 Pago en <strong>efectivo</strong> al recibir la mercancía. Te llamaremos al teléfono para confirmar la disponibilidad y la entrega.</p>
         </div>
 
         <div class="cart-subtotal-row">
