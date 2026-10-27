@@ -41,7 +41,7 @@ Todo lo específico del cliente vive en **`public/js/config.js`**:
 | `brand.tagline` | Eslogan bajo el nombre. |
 | `brand.studio` / `brand.studioWhatsApp` | Crédito y enlace del desarrollador en el pie. |
 | `currency` / `locale` | Moneda y formato de números/fechas. |
-| `categories` | Categorías del catálogo. Agregar una la hace aparecer en la tienda, el filtro y el panel. |
+| `categories` | Categorías iniciales de respaldo. Las categorías reales se administran en el panel y se comparten por Supabase. |
 | `checkout.minNameLength` / `minAddressLength` | Validación mínima de nombre y dirección de entrega. |
 | `checkout.minPhoneDigits` / `maxPhoneDigits` | Validación del teléfono (obligatorio; confirman los pedidos por llamada). |
 
@@ -140,6 +140,16 @@ o `pg_dump` con la cadena de conexión del proyecto.
 - **No hay pagos, envíos ni facturación.** El cierre es por WhatsApp.
 - **Descripción de productos:** el panel admite hasta **3.000 caracteres** al crear o editar
   un producto (cinco veces el límite anterior).
+- **Productos con proveedor y stock flexible:** el stock queda opcional en el formulario para
+  productos gestionados directamente por proveedores; también se admite ciudad/municipio y dirección
+  del proveedor si el catálogo necesita ese dato extra.
+- **Subida local de imágenes:** el administrador puede elegir varias fotos desde móvil o portátil;
+  se reducen y convierten a WebP/JPEG en el navegador y se guardan en el bucket `product-images`
+  de Supabase Storage. Límite: 8 MB por imagen convertida.
+- **Categorías dinámicas y compartidas:** una categoría creada desde el formulario se guarda en
+  `public.categories` y aparece en la tienda de todos los dispositivos, sin editar `config.js`.
+- **Comisiones enlazadas:** el porcentaje y la comisión fija se recalculan en vivo para que el
+  administrador no tenga que duplicar reglas manualmente.
 - **El stock puede desincronizarse** si se vende por otro canal; ajústalo desde el panel.
 - **Las imágenes de demo son locales** (`public/img/`, WebP de 800/400 px). Reemplázalas por
   fotos reales del negocio cuando las tengas.
@@ -277,8 +287,10 @@ políticas RLS limitan qué puede leer y escribir cada rol. Aun así, conviene:
 
 El proyecto ya está integrado. El análisis de rendimiento y límites está en
 [`docs/SUPABASE.md`](docs/SUPABASE.md); la puesta en marcha y el esquema, en
-[`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md) y
-[`supabase/migrations/20261024120000_init.sql`](supabase/migrations/20261024120000_init.sql).
+[`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md). Para instalaciones existentes, aplica la
+migración [`20261027120000_product_media_categories.sql`](supabase/migrations/20261027120000_product_media_categories.sql)
+después de las tres migraciones anteriores; configura las columnas de ubicación, categorías
+persistentes y el bucket de imágenes con sus políticas RLS.
 
 Opciones gratuitas de hosting: Cloudflare Workers, Netlify, GitHub Pages.
 

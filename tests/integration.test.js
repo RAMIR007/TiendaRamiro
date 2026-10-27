@@ -97,6 +97,12 @@ const USERS = {
 function createMock() {
   const state = {
     products: clone(PRODUCTS),
+    categories: [
+      { key: 'tecnologia', label: 'Tecnología', emoji: '⚡', active: true },
+      { key: 'moda', label: 'Moda & Calzado', emoji: '👟', active: true },
+      { key: 'hogar', label: 'Hogar & Accesorios', emoji: '🏠', active: true }
+    ],
+    productImages: [],
     orders: clone(ORDERS),
     audit: clone(AUDIT),
     profiles: Object.fromEntries(Object.values(USERS).map((user) => [
@@ -125,7 +131,7 @@ function createMock() {
     const route = url.pathname;
     const method = String(options.method || 'GET').toUpperCase();
     const headers = options.headers || {};
-    const body = options.body ? JSON.parse(options.body) : null;
+    const body = options.body && typeof options.body === 'string' ? JSON.parse(options.body) : null;
     const authorization = headers.Authorization || headers.authorization || '';
     const token = authorization.replace(/^Bearer\s+/i, '');
     const userId = token.startsWith('token-') ? token.slice(6) : null;
@@ -180,6 +186,33 @@ function createMock() {
     if (route === '/rest/v1/products' && method === 'GET') {
       const activeOnly = url.searchParams.get('active') === 'eq.true';
       return respond(state.products.filter((product) => !activeOnly || product.active));
+    }
+
+    if (route === '/rest/v1/categories' && method === 'GET') {
+      const activeOnly = url.searchParams.get('active') === 'eq.true';
+      return respond(state.categories.filter((category) => !activeOnly || category.active));
+    }
+
+    if (route === '/rest/v1/categories' && method === 'POST') {
+      if (state.categories.some((category) => category.key === body.key)) {
+        return respond({ message: 'duplicate key value violates unique constraint' }, 409);
+      }
+      const category = { ...body };
+      state.categories.push(category);
+      return respond([category], 201);
+    }
+
+    if (route.startsWith('/storage/v1/object/product-images/') && method === 'POST') {
+      state.productImages.push({
+        path: route.slice('/storage/v1/object/product-images/'.length),
+        contentType: headers['Content-Type'] || headers['content-type']
+      });
+      return respond({ Key: route });
+    }
+
+    if (route === '/storage/v1/object/product-images' && method === 'DELETE') {
+      state.productImages = state.productImages.filter((image) => !body.prefixes.includes(image.path));
+      return respond({});
     }
 
     if (route === '/rest/v1/products' && method === 'POST') {
@@ -353,6 +386,11 @@ async function login(win, doc, email, password) {
     assert.strictEqual(doc.querySelectorAll('.product-card').length, 3);
     assert.match(doc.getElementById('productsCount').textContent, /3 productos/);
     assert.ok(doc.body.textContent.includes('Auriculares Inalámbricos TWS Pro'));
+  });
+
+  await check('sincroniza las categorías guardadas en Supabase', () => {
+    assert.strictEqual(doc.querySelectorAll('#categoriesPills .cat-btn').length, 4);
+    assert.ok(doc.querySelector('#categoriesPills [data-cat="moda"]'));
   });
 
   await check('el producto agotado no se puede añadir', () => {
@@ -529,17 +567,39 @@ async function login(win, doc, email, password) {
     assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 3);
   });
 
+  await check('crea una categoría compartida y la selecciona en el formulario', async () => {
+    adminWin.openCreateModal();
+    click(adminDoc.getElementById('addCategoryBtn'));
+    adminDoc.getElementById('newCategoryInput').value = 'Accesorios';
+    click(adminDoc.getElementById('saveCategoryBtn'));
+    await tick(220);
+
+    assert.ok(adminMock.state.categories.some((category) => category.key === 'accesorios'));
+    assert.strictEqual(adminDoc.getElementById('pCategory').value, 'accesorios');
+  });
+
+  await check('sube las imágenes autenticadas a Supabase Storage', async () => {
+    const uploaded = await adminWin.uploadProductImage('data:image/webp;base64,AA==');
+    assert.match(uploaded.url, /\/storage\/v1\/object\/public\/product-images\/products\//);
+    assert.strictEqual(adminMock.state.productImages.length, 1);
+    assert.strictEqual(adminMock.state.productImages[0].contentType, 'image/webp');
+  });
+
   await check('crea un producto con precio en centavos y descripción extendida', async () => {
     adminWin.openCreateModal();
     const longDescription = 'x'.repeat(3000);
     assert.strictEqual(adminDoc.getElementById('pDesc').maxLength, 3000);
     adminDoc.getElementById('pName').value = 'Producto de Prueba';
-    adminDoc.getElementById('pCategory').value = 'hogar';
+    adminDoc.getElementById('pCategory').value = 'accesorios';
     adminDoc.getElementById('pPrice').value = '12.50';
-    adminDoc.getElementById('pStock').value = '4';
+    adminDoc.getElementById('pStock').value = '';
+    adminDoc.getElementById('pSupplierCity').value = 'La Habana';
+    adminDoc.getElementById('pSupplierMunicipality').value = 'Playa';
+    adminDoc.getElementById('pSupplierAddress').value = 'Calle 10 #123';
     adminDoc.getElementById('pImages').value = 'https://example.com/foto.jpg, javascript:alert(1)';
     adminDoc.getElementById('pVariants').value = 'Único';
     adminDoc.getElementById('pDesc').value = longDescription;
+    adminWin.eval('productLocalImages = ["data:image/webp;base64,AA=="]');
 
     submit(adminDoc.getElementById('productForm'));
     await tick(300);
@@ -547,8 +607,16 @@ async function login(win, doc, email, password) {
     const created = adminMock.state.products.find((product) => product.name === 'Producto de Prueba');
     assert.ok(created, 'no se creó el producto');
     assert.strictEqual(created.price_cents, 1250);
+    assert.strictEqual(created.stock, 0);
+    assert.strictEqual(created.category, 'accesorios');
+    assert.strictEqual(created.supplier_city, 'La Habana');
+    assert.strictEqual(created.supplier_municipality, 'Playa');
+    assert.strictEqual(created.supplier_address, 'Calle 10 #123');
     assert.strictEqual(created.description, longDescription);
-    assert.deepStrictEqual(created.images, ['https://example.com/foto.jpg']);
+    assert.strictEqual(created.images.length, 2);
+    assert.ok(created.images.some((url) => url.includes('/storage/v1/object/public/product-images/products/')));
+    assert.ok(created.images.includes('https://example.com/foto.jpg'));
+    assert.strictEqual(adminMock.state.productImages.length, 2);
     assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 4);
   });
 

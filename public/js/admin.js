@@ -8,12 +8,23 @@ let ordersCache = [];
 let auditCache = [];
 let productsError = '';
 let adminModalLastFocused = null;
+let productLocalImages = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   renderCategoryOptions();
   setupAdminEvents();
   restoreSession();
 });
+
+function createCategoryKey(rawName) {
+  return String(rawName || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32) || `categoria-${Date.now()}`;
+}
 
 /* ------------------------------------------------------------------ */
 /* Sesión                                                              */
@@ -83,7 +94,7 @@ function showAdminPanel() {
 }
 
 async function refreshAll() {
-  await Promise.allSettled([loadProducts(), loadOrders(), loadAudit()]);
+  await Promise.allSettled([loadCategories(), loadProducts(), loadOrders(), loadAudit()]);
 }
 
 async function handleLogin(event) {
@@ -198,9 +209,30 @@ function renderCategoryOptions() {
   const select = document.getElementById('pCategory');
   if (!select) return;
 
-  select.innerHTML = STORE_CONFIG.categories
+  const categories = Array.isArray(STORE_CONFIG.categories) && STORE_CONFIG.categories.length > 0
+    ? STORE_CONFIG.categories
+    : [{ key: 'general', label: 'General', emoji: '📦' }];
+  select.innerHTML = categories
     .map((category) => `<option value="${escapeHtml(category.key)}">${escapeHtml(category.label)}</option>`)
     .join('');
+
+  if (categories.length > 0) {
+    const currentValue = select.value || categories[0].key;
+    select.value = categories.some((category) => category.key === currentValue) ? currentValue : categories[0].key;
+  }
+}
+
+async function loadCategories() {
+  try {
+    const categories = await fetchCategoriesFromApi({ includeInactive: isAdmin() });
+    if (categories.length > 0) {
+      STORE_CONFIG.categories = categories;
+    }
+    renderCategoryOptions();
+  } catch (error) {
+    console.error('[categories]', error);
+    showToast(error.message || 'No se pudieron cargar las categorías de Supabase');
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -433,6 +465,7 @@ function renderAdminTable() {
     const lowStock = !outOfStock && product.stock <= 3;
     const stockClass = outOfStock ? 'out' : (lowStock ? 'low' : '');
     const inactive = product.active === false;
+    const badgeText = inferAutomaticBadge(product) || product.badge || '';
     const name = escapeHtml(product.name);
     const id = escapeHtml(product.id);
     const margin = marginLabel(product);
@@ -459,6 +492,7 @@ function renderAdminTable() {
             <div>
               <strong>${name}</strong>
               <div class="table-id">${escapeHtml(getCategoryLabel(product.category))} · ${id.slice(0, 8)}</div>
+              ${badgeText ? `<span class="state-pill">${escapeHtml(badgeText)}</span>` : ''}
               ${inactive ? '<span class="state-pill">Inactivo</span>' : ''}
             </div>
           </div>
@@ -500,6 +534,43 @@ function commissionUnitOf(product, price) {
 
   const percent = Math.min(100, Math.max(0, Number(product.commissionPercent) || 0));
   return { type, amount: (Number(price) || 0) * percent / 100 };
+}
+
+function inferAutomaticBadge(product) {
+  if (!product || typeof product !== 'object') return null;
+
+  if (product.badge && String(product.badge).trim()) return String(product.badge).trim();
+
+  const soldQty = ordersCache.reduce((sum, order) => {
+    const matching = order.items.filter((item) => item.name === product.name);
+    return sum + matching.reduce((count, item) => count + (Number(item.quantity) || 0), 0);
+  }, 0);
+
+  if (soldQty >= 3) return 'Más vendido';
+
+  const createdAt = product.createdAt ? new Date(product.createdAt).getTime() : Date.now();
+  const isRecent = Date.now() - createdAt <= 14 * 24 * 60 * 60 * 1000;
+  return isRecent ? 'Nuevo' : null;
+}
+
+function syncCommissionPreview() {
+  const priceInput = document.getElementById('pPrice');
+  const typeInput = document.getElementById('pCommissionType');
+  const commissionInput = document.getElementById('pCommission');
+  const preview = document.getElementById('pCommissionEquivalent');
+  if (!typeInput || !commissionInput || !preview || !priceInput) return;
+
+  const price = Number(priceInput.value) || 0;
+  const type = typeInput.value === 'amount' ? 'amount' : 'percent';
+  const value = Number(commissionInput.value) || 0;
+
+  if (type === 'percent') {
+    const equivalent = price > 0 ? (value / 100) * price : 0;
+    preview.textContent = `${formatMoney(equivalent)} equivalente (${Number(value || 0).toFixed(1)}%)`;
+  } else {
+    const equivalent = price > 0 ? (value / price) * 100 : 0;
+    preview.textContent = `${Number(equivalent || 0).toFixed(2)}% del precio (${formatMoney(value)} fijo)`;
+  }
 }
 
 function updateMarginPreview() {
@@ -546,6 +617,7 @@ function updateMarginPreview() {
   preview.textContent =
     `${formatMoney(margin)} (${marginPercent}%) · comisión ${formatMoney(commissionAmount)} · neto ${formatMoney(netMargin)}`;
   preview.classList.toggle('negative', netMargin < 0);
+  syncCommissionPreview();
 }
 
 function openCreateModal() {
@@ -554,9 +626,17 @@ function openCreateModal() {
   const form = document.getElementById('productForm');
   if (form) form.reset();
 
+  productLocalImages = [];
+  const preview = document.getElementById('productImagePreview');
+  if (preview) preview.innerHTML = '';
+  document.getElementById('productImageInput').value = '';
+
   document.getElementById('formModalTitle').textContent = 'Añadir Nuevo Producto';
   document.getElementById('productId').value = '';
   document.getElementById('pSupplier').value = '';
+  document.getElementById('pSupplierCity').value = '';
+  document.getElementById('pSupplierMunicipality').value = '';
+  document.getElementById('pSupplierAddress').value = '';
   document.getElementById('pCost').value = '';
   document.getElementById('pCommission').value = '';
   document.getElementById('pCommissionType').value = 'percent';
@@ -571,6 +651,8 @@ function openEditModal(productId) {
     return;
   }
 
+  productLocalImages = [];
+
   document.getElementById('formModalTitle').textContent = 'Editar Producto';
   document.getElementById('productId').value = product.id;
   document.getElementById('pName').value = product.name;
@@ -582,13 +664,87 @@ function openEditModal(productId) {
   document.getElementById('pVariants').value = product.variants.join(', ');
   document.getElementById('pDesc').value = product.description;
   document.getElementById('pSupplier').value = product.supplier || '';
+  document.getElementById('pSupplierCity').value = product.supplierCity || '';
+  document.getElementById('pSupplierMunicipality').value = product.supplierMunicipality || '';
+  document.getElementById('pSupplierAddress').value = product.supplierAddress || '';
   document.getElementById('pCost').value = product.cost === null || product.cost === undefined ? '' : product.cost;
   document.getElementById('pCommissionType').value = product.commissionType === 'amount' ? 'amount' : 'percent';
   document.getElementById('pCommission').value =
     product.commissionType === 'amount' ? (product.commissionFixed || 0) : (product.commissionPercent || 0);
+  renderProductImagePreview();
   updateMarginPreview();
 
   openModal(document.getElementById('formModal'));
+}
+
+async function handleProductImageUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  try {
+    const converted = await Promise.all(files.map(async (file) => {
+      if (!file || !file.type.startsWith('image/')) return null;
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const image = new Image();
+          image.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxSide = 1400;
+            const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+            canvas.width = Math.max(1, Math.round(image.width * scale));
+            canvas.height = Math.max(1, Math.round(image.height * scale));
+            const context = canvas.getContext('2d');
+            if (!context) {
+              reject(new Error('El navegador no pudo procesar la imagen.'));
+              return;
+            }
+
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            let dataUrl = canvas.toDataURL('image/webp', 0.82);
+            if (!dataUrl.startsWith('data:image/webp;')) {
+              dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            }
+            resolve(dataUrl);
+          };
+          image.onerror = () => reject(new Error(`No se pudo abrir la imagen "${file.name}".`));
+          image.src = String(reader.result);
+        };
+        reader.onerror = () => reject(new Error(`No se pudo leer la imagen "${file.name}".`));
+        reader.readAsDataURL(file);
+      });
+    }));
+
+    const nextImages = converted.filter((dataUrl) => typeof dataUrl === 'string');
+    productLocalImages = [...productLocalImages, ...nextImages];
+    renderProductImagePreview();
+
+    if (nextImages.length) {
+      showToast(`${nextImages.length} imagen${nextImages.length > 1 ? 'es' : ''} lista${nextImages.length > 1 ? 's' : ''} para subir a Supabase`);
+    } else {
+      showToast('Selecciona archivos de imagen válidos');
+    }
+  } catch (error) {
+    console.error('[product-image-convert]', error);
+    showToast(error.message || 'No se pudieron convertir las imágenes');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function renderProductImagePreview() {
+  const preview = document.getElementById('productImagePreview');
+  if (!preview) return;
+
+  const remoteImages = document.getElementById('pImages').value
+    .split(',')
+    .map((url) => url.trim())
+    .filter(isSafeImageUrl);
+  const images = [...remoteImages, ...productLocalImages].slice(0, 8);
+  preview.innerHTML = images
+    .map((url) => `<img src="${escapeHtml(url)}" alt="Vista previa del producto" width="64" height="64" loading="lazy">`)
+    .join('');
 }
 
 async function handleSaveProduct(event) {
@@ -600,9 +756,14 @@ async function handleSaveProduct(event) {
   const priceRaw = document.getElementById('pPrice').value.trim();
   const stockRaw = document.getElementById('pStock').value.trim();
   const price = Number(priceRaw);
-  const stock = Number(stockRaw);
+  const stock = stockRaw === '' ? 0 : Number(stockRaw);
   const badge = document.getElementById('pBadge').value.trim() || null;
   const description = document.getElementById('pDesc').value.trim();
+  const autoBadge = badge || inferAutomaticBadge({
+    name,
+    createdAt: new Date().toISOString(),
+    badge
+  });
 
   const existing = id ? productsCache.find((product) => product.id === id) : null;
 
@@ -611,10 +772,15 @@ async function handleSaveProduct(event) {
     return;
   }
 
-  const images = document.getElementById('pImages').value
+  const providedImages = document.getElementById('pImages').value
     .split(',')
     .map((url) => url.trim())
     .filter(isSafeImageUrl);
+  const dataImages = [
+    ...productLocalImages,
+    ...providedImages.filter((url) => url.startsWith('data:image/'))
+  ];
+  const remoteImages = providedImages.filter((url) => !url.startsWith('data:image/'));
 
   const variants = document.getElementById('pVariants').value
     .split(',')
@@ -631,7 +797,7 @@ async function handleSaveProduct(event) {
     return;
   }
 
-  if (!stockRaw || !Number.isFinite(stock) || stock < 0) {
+  if (stockRaw !== '' && (!Number.isFinite(stock) || stock < 0)) {
     showToast('El stock debe ser un número entero mayor o igual a 0');
     return;
   }
@@ -645,12 +811,18 @@ async function handleSaveProduct(event) {
   let commissionFixed = 0;
   let commissionTypeFinal = 'percent';
   let supplier = null;
+  let supplierCity = null;
+  let supplierMunicipality = null;
+  let supplierAddress = null;
 
   if (isAdmin()) {
     const costRaw = document.getElementById('pCost').value.trim();
     const commissionRaw = document.getElementById('pCommission').value.trim();
     const supplierRaw = document.getElementById('pSupplier').value.trim();
     const commissionType = document.getElementById('pCommissionType').value === 'amount' ? 'amount' : 'percent';
+    supplierCity = document.getElementById('pSupplierCity').value.trim() || null;
+    supplierMunicipality = document.getElementById('pSupplierMunicipality').value.trim() || null;
+    supplierAddress = document.getElementById('pSupplierAddress').value.trim() || null;
 
     cost = costRaw === ''
       ? (existing ? existing.cost : null)
@@ -687,11 +859,10 @@ async function handleSaveProduct(event) {
     name,
     category: validCategory,
     price,
-    stock: Math.floor(stock),
-    badge,
+    stock: Math.max(0, Math.floor(Number(stock || 0))),
+    badge: autoBadge,
     description,
-    // Si el campo quedó vacío se conservan las imágenes anteriores.
-    images: images.length > 0 ? images : (existing ? existing.images : []),
+    images: remoteImages.length > 0 ? [...new Set(remoteImages)] : (existing ? existing.images : []),
     variants,
     active: existing ? existing.active : true
   };
@@ -702,9 +873,25 @@ async function handleSaveProduct(event) {
     product.commissionFixed = commissionFixed;
     product.commissionType = commissionTypeFinal;
     product.supplier = supplier;
+    product.supplierCity = supplierCity;
+    product.supplierMunicipality = supplierMunicipality;
+    product.supplierAddress = supplierAddress;
   }
 
+  const uploadedImages = [];
   try {
+    for (const dataUrl of dataImages) {
+      uploadedImages.push(await uploadProductImage(dataUrl));
+    }
+
+    product.images = [...new Set([
+      ...remoteImages,
+      ...uploadedImages.map((image) => image.url)
+    ])];
+    if (product.images.length === 0 && existing) {
+      product.images = existing.images;
+    }
+
     if (existing) {
       await updateProductInApi(existing.id, product);
       await logAudit(`Editó el producto "${name}"`);
@@ -718,6 +905,14 @@ async function handleSaveProduct(event) {
     showToast(existing ? 'Producto actualizado' : 'Producto creado');
   } catch (error) {
     console.error('[product]', error);
+    if (uploadedImages.length > 0) {
+      try {
+        await deleteProductImagesInApi(uploadedImages.map((image) => image.path));
+      } catch (cleanupError) {
+        console.error('[product-image-cleanup]', cleanupError);
+        showToast('No se guardó el producto y no se pudieron borrar algunas imágenes temporales.');
+      }
+    }
     showToast(error.message || 'No se pudo guardar el producto');
   }
 }
@@ -1176,11 +1371,30 @@ function setupAdminEvents() {
   document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
   document.getElementById('accountForm')?.addEventListener('submit', handleChangePassword);
   document.getElementById('importFile')?.addEventListener('change', handleImportFile);
+  document.getElementById('productImageInput')?.addEventListener('change', handleProductImageUpload);
+  document.getElementById('pImages')?.addEventListener('input', renderProductImagePreview);
+  document.getElementById('addCategoryBtn')?.addEventListener('click', () => {
+    if (!requireAdmin('crear categorías')) return;
+    const row = document.getElementById('newCategoryRow');
+    if (row) row.hidden = !row.hidden;
+    const input = document.getElementById('newCategoryInput');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  });
+  document.getElementById('saveCategoryBtn')?.addEventListener('click', handleCreateCategory);
 
   ['pPrice', 'pCost', 'pCommission'].forEach((id) => {
-    document.getElementById(id)?.addEventListener('input', updateMarginPreview);
+    document.getElementById(id)?.addEventListener('input', () => {
+      updateMarginPreview();
+      syncCommissionPreview();
+    });
   });
-  document.getElementById('pCommissionType')?.addEventListener('change', updateMarginPreview);
+  document.getElementById('pCommissionType')?.addEventListener('change', () => {
+    updateMarginPreview();
+    syncCommissionPreview();
+  });
   document.getElementById('reportsPeriod')?.addEventListener('change', renderReports);
 
   document.addEventListener('click', (event) => {
@@ -1261,4 +1475,41 @@ function setupAdminEvents() {
       if (activeModal) trapTab(event, activeModal.querySelector('.modal-content'));
     }
   });
+}
+
+async function handleCreateCategory() {
+  if (!requireAdmin('crear categorías')) return;
+
+  const input = document.getElementById('newCategoryInput');
+  const label = input ? input.value.trim() : '';
+  if (!label || label.length > 50) {
+    showToast('Escribe un nombre de categoría de 1 a 50 caracteres');
+    return;
+  }
+
+  const key = createCategoryKey(label);
+  if (STORE_CONFIG.categories.some((category) =>
+    category.key === key || category.label.toLocaleLowerCase() === label.toLocaleLowerCase())) {
+    showToast('Ya existe una categoría con ese nombre');
+    return;
+  }
+
+  try {
+    const category = await createCategoryInApi({ key, label, emoji: '📦' });
+    STORE_CONFIG.categories = await fetchCategoriesFromApi({ includeInactive: true });
+    renderCategoryOptions();
+
+    const select = document.getElementById('pCategory');
+    if (select) select.value = category.key;
+    const row = document.getElementById('newCategoryRow');
+    if (row) row.hidden = true;
+    if (input) input.value = '';
+    showToast(`Categoría guardada: ${category.label}`);
+  } catch (error) {
+    console.error('[category-create]', error);
+    const message = error.status === 409
+      ? 'Ya existe una categoría con esa clave'
+      : (error.message || 'No se pudo guardar la categoría en Supabase');
+    showToast(message);
+  }
 }

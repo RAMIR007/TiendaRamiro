@@ -36,7 +36,7 @@ cliente no cambia: el cuello de botella real sigue siendo WhatsApp.
 1. Traer el catálogo de Supabase **en cada carga** sin caché.
 2. Usar Realtime (WebSocket) en la tienda pública.
 3. Pedir el catálogo completo en cada tecla del buscador.
-4. Subir las fotos a Supabase Storage y servirlas desde ahí sin CDN ni optimización.
+4. Subir fotos originales sin optimizarlas ni aplicar carga diferida.
 5. Hacer 5 consultas separadas para armar una pantalla (productos + variantes + stock + pedidos).
 
 ---
@@ -94,7 +94,7 @@ cliente no cambia: el cuello de botella real sigue siendo WhatsApp.
 | --- | --- | --- |
 | **El proyecto free se pausa tras ~1 semana sin actividad** | La primera petición falla hasta restaurarlo desde el panel | Plan pago, o un ping diario (Cloudflare Worker cron) mientras sea aceptable |
 | **Latencia desde Cuba** | 0,4–1,5 s por consulta en datos móviles | Caché local, una sola escritura por pedido, región us-east-1 |
-| **Ancho de banda del plan free** | Si sirves imágenes desde Storage, se agota | Imágenes en Cloudflare/Unsplash o WebP locales; Storage solo si hace falta |
+| **Ancho de banda del plan free** | Las visitas a muchas imágenes pueden consumir la cuota | Redimensionar y convertir en WebP/JPEG, usar carga diferida y vigilar el uso del bucket público |
 | **RLS mal configurado** | Fuga de pedidos o escritura libre | Políticas explícitas, probar con la clave `anon`, nunca exponer `service_role` |
 | **Dependencia de red** | Sin internet no hay pedido guardado | WhatsApp siempre funciona; encolar el pedido y reintentar |
 | **Spam de pedidos** | Cualquiera puede insertar filas | Cloudflare Turnstile, rate limit en un Worker o validación por teléfono |

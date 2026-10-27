@@ -1,6 +1,6 @@
-// js/config.js — Configuración única de la tienda.
-// Este es el ÚNICO archivo que hay que editar para adaptar la tienda a un cliente:
-// número de WhatsApp, moneda, categorías y textos.
+// js/config.js — Configuración base de la tienda.
+// Las categorías de esta lista son respaldo inicial; las categorías activas
+// se sincronizan desde Supabase y se administran desde el panel.
 
 const STORE_CONFIG = {
   brand: {
@@ -27,8 +27,7 @@ const STORE_CONFIG = {
   currency: 'USD',
   locale: 'es-ES',
 
-  // Categorías del catálogo. Agregar una aquí la hace aparecer en la tienda,
-  // en el filtro y en el formulario del panel, sin tocar nada más.
+  // Categorías predeterminadas usadas como respaldo antes de conectar Supabase.
   categories: [
     { key: 'tecnologia', label: 'Tecnología', emoji: '⚡' },
     { key: 'moda', label: 'Moda & Calzado', emoji: '👟' },

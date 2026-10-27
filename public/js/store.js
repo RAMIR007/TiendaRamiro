@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   catalogState = getCachedProducts().length > 0 ? 'ready' : 'loading';
   renderCatalog();
+  refreshCategoriesFromServer();
   refreshProductsFromServer();
 });
 
@@ -75,6 +76,18 @@ async function refreshProductsFromServer(options = {}) {
 /* ------------------------------------------------------------------ */
 /* Categorías                                                          */
 /* ------------------------------------------------------------------ */
+
+async function refreshCategoriesFromServer() {
+  try {
+    const categories = await fetchCategoriesFromApi();
+    STORE_CONFIG.categories = categories;
+    renderCategories();
+    renderCatalog();
+  } catch (error) {
+    console.error('[categories]', error);
+    showToast('No se pudieron sincronizar las categorías; se muestran las predeterminadas.');
+  }
+}
 
 function renderCategories() {
   const container = document.getElementById('categoriesPills');

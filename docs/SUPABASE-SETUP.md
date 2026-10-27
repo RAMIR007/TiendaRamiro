@@ -22,17 +22,26 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
 ## 2. Crear las tablas y políticas
 
 1. En el proyecto, abre **SQL Editor → New query**.
-2. Copia **todo** el contenido de
-   [`supabase/migrations/20261024120000_init.sql`](../supabase/migrations/20261024120000_init.sql).
-3. Pega y pulsa **Run** (`Ctrl+Enter`). Debe terminar sin errores.
-4. **Solo la primera vez**, ejecuta también
+2. Ejecuta las migraciones, una por una y en este orden:
+   - [`20261024120000_init.sql`](../supabase/migrations/20261024120000_init.sql)
+   - [`20261025120000_sales.sql`](../supabase/migrations/20261025120000_sales.sql)
+   - [`20261026120000_commission_amount.sql`](../supabase/migrations/20261026120000_commission_amount.sql)
+   - [`20261027120000_product_media_categories.sql`](../supabase/migrations/20261027120000_product_media_categories.sql)
+3. **Solo la primera vez**, ejecuta también
    [`supabase/seed.sql`](../supabase/seed.sql) para cargar los 8 productos de demostración.
-5. En **Table Editor** deberías ver: `profiles`, `products` (8 filas), `orders`,
-   `order_items` y `audit_logs`.
+4. En **Table Editor** deberías ver, entre otras, las tablas `profiles`, `products`,
+   `categories`, `product_costs`, `orders`, `order_items` y `audit_logs`.
+5. En **Storage → Buckets** debe aparecer `product-images`, público para lectura y con
+   escrituras restringidas por RLS al rol administrador.
 
-El script crea las tablas, activa RLS, define los roles y agrega la función
+> **Proyecto ya configurado:** si las tres migraciones anteriores ya están aplicadas,
+> ejecuta únicamente `20261027120000_product_media_categories.sql`. Esta migración agrega
+> el bucket de imágenes, las categorías compartidas y los campos de ubicación del proveedor.
+
+Las migraciones crean las tablas, activan RLS, definen los roles y agregan la función
 `create_order()`, que valida stock y precios en el servidor y descuenta inventario
-en una sola transacción.
+en una sola transacción. También configuran el bucket público `product-images`; la subida
+y eliminación de archivos requiere una sesión de administrador.
 
 > **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutar la migración
 > completa. Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a
@@ -116,8 +125,13 @@ Esta versión ya está migrada. Los archivos que intervienen son:
 | `public/js/supabase.js` | Cliente de Auth y REST (sin SDK) |
 | `public/js/admin.js` | Login con Supabase Auth, perfiles/roles, CRUD y pedidos |
 | `public/js/cart.js` | Checkout con la RPC `create_order()` |
-| `public/js/store.js` | Catálogo desde Supabase con caché local |
-| `supabase/migrations/…_init.sql` | Tablas, RLS, trigger de perfiles y `create_order()` |
+| `public/js/store.js` | Catálogo y categorías desde Supabase con caché local del catálogo |
+| `supabase/migrations/` | Tablas, RLS, trigger de perfiles, `create_order()`, categorías y Storage |
+
+Las imágenes locales se reducen y convierten en el navegador (WebP, con JPEG como alternativa),
+se guardan en `product-images` y el catálogo conserva sus URL públicas. El límite por imagen es
+8 MB después de la conversión. Las categorías creadas en el panel quedan en `public.categories`
+y aparecen en el catálogo en los demás dispositivos.
 
 La gestión de usuarios (crear empleados, cambiar roles) se hace desde **Authentication → Users**
 y **Table Editor → profiles**. El panel solo permite cambiar la propia contraseña; así la

@@ -223,9 +223,16 @@
         <div class="form-grid-2">
           <div class="form-group">
             <label for="pCategory">Categoría *</label>
-            <select id="pCategory" class="form-control" required>
-              <!-- Opciones generadas desde STORE_CONFIG.categories -->
-            </select>
+            <div class="category-picker">
+              <select id="pCategory" class="form-control" required>
+                <!-- Opciones generadas desde STORE_CONFIG.categories -->
+              </select>
+              <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-small" data-admin-only hidden>+ Nueva</button>
+            </div>
+            <div id="newCategoryRow" class="inline-row" hidden>
+              <input type="text" id="newCategoryInput" class="form-control" maxlength="40" placeholder="Nombre de la categoría">
+              <button type="button" id="saveCategoryBtn" class="btn btn-primary btn-small">Guardar</button>
+            </div>
           </div>
 
           <div class="form-group">
@@ -236,8 +243,8 @@
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label for="pStock">Stock Disponible *</label>
-            <input type="number" id="pStock" class="form-control" min="0" step="1" required placeholder="ej. 10">
+            <label for="pStock">Stock disponible (opcional)</label>
+            <input type="number" id="pStock" class="form-control" min="0" step="1" placeholder="ej. 10">
           </div>
 
           <div class="form-group">
@@ -262,6 +269,20 @@
           </div>
           <div class="form-grid-2">
             <div class="form-group">
+              <label for="pSupplierCity">Ciudad / municipio del proveedor</label>
+              <input type="text" id="pSupplierCity" class="form-control" maxlength="60" placeholder="ej. La Habana">
+            </div>
+            <div class="form-group">
+              <label for="pSupplierMunicipality">Municipio / zona</label>
+              <input type="text" id="pSupplierMunicipality" class="form-control" maxlength="60" placeholder="ej. Plaza de la Revolución">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="pSupplierAddress">Dirección exacta del proveedor (opcional)</label>
+            <input type="text" id="pSupplierAddress" class="form-control" maxlength="120" placeholder="ej. Calle 10 #123 e/ 1ra y 3ra">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
               <label for="pCommissionType">Comisión del vendedor</label>
               <select id="pCommissionType" class="form-control">
                 <option value="percent">% del precio de venta</option>
@@ -272,6 +293,7 @@
               <label for="pCommission" id="pCommissionLabel">Comisión (% del precio)</label>
               <input type="number" id="pCommission" class="form-control" min="0" step="0.5" placeholder="ej. 10">
               <small class="form-hint" id="pCommissionHint">10% de un producto de $25 = $2.50 por unidad.</small>
+              <small class="form-hint" id="pCommissionEquivalent">0.00 equivalente</small>
             </div>
           </div>
           <div class="form-grid-2">
@@ -285,9 +307,16 @@
         </div>
 
         <div class="form-group">
+          <label for="productImageInput">Imágenes del producto</label>
+          <input type="file" id="productImageInput" class="form-control" accept="image/*" multiple>
+          <small class="form-hint">Se optimizan en WebP/JPEG y se guardan en Supabase Storage. Puedes elegir varias desde móvil o laptop.</small>
+          <div id="productImagePreview" class="image-preview-list"></div>
+        </div>
+
+        <div class="form-group">
           <label for="pImages">URLs de Imágenes (separadas por coma)</label>
           <input type="text" id="pImages" class="form-control" placeholder="https://..., https://...">
-          <small class="form-hint">Enlaces https:// o imágenes data:. Si se deja vacío al editar, se conservan las actuales.</small>
+          <small class="form-hint">Pega enlaces https://. Si se deja vacío al editar, se conservan las imágenes actuales.</small>
         </div>
 
         <div class="form-group">

@@ -39,6 +39,7 @@ function normalizeProduct(raw) {
   const commission = Number(raw.commissionPercent);
   const commissionFixed = Number(raw.commissionFixed);
   const commissionType = raw.commissionType === 'amount' ? 'amount' : 'percent';
+  const createdAt = typeof raw.created_at === 'string' ? raw.created_at : null;
 
   return {
     id,
@@ -51,6 +52,7 @@ function normalizeProduct(raw) {
     images: images.length > 0 ? images : [PRODUCT_PLACEHOLDER_IMAGE],
     variants,
     active: raw.active !== false,
+    createdAt,
     // Datos internos: solo llegan al panel del administrador.
     cost: Number.isFinite(cost) && cost >= 0 ? Math.round(cost * 100) / 100 : null,
     commissionPercent: Number.isFinite(commission)
@@ -62,6 +64,15 @@ function normalizeProduct(raw) {
       : 0,
     supplier: typeof raw.supplier === 'string' && raw.supplier.trim()
       ? raw.supplier.trim()
+      : null,
+    supplierCity: typeof raw.supplier_city === 'string' && raw.supplier_city.trim()
+      ? raw.supplier_city.trim()
+      : null,
+    supplierMunicipality: typeof raw.supplier_municipality === 'string' && raw.supplier_municipality.trim()
+      ? raw.supplier_municipality.trim()
+      : null,
+    supplierAddress: typeof raw.supplier_address === 'string' && raw.supplier_address.trim()
+      ? raw.supplier_address.trim()
       : null
   };
 }

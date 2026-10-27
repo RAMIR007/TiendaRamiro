@@ -3,7 +3,7 @@
 // Requiere: js/config.js, js/utils.js y js/data.js cargados antes de usar sus funciones.
 
 const SUPABASE_SESSION_KEY = 'rx_sb_session';
-const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at';
+const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at,supplier_city,supplier_municipality,supplier_address';
 const SUPABASE_PRODUCT_COST_SELECT = 'product_costs(cost_cents,commission_percent,commission_type,commission_fixed_cents,supplier)';
 const SUPABASE_ORDER_SELECT = [
   'id,created_at,status,client_name,client_phone,client_address,client_notes',
@@ -30,6 +30,8 @@ async function supabaseRequest(path, options = {}) {
   const {
     method = 'GET',
     body,
+    rawBody,
+    contentType = 'application/json',
     token,
     prefer,
     headers = {}
@@ -41,7 +43,7 @@ async function supabaseRequest(path, options = {}) {
   };
 
   if (token) requestHeaders.Authorization = `Bearer ${token}`;
-  if (body !== undefined) requestHeaders['Content-Type'] = 'application/json';
+  if (body !== undefined || rawBody !== undefined) requestHeaders['Content-Type'] = contentType;
   if (prefer) requestHeaders.Prefer = prefer;
 
   let response;
@@ -50,7 +52,7 @@ async function supabaseRequest(path, options = {}) {
     response = await fetch(`${SUPABASE_CONFIG.url}${path}`, {
       method,
       headers: requestHeaders,
-      body: body === undefined ? undefined : JSON.stringify(body)
+      body: rawBody !== undefined ? rawBody : (body === undefined ? undefined : JSON.stringify(body))
     });
   } catch (error) {
     throw new SupabaseError('No se pudo conectar con el servidor. Revisa tu conexión.', 0, null, error);
@@ -256,16 +258,20 @@ function mapProductRow(row, includeCosts) {
     description: row.description || '',
     images: Array.isArray(row.images) ? row.images : [],
     variants: Array.isArray(row.variants) ? row.variants : [],
+    created_at: row.created_at,
     cost: costRow ? (Number(costRow.cost_cents) || 0) / 100 : null,
     commissionPercent: costRow ? Number(costRow.commission_percent) || 0 : 0,
     commissionType: costRow && costRow.commission_type === 'amount' ? 'amount' : 'percent',
     commissionFixed: costRow ? (Number(costRow.commission_fixed_cents) || 0) / 100 : 0,
-    supplier: costRow ? costRow.supplier : null
+    supplier: costRow ? costRow.supplier : null,
+    supplier_city: row.supplier_city || null,
+    supplier_municipality: row.supplier_municipality || null,
+    supplier_address: row.supplier_address || null
   });
 }
 
 function productToRow(product) {
-  return {
+  const row = {
     name: product.name,
     category: product.category,
     price_cents: toCents(product.price),
@@ -276,6 +282,115 @@ function productToRow(product) {
     variants: product.variants || [],
     active: product.active !== false
   };
+
+  if (Object.prototype.hasOwnProperty.call(product, 'supplierCity')) {
+    row.supplier_city = product.supplierCity || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(product, 'supplierMunicipality')) {
+    row.supplier_municipality = product.supplierMunicipality || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(product, 'supplierAddress')) {
+    row.supplier_address = product.supplierAddress || null;
+  }
+
+  return row;
+}
+
+async function fetchCategoriesFromApi(options = {}) {
+  const includeInactive = Boolean(options.includeInactive);
+  const token = includeInactive ? await requireAccessToken() : null;
+  const activeFilter = includeInactive ? '' : '&active=eq.true';
+  const rows = await supabaseRequest(
+    `/rest/v1/categories?select=key,label,emoji,active&order=label.asc${activeFilter}`,
+    { token }
+  );
+
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => row && typeof row.key === 'string' && typeof row.label === 'string')
+    .map((row) => ({
+      key: row.key,
+      label: row.label,
+      emoji: row.emoji || '📦',
+      active: row.active !== false
+    }));
+}
+
+async function createCategoryInApi(category) {
+  const token = await requireAccessToken();
+  const rows = await supabaseRequest('/rest/v1/categories?select=key,label,emoji,active', {
+    method: 'POST',
+    token,
+    body: {
+      key: category.key,
+      label: category.label,
+      emoji: category.emoji || '📦',
+      active: true
+    },
+    prefer: 'return=representation'
+  });
+
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  if (!row || row.key !== category.key) {
+    throw new SupabaseError('Supabase no confirmó la categoría creada.', 500, rows);
+  }
+
+  return {
+    key: row.key,
+    label: row.label,
+    emoji: row.emoji || '📦',
+    active: row.active !== false
+  };
+}
+
+async function uploadProductImage(dataUrl) {
+  const match = /^data:(image\/(?:webp|jpeg|png));base64,([A-Za-z0-9+/=]+)$/i.exec(String(dataUrl || ''));
+  if (!match) {
+    throw new SupabaseError('La imagen no tiene un formato compatible. Vuelve a seleccionarla.', 400, null);
+  }
+
+  const mimeType = match[1].toLowerCase();
+  const binary = atob(match[2]);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  if (bytes.byteLength > 8 * 1024 * 1024) {
+    throw new SupabaseError('La imagen convertida supera el límite de 8 MB.', 413, null);
+  }
+
+  const token = await requireAccessToken();
+  const suffix = mimeType === 'image/webp' ? 'webp' : (mimeType === 'image/png' ? 'png' : 'jpg');
+  const nonce = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const objectPath = `products/${nonce}.${suffix}`;
+  const encodedPath = objectPath.split('/').map(encodeURIComponent).join('/');
+
+  await supabaseRequest(`/storage/v1/object/product-images/${encodedPath}`, {
+    method: 'POST',
+    token,
+    rawBody: new Blob([bytes], { type: mimeType }),
+    contentType: mimeType,
+    headers: { 'x-upsert': 'false' }
+  });
+
+  return {
+    path: objectPath,
+    url: `${SUPABASE_CONFIG.url}/storage/v1/object/public/product-images/${encodedPath}`
+  };
+}
+
+async function deleteProductImagesInApi(paths) {
+  const objectPaths = Array.isArray(paths) ? paths.filter(Boolean) : [];
+  if (objectPaths.length === 0) return;
+
+  const token = await requireAccessToken();
+  await supabaseRequest('/storage/v1/object/product-images', {
+    method: 'DELETE',
+    token,
+    body: { prefixes: objectPaths }
+  });
 }
 
 async function fetchProductsFromApi(options = {}) {
