@@ -1,4 +1,4 @@
-# Tienda Ramiro — Catálogo y pedidos por WhatsApp
+# RamiroX Market — Catálogo y pedidos por WhatsApp
 
 Sitio estático (HTML + CSS + JavaScript, **sin build y sin dependencias en producción**) para
 mostrar un catálogo y cerrar pedidos por WhatsApp. Pensado para emprendimientos y MiPymes,
@@ -37,7 +37,7 @@ Todo lo específico del cliente vive en **`public/js/config.js`**:
 | Opción | Qué hace |
 | --- | --- |
 | `whatsappPhone` | Número que recibe los pedidos. Formato internacional sin `+`. Cuba: `5358382989`. |
-| `brand.name` | Nombre de la tienda (encabezado y pie). |
+| `brand.name` | Nombre de la tienda (encabezado y pie). La marca actual es **RamiroX Market**. |
 | `brand.tagline` | Eslogan bajo el nombre. |
 | `brand.studio` / `brand.studioWhatsApp` | Crédito y enlace del desarrollador en el pie. |
 | `currency` / `locale` | Moneda y formato de números/fechas. |
@@ -364,7 +364,7 @@ docs/CLOUDFLARE-ACCESS.md Proteger /admin con Cloudflare Access
   filtrable a 7/30 días o todo el historial.
 - **Compartir producto:** botón de WhatsApp en cada tarjeta y en el modal para mandarle
   el producto (nombre, precio y enlace) directamente a un cliente.
-- **Imagen comercial:** marca y textos reales (Tienda Ramiro), hero orientado al cliente
+- **Imagen comercial:** marca y textos reales (RamiroX Market), hero orientado al cliente
   (entrega por mensajero, pago en efectivo).
 - **Sin SMTP:** se retiró la recuperación de contraseña por correo del login; los
   restablecimientos se hacen desde Supabase o desde "Mi cuenta".

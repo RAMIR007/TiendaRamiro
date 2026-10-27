@@ -4,7 +4,7 @@
 
 const STORE_CONFIG = {
   brand: {
-    name: 'Tienda Ramiro',
+    name: 'RamiroX Market',
     tagline: 'Tecnología · Moda · Hogar — Pedidos por WhatsApp',
     studio: 'RX Web Studio',
     studioWhatsApp: '5358382989'
