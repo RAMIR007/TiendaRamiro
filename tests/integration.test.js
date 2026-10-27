@@ -518,14 +518,17 @@ async function login(win, doc, email, password) {
     assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 3);
   });
 
-  await check('crea un producto con precio en centavos', async () => {
+  await check('crea un producto con precio en centavos y descripción extendida', async () => {
     adminWin.openCreateModal();
+    const longDescription = 'x'.repeat(3000);
+    assert.strictEqual(adminDoc.getElementById('pDesc').maxLength, 3000);
     adminDoc.getElementById('pName').value = 'Producto de Prueba';
     adminDoc.getElementById('pCategory').value = 'hogar';
     adminDoc.getElementById('pPrice').value = '12.50';
     adminDoc.getElementById('pStock').value = '4';
     adminDoc.getElementById('pImages').value = 'https://example.com/foto.jpg, javascript:alert(1)';
     adminDoc.getElementById('pVariants').value = 'Único';
+    adminDoc.getElementById('pDesc').value = longDescription;
 
     submit(adminDoc.getElementById('productForm'));
     await tick(300);
@@ -533,6 +536,7 @@ async function login(win, doc, email, password) {
     const created = adminMock.state.products.find((product) => product.name === 'Producto de Prueba');
     assert.ok(created, 'no se creó el producto');
     assert.strictEqual(created.price_cents, 1250);
+    assert.strictEqual(created.description, longDescription);
     assert.deepStrictEqual(created.images, ['https://example.com/foto.jpg']);
     assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 4);
   });

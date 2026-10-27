@@ -138,6 +138,8 @@ o `pg_dump` con la cadena de conexión del proyecto.
 - **Las cuentas se gestionan en Supabase.** Crear empleados, cambiar roles o recuperar contraseñas
   se hace en **Authentication → Users**; el panel solo permite cambiar la propia contraseña.
 - **No hay pagos, envíos ni facturación.** El cierre es por WhatsApp.
+- **Descripción de productos:** el panel admite hasta **3.000 caracteres** al crear o editar
+  un producto (cinco veces el límite anterior).
 - **El stock puede desincronizarse** si se vende por otro canal; ajústalo desde el panel.
 - **Las imágenes de demo son locales** (`public/img/`, WebP de 800/400 px). Reemplázalas por
   fotos reales del negocio cuando las tengas.
@@ -284,7 +286,7 @@ npm test           # utilidades + integración
   Cubre catálogo, stock, checkout RPC con vale (teléfono, entrega y vendedor), XSS, login,
   usuario pendiente, roles, CRUD con costos y comisiones, pedidos, auditoría y cambio de contraseña.
 
-Estado actual: **18 + 25 comprobaciones en verde**.
+Estado actual: **18 + 26 comprobaciones en verde**.
 
 ---
 
