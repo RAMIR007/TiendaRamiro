@@ -224,17 +224,48 @@
             autocomplete="tel" inputmode="tel" maxlength="18" aria-describedby="clientPhoneError">
           <p id="clientPhoneError" class="field-error" role="alert"></p>
 
+          <label class="sr-only" for="clientPhoneLandline" data-field="domicilio">Teléfono fijo (si tienes)</label>
+          <input type="tel" id="clientPhoneLandline" class="checkout-input" placeholder="Teléfono fijo, si tienes (opcional)"
+            autocomplete="tel-local" inputmode="tel" maxlength="18" data-field="domicilio" aria-describedby="clientPhoneLandlineError">
+          <p id="clientPhoneLandlineError" class="field-error" role="alert" data-field="domicilio"></p>
+
           <label class="sr-only" for="deliveryMethod">Entrega</label>
           <select id="deliveryMethod" class="checkout-input" autocomplete="off">
-            <option value="domicilio">🛵 Entrega a domicilio por nuestro mensajero</option>
-            <option value="recogida">🏬 Recogida en la tienda</option>
+            <option value="domicilio">🛵 Mensajería a domicilio</option>
+            <option value="recogida">🔱 Recogida en el punto de venta</option>
           </select>
-          <p id="deliveryMethodError" class="field-error" role="alert"></p>
 
-          <label class="sr-only" for="clientAddress">Municipio y dirección de entrega</label>
-          <input type="text" id="clientAddress" class="checkout-input" placeholder="Municipio / Dirección de entrega (ej. Playa, La Habana)"
-            autocomplete="street-address" maxlength="120" aria-describedby="clientAddressError">
-          <p id="clientAddressError" class="field-error" role="alert"></p>
+          <label class="sr-only" for="clientMunicipality">Municipio</label>
+          <input type="text" id="clientMunicipality" class="checkout-input" placeholder="Municipio (ej. Playa)"
+            autocomplete="address-level2" maxlength="60" data-field="domicilio" aria-describedby="clientMunicipalityError">
+          <p id="clientMunicipalityError" class="field-error" role="alert" data-field="domicilio"></p>
+
+          <label class="sr-only" for="clientAddress">Dirección</label>
+          <input type="text" id="clientAddress" class="checkout-input" placeholder="Dirección (calle, nº, apto.)"
+            autocomplete="street-address" maxlength="120" data-field="domicilio" aria-describedby="clientAddressError">
+          <p id="clientAddressError" class="field-error" role="alert" data-field="domicilio"></p>
+
+          <label class="sr-only" for="clientReference">Punto de referencia</label>
+          <input type="text" id="clientReference" class="checkout-input" placeholder="Punto de referencia (ej. entre 23 y 25, frente al parque)"
+            maxlength="120" data-field="domicilio" aria-describedby="clientReferenceError">
+          <p id="clientReferenceError" class="field-error" role="alert" data-field="domicilio"></p>
+
+          <label class="sr-only" for="clientTimeRange">Rango de horario</label>
+          <select id="clientTimeRange" class="checkout-input" autocomplete="off"
+            aria-describedby="clientTimeRangeError">
+            <option value="">-- Elige el horario de entrega / recogida --</option>
+            <option value="Mañana (9:00 — 12:00)">Mañana (9:00 — 12:00)</option>
+            <option value="Mediodía (12:00 — 15:00)">Mediodía (12:00 — 15:00)</option>
+            <option value="Tarde (15:00 — 19:00)">Tarde (15:00 — 19:00)</option>
+            <option value="Noche (19:00 — 22:00)">Noche (19:00 — 22:00)</option>
+          </select>
+          <p id="clientTimeRangeError" class="field-error" role="alert"></p>
+
+          <label class="sr-only" for="clientPaymentNote">Con qué billete pagas (para el vuelto)</label>
+          <input type="number" id="clientPaymentNote" class="checkout-input" min="1" step="1" inputmode="numeric"
+            placeholder="Pagas con un billete de... ($, para tener tu vuelto listo)" data-field="domicilio"
+            aria-describedby="clientPaymentNoteError">
+          <p id="clientPaymentNoteError" class="field-error" role="alert" data-field="domicilio"></p>
 
           <label class="sr-only" for="sellerCodeInput">Código de vendedor</label>
           <input type="text" id="sellerCodeInput" class="checkout-input" placeholder="Código de vendedor (opcional)"
@@ -242,11 +273,11 @@
           <p id="sellerCodeError" class="field-error" role="alert"></p>
 
           <label class="sr-only" for="clientNotes">Comentarios u horario preferido</label>
-          <input type="text" id="clientNotes" class="checkout-input" placeholder="Comentarios / Horario preferido (opcional)"
+          <input type="text" id="clientNotes" class="checkout-input" placeholder="Comentarios adicionales (opcional)"
             maxlength="200" aria-describedby="clientNotesError">
           <p id="clientNotesError" class="field-error" role="alert"></p>
 
-          <p class="checkout-payment-note">💵 Pago en <strong>efectivo</strong> al recibir la mercancía. Te llamaremos al teléfono para confirmar la disponibilidad y la entrega.</p>
+          <p class="checkout-payment-note">💵 Pago en <strong>efectivo</strong> al recibir la mercancía. Te llamaremos para confirmar la disponibilidad y coordinar la entrega.</p>
         </div>
 
         <div class="cart-subtotal-row">

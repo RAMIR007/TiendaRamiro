@@ -131,6 +131,7 @@ function initCart() {
   persistCart();
   updateCartUI();
   restoreSellerCode();
+  refreshCheckoutFields();
 
   window.addEventListener('storage', (event) => {
     if (event.key === STORAGE_KEYS.cart) {
@@ -401,20 +402,46 @@ function getDigits(value) {
   return String(value || '').replace(/\D/g, '');
 }
 
+// Muestra u oculta los campos propios de mensajería según el método elegido.
+function refreshCheckoutFields() {
+  const methodInput = document.getElementById('deliveryMethod');
+  if (!methodInput) return;
+
+  const method = methodInput.value === 'recogida' ? 'recogida' : 'domicilio';
+  document.querySelectorAll('[data-field]').forEach((el) => {
+    el.hidden = method !== 'domicilio';
+  });
+
+  const timeLabel = document.querySelector('[for="clientTimeRange"]');
+  if (timeLabel && timeLabel.classList.contains('sr-only') === false) {
+    timeLabel.textContent = method === 'recogida' ? 'Rango de horario de recogida' : 'Rango de horario de mensajería';
+  }
+}
+
 function validateCheckout() {
   const nameInput = document.getElementById('clientName');
   const phoneInput = document.getElementById('clientPhone');
+  const landlineInput = document.getElementById('clientPhoneLandline');
   const methodInput = document.getElementById('deliveryMethod');
+  const municipalityInput = document.getElementById('clientMunicipality');
   const addressInput = document.getElementById('clientAddress');
+  const referenceInput = document.getElementById('clientReference');
+  const timeInput = document.getElementById('clientTimeRange');
   const sellerInput = document.getElementById('sellerCodeInput');
   const notesInput = document.getElementById('clientNotes');
+  const paymentInput = document.getElementById('clientPaymentNote');
 
   const name = nameInput ? nameInput.value.trim() : '';
   const phone = getDigits(phoneInput ? phoneInput.value : '');
+  const phoneLandline = getDigits(landlineInput ? landlineInput.value : '');
   const deliveryMethod = methodInput && methodInput.value === 'recogida' ? 'recogida' : 'domicilio';
+  const municipality = municipalityInput ? municipalityInput.value.trim() : '';
   const address = addressInput ? addressInput.value.trim() : '';
+  const reference = referenceInput ? referenceInput.value.trim() : '';
+  const timeRange = timeInput ? timeInput.value : '';
   const sellerCode = sellerInput ? sellerInput.value.trim().toUpperCase() : '';
   const notes = notesInput ? notesInput.value.trim() : '';
+  const paysWith = paymentInput ? Number(paymentInput.value) || 0 : 0;
 
   let ok = true;
   let firstInvalid = null;
@@ -438,46 +465,132 @@ function validateCheckout() {
     markInvalid(phoneInput, `Teléfono necesario para confirmar el pedido (${minPhoneDigits}–${maxPhoneDigits} dígitos).`);
   }
 
+  if (phoneLandline && phoneLandline.length < minPhoneDigits) {
+    markInvalid(landlineInput, `El teléfono fijo necesita ${minPhoneDigits}+ dígitos.`);
+  }
+
   if (deliveryMethod === 'domicilio') {
+    if (municipality.length >= 3) {
+      setFieldError(municipalityInput, '');
+    } else {
+      markInvalid(municipalityInput, 'Indica el municipio para el mensajero.');
+    }
+
     if (address.length >= STORE_CONFIG.checkout.minAddressLength) {
       setFieldError(addressInput, '');
     } else {
-      markInvalid(addressInput, 'Indica municipio y dirección para el mensajero.');
+      markInvalid(addressInput, 'Indica calle, número y apto. para el mensajero.');
     }
+
+    if (reference.length >= 3) {
+      setFieldError(referenceInput, '');
+    } else {
+      markInvalid(referenceInput, 'Un punto de referencia ayuda al mensajero a llegar.');
+    }
+
+    if (paysWith && paysWith < totalOrderValue()) {
+      showToast(`Para el vuelto, el billete debe cubrir el total (${formatCents(totalOrderValue())}).`);
+    }
+  }
+
+  if (timeRange) {
+    setFieldError(timeInput, '');
   } else {
-    setFieldError(addressInput, '');
+    markInvalid(timeInput, 'Elige el rango de horario para la entrega / recogida.');
   }
 
   if (notes.length > 200) {
     markInvalid(notesInput, 'Máximo 200 caracteres.');
   }
 
-  return { ok, firstInvalid, name, phone, deliveryMethod, address, sellerCode, notes };
+  const fullAddress = deliveryMethod === 'domicilio'
+    ? `${address}, ${municipality}${reference ? ` (ref: ${reference})` : ''}`
+    : '';
+
+  return {
+    ok, firstInvalid, name, phone, phoneLandline, deliveryMethod,
+    municipality, address, reference, timeRange, sellerCode, notes, paysWith, fullAddress
+  };
+}
+
+function totalOrderValue() {
+  return getCartTotals().totalCents;
+}
+
+function productLines() {
+  return cart.map((item) => {
+    const variant = item.variant ? ` (${item.variant})` : '';
+    const unit = formatCents(toCents(item.price));
+    const lineTotal = formatCents(toCents(item.price) * item.quantity);
+    return {
+      name: `${item.quantity}x ${item.name}${variant}`,
+      unit,
+      lineTotal
+    };
+  });
+}
+
+function productNamesText(lines) {
+  return lines.map((line) => `• ${line.name}`).join('\n');
+}
+
+function productPricesText(lines) {
+  return lines.map((line) => `• ${line.lineTotal} (${line.unit} c/u)`).join('\n');
+}
+
+function valeGestorLine() {
+  const gestor = STORE_CONFIG.gestor || {};
+  return `Nombre y teléfono del gestor (se requiere para las dinámicas): ${gestor.name || '—'} (${gestor.phone || '—'})`;
 }
 
 function buildWhatsAppMessage(data, totalCents, orderCode) {
-  let message = '🧾 *VALE DE PEDIDO*';
-  if (orderCode) message += ` — Nº ${orderCode}`;
-  message += '\n\n📦 *PRODUCTOS SOLICITADOS:*\n';
+  const lines = productLines();
+  const productsText = productNamesText(lines);
+  const pricesText = productPricesText(lines);
+  const disclaimer = 'Revisar bien el producto una vez el cliente se vaya no hay devolución de ningún tipo.';
+  const paymentMethod = 'Efectivo';
 
-  cart.forEach((item) => {
-    const variant = item.variant ? ` (${item.variant})` : '';
-    const lineTotal = formatCents(toCents(item.price) * item.quantity);
-    message += `• ${item.quantity}x ${item.name}${variant} — ${lineTotal} (${formatCents(toCents(item.price))} c/u)\n`;
-  });
+  if (data.deliveryMethod === 'recogida') {
+    let vale = '🔱 *VALE DE RECOGIDA* 🔱';
+    if (orderCode) vale += `\nNº de vale: ${orderCode}`;
+    vale += '\n\n';
+    vale += `Nombre del cliente: ${data.name}\n`;
+    vale += `Teléfono: ${data.phone}\n`;
+    vale += `Rango de horario de recogida: ${data.timeRange}\n`;
+    vale += `Producto:\n${productsText}\n`;
+    vale += `Precio del producto:\n${pricesText}\n`;
+    vale += `Forma de pago: ${paymentMethod}\n`;
+    vale += `\n${valeGestorLine()}\n\n`;
+    vale += disclaimer;
+    return vale;
+  }
 
-  message += `\n💰 *TOTAL A PAGAR:* ${formatCents(totalCents)} (efectivo, al recibir)\n`;
-  message += `👤 *Cliente:* ${data.name}\n`;
-  message += `📞 *Teléfono:* ${data.phone}\n`;
-  message += data.deliveryMethod === 'recogida'
-    ? '🏬 *Entrega:* Recogida en la tienda\n'
-    : `🛵 *Entrega:* Domicilio — ${data.address}\n`;
-  if (data.deliveryMethod === 'domicilio' && !data.address) message += '📍 *Ubicación:* (sin dirección)\n';
-  if (data.sellerCode) message += `🏷️ *Vendedor:* ${data.sellerCode}\n`;
-  if (data.notes) message += `📝 *Nota adicional:* ${data.notes}\n`;
-  message += '\n✅ Confirmar la disponibilidad y coordinar la entrega por teléfono. ¡Gracias!';
+  const deliveryPrice = Number(STORE_CONFIG.deliveryPrice) || 0;
+  const vuelto = data.paysWith
+    ? formatMoney(Math.max(0, Number(data.paysWith) - (totalCents / 100 + deliveryPrice)))
+    : '—';
 
-  return message;
+  let vale = '🔱 *VALE DE MENSAJERÍA* 🔱';
+  if (orderCode) vale += `\nNº de vale: ${orderCode}`;
+  vale += '\n\n';
+  vale += `Nombre del cliente: ${data.name}\n`;
+  vale += `Dirección: ${data.address}\n`;
+  vale += `Municipio: ${data.municipality}\n`;
+  vale += `Punto de referencia: ${data.reference}\n`;
+  vale += `Teléfono: ${data.phone}\n`;
+  vale += `Teléfono fijo en caso de tener: ${data.phoneLandline || '—'}\n`;
+  vale += `Rango de horario de mensajería: ${data.timeRange}\n`;
+  vale += `Producto:\n${productsText}\n`;
+  vale += `Precio del producto:\n${pricesText}\n`;
+  vale += `Precio de mensajería: ${formatMoney(deliveryPrice)}\n`;
+  vale += `Forma de pago: ${paymentMethod}\n`;
+  vale += `Vuelto: ${vuelto}\n`;
+  if (data.sellerCode) vale += `Código de vendedor: ${data.sellerCode}\n`;
+  if (data.notes) vale += `Nota: ${data.notes}\n`;
+  vale += `\n${valeGestorLine()}\n\n`;
+  vale += `${disclaimer}\n`;
+  vale += 'La mensajería es obligatoria pagarla aunque el cliente no se quede con el producto.';
+  return vale;
 }
 
 function buildWhatsAppUrl(message) {
@@ -540,7 +653,7 @@ async function checkoutWhatsApp() {
       const result = await createOrderInApi({
         name: data.name,
         phone: data.phone,
-        address: data.address,
+        address: data.fullAddress,
         notes: data.notes,
         deliveryMethod: data.deliveryMethod,
         sellerCode: data.sellerCode,
@@ -581,10 +694,13 @@ async function checkoutWhatsApp() {
     clearCart();
     closeCartDrawer();
 
-    ['clientName', 'clientPhone', 'clientAddress', 'sellerCodeInput', 'clientNotes'].forEach((id) => {
+    ['clientName', 'clientPhone', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
+      'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
       const input = document.getElementById(id);
       if (input) input.value = '';
     });
+    const timeInput = document.getElementById('clientTimeRange');
+    if (timeInput) timeInput.value = '';
 
     showToast(registered
       ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
@@ -642,7 +758,8 @@ function setupCartEvents() {
     });
   }
 
-  ['clientName', 'clientPhone', 'clientAddress', 'sellerCodeInput', 'clientNotes'].forEach((id) => {
+  ['clientName', 'clientPhone', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
+    'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
     const input = document.getElementById(id);
     if (!input) return;
     input.addEventListener('input', () => setFieldError(input, ''));
@@ -650,7 +767,11 @@ function setupCartEvents() {
 
   const methodInput = document.getElementById('deliveryMethod');
   if (methodInput) {
-    methodInput.addEventListener('change', () => setFieldError(methodInput, ''));
+    methodInput.addEventListener('change', () => {
+      setFieldError(methodInput, '');
+      refreshCheckoutFields();
+    });
+    refreshCheckoutFields();
   }
 
   document.addEventListener('keydown', (event) => {

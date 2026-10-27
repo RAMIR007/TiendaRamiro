@@ -402,7 +402,11 @@ async function login(win, doc, email, password) {
   await check('crea el pedido en Supabase, limpia el carrito y abre WhatsApp', async () => {
     doc.getElementById('clientName').value = 'María López';
     doc.getElementById('clientPhone').value = '+53 5838 2989';
-    doc.getElementById('clientAddress').value = 'Playa, La Habana';
+    doc.getElementById('clientMunicipality').value = 'Playa';
+    doc.getElementById('clientAddress').value = 'Calle 23, número 12';
+    doc.getElementById('clientReference').value = 'Frente al parque';
+    doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
+    doc.getElementById('clientPaymentNote').value = '500';
 
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
@@ -412,7 +416,7 @@ async function login(win, doc, email, password) {
     assert.strictEqual(payload.p_client_name, 'María López');
     assert.strictEqual(payload.p_client_phone, '5358382989');
     assert.strictEqual(payload.p_delivery_method, 'domicilio');
-    assert.strictEqual(payload.p_client_address, 'Playa, La Habana');
+    assert.strictEqual(payload.p_client_address, 'Calle 23, número 12, Playa (ref: Frente al parque)');
     assert.strictEqual(payload.p_items.length, 2);
     assert.strictEqual(payload.p_items[0].quantity, 12);
     assert.strictEqual(payload.p_items[1].quantity, 3);
@@ -421,7 +425,44 @@ async function login(win, doc, email, password) {
     assert.strictEqual(win.getCartTotals().count, 0);
     assert.strictEqual(doc.getElementById('cartSubtotal').textContent, '$0 USD');
     assert.match(win.__lastOpened, /^https:\/\/wa\.me\/5358382989\?text=/);
-    assert.ok(decodeURIComponent(win.__lastOpened).includes('$396 USD'));
+    const voucher = new URL(win.__lastOpened).searchParams.get('text');
+    assert.ok(voucher.includes('🔱 *VALE DE MENSAJERÍA* 🔱'));
+    assert.ok(voucher.includes('Dirección: Calle 23, número 12'));
+    assert.ok(voucher.includes('Municipio: Playa'));
+    assert.ok(voucher.includes('Punto de referencia: Frente al parque'));
+    assert.ok(voucher.includes('Teléfono fijo en caso de tener: —'));
+    assert.ok(voucher.includes('Precio de mensajería: $2 USD'));
+    assert.ok(voucher.includes('Forma de pago: Efectivo'));
+    assert.ok(voucher.includes('Vuelto: $102 USD'));
+    assert.ok(voucher.includes('La mensajería es obligatoria pagarla aunque el cliente no se quede con el producto.'));
+  });
+
+  await check('genera el vale de recogida con sus campos y sin datos de mensajería', async () => {
+    assert.strictEqual(win.addToCart('11111111-1111-4111-8111-111111111111'), true);
+    const method = doc.getElementById('deliveryMethod');
+    method.value = 'recogida';
+    method.dispatchEvent(new win.Event('change', { bubbles: true }));
+    doc.getElementById('clientName').value = 'Carlos Pérez';
+    doc.getElementById('clientPhone').value = '5358382989';
+    doc.getElementById('clientTimeRange').value = 'Mañana (9:00 — 12:00)';
+
+    submit(doc.getElementById('checkoutForm'));
+    await tick(260);
+
+    assert.strictEqual(storeMock.state.lastOrderPayload.p_delivery_method, 'recogida');
+    const voucher = new URL(win.__lastOpened).searchParams.get('text');
+    assert.ok(voucher.includes('🔱 *VALE DE RECOGIDA* 🔱'));
+    assert.ok(voucher.includes('Nombre del cliente: Carlos Pérez'));
+    assert.ok(voucher.includes('Teléfono: 5358382989'));
+    assert.ok(voucher.includes('Rango de horario de recogida: Mañana (9:00 — 12:00)'));
+    assert.ok(voucher.includes('Producto:\n• 1x Auriculares Inalámbricos TWS Pro (Negro Mate)'));
+    assert.ok(voucher.includes('Precio del producto:\n• $28 USD ($28 USD c/u)'));
+    assert.ok(voucher.includes('Forma de pago: Efectivo'));
+    assert.ok(voucher.includes('Nombre y teléfono del gestor (se requiere para las dinámicas): Ramiro (5358382989)'));
+    assert.ok(voucher.includes('Revisar bien el producto una vez el cliente se vaya no hay devolución de ningún tipo.'));
+    assert.ok(!voucher.includes('Dirección:'));
+    assert.ok(!voucher.includes('Precio de mensajería:'));
+    assert.ok(!voucher.includes('Total a pagar:'));
   });
 
   await check('escapa un producto malicioso que llega de la API', async () => {

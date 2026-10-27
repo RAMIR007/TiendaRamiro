@@ -14,6 +14,16 @@ const STORE_CONFIG = {
   // Cuba: 53 + número (ej. 5358382989).
   whatsappPhone: '5358382989',
 
+  // Gestor que firma los vales (válido para las dinámicas de recolección/venta
+  // cuyas comisiones van a la cuenta del vendedor asociado). Sale impreso en el vale.
+  gestor: {
+    name: 'Ramiro',
+    phone: '5358382989'
+  },
+
+  // Precio del servicio de mensajería (en USD) — sale en el vale de mensajería.
+  deliveryPrice: 2,
+
   currency: 'USD',
   locale: 'es-ES',
 
