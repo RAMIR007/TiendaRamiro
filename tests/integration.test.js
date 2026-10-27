@@ -338,6 +338,16 @@ async function login(win, doc, email, password) {
     assert.strictEqual(doc.getElementById('adminEmail'), null);
   });
 
+  await check('publica metadatos SEO y datos estructurados de la tienda', () => {
+    assert.match(doc.title, /tecnología, moda y hogar/i);
+    assert.strictEqual(doc.querySelector('link[rel="canonical"]').href, 'https://tiendaramiro.ramiroxavier07.workers.dev/');
+    assert.ok(doc.querySelector('meta[name="description"]').content.includes('WhatsApp'));
+    assert.strictEqual(doc.querySelector('meta[property="og:url"]').content, 'https://tiendaramiro.ramiroxavier07.workers.dev/');
+    const structuredData = JSON.parse(doc.querySelector('script[type="application/ld+json"]').textContent);
+    assert.strictEqual(structuredData['@type'], 'OnlineStore');
+    assert.strictEqual(structuredData.name, 'Tienda Ramiro');
+  });
+
   await check('renderiza los productos que llegan de Supabase', () => {
     assert.strictEqual(doc.querySelectorAll('.product-card').length, 3);
     assert.match(doc.getElementById('productsCount').textContent, /3 productos/);

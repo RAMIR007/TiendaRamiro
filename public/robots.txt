@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin.html
+
+Sitemap: https://tiendaramiro.ramiroxavier07.workers.dev/sitemap.xml

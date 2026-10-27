@@ -1,0 +1,301 @@
+- generic [active] [ref=f12e1]:
+  - generic:
+    - generic:
+      - link "Ir al contenido principal" [ref=f12e2] [cursor=pointer]
+      - link "Ayuda sobre la accesibilidad" [ref=f12e3] [cursor=pointer]:
+        - /url: https://support.google.com/websearch/answer/181196?hl=es-US
+  - generic [ref=f12e8]:
+    - search [ref=f12e9]:
+      - generic [ref=f12e11]:
+        - link "Ir a la página principal de Google" [ref=f12e13] [cursor=pointer]:
+          - /url: https://www.google.com/webhp?hl=es&sa=X&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQPHoECAYQBA
+        - generic [ref=f12e22]:
+          - combobox "Buscar" [ref=f12e24]: "\"Tienda Ramiro\" online \"Tienda Ramiro\" online"
+          - generic [ref=f12e25]:
+            - button "Borrar" [ref=f12e29] [cursor=pointer]
+            - generic [ref=f12e34]:
+              - button "Búsqueda por voz" [ref=f12e37] [cursor=pointer]
+              - button "Búsqueda por imagen" [ref=f12e42] [cursor=pointer]
+    - generic [ref=f12e45]:
+      - button "Configuración" [ref=f12e47] [cursor=pointer]
+      - button "Compartir" [ref=f12e52] [cursor=pointer]
+      - generic [ref=f12e58]:
+        - button "Aplicaciones de Google" [ref=f12e60] [cursor=pointer]
+        - link "Iniciar sesión" [ref=f12e65] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?hl=es&passive=true&continue=https://www.google.com/search%3Fq%3D%2522Tienda%2BRamiro%2522%2Bonline&ec=futura_srp_og_si_72236_p
+  - generic [ref=f12e67]:
+    - navigation [ref=f12e73]:
+      - generic [ref=f12e79]:
+        - list [ref=f12e80]:
+          - listitem [ref=f12e81]:
+            - link "Modo IA" [ref=f12e84] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22+online&sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&udm=50&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVfXkjt5sbPPSQB1X1vWW-t-7xjcI3Kmj3Wb7xt-vKiAzoSjPbQL4C1LJP9RMXWBkP2MGgRwhG2gzoa3_RbuUQSZTFXLFTNz9OM3m-kzLFI8IOh7L_zbxusaFr5w7NgDIQX8bRcw&vsint=&aep=1&ntc=1&cs=0&sa=X&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQ2J8OegQIExAD
+          - listitem [ref=f12e88]:
+            - link "Todo" [disabled] [ref=f12e89]
+          - listitem [ref=f12e92]:
+            - link "Shopping" [ref=f12e93] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&udm=28&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVfXkjt5sbPPSQB1X1vWW-t-7xjcI3Kmj3Wb7xt-vKiAzoSjPbQL4C1LJP9RMXWBkP2MGgRwhG2gzoa3_RbuUQSZTFXLFTNz9OM3m-kzLFI8IOh7L_zbxusaFr5w7NgDIQX8bRcw&q=%22Tienda+Ramiro%22+online&ved=1t:220175&ictx=111
+          - listitem [ref=f12e96]:
+            - link "Imágenes" [ref=f12e97] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&udm=2&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVfXkjt5sbPPSQB1X1vWW-t-7xjcI3Kmj3Wb7xt-vKiAzoSjPbQL4C1LJP9RMXWBkP2MGgRwhG2gzoa3_RbuUQSZTFXLFTNz9OM3m-kzLFI8IOh7L_zbxusaFr5w7NgDIQX8bRcw&q=%22Tienda+Ramiro%22+online&sa=X&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQtKgLegQIFhAB
+          - listitem [ref=f12e100]:
+            - link "Vídeos" [ref=f12e101] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&udm=vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVfXkjt5sbPPSQB1X1vWW-t-7xjcI3Kmj3Wb7xt-vKiAzoSjPbQL4C1LJP9RMXWBkP2MGgRwhG2gzoa3_RbuUQSZTFXLFTNz9OM3m-kzLFI8IOh7L_zbxusaFr5w7NgDIQX8bRcw&q=%22Tienda+Ramiro%22+online&sa=X&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQtKgLegQIFRAB
+          - listitem [ref=f12e104]:
+            - link "Vídeos cortos" [ref=f12e105] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&udm=short_vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVfXkjt5sbPPSQB1X1vWW-t-7xjcI3Kmj3Wb7xt-vKiAzoSjPbQL4C1LJP9RMXWBkP2MGgRwhG2gzoa3_RbuUQSZTFXLFTNz9OM3m-kzLFI8IOh7L_zbxusaFr5w7NgDIQX8bRcw&q=%22Tienda+Ramiro%22+online&sa=X&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQs6gLegQIGRAB
+          - listitem [ref=f12e108]:
+            - link "Noticias" [ref=f12e109] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&q=%22Tienda+Ramiro%22+online&tbm=nws&source=lnms&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVfXkjt5sbPPSQB1X1vWW-t-7xjcI3Kmj3Wb7xt-vKiAzoSjPbQL4C1LJP9RMXWBkP2MGgRwhG2gzoa3_RbuUQSZTFXLFTNz9OM3m-kzLFI8IOh7L_zbxusaFr5w7NgDIQX8bRcw&sa=X&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQ0pQJegQIFxAB
+          - listitem [ref=f12e112]:
+            - button [ref=f12e113] [cursor=pointer]:
+              - generic "Más filtros" [ref=f12e114]: Más
+        - button "Herramientas" [ref=f12e121] [cursor=pointer]
+    - heading "Resultados de búsqueda" [level=1] [ref=f12e128]
+    - generic [ref=f12e133]:
+      - generic [ref=f12e150]:
+        - heading "Pensando" [level=2] [ref=f12e154]
+        - progressbar "Generando" [ref=f12e157]
+      - main [ref=f12e159]:
+        - generic [ref=f12e163]:
+          - generic [ref=f12e166]:
+            - heading "Resultados web" [level=2] [ref=f12e167]
+            - generic [ref=f12e168]:
+              - generic [ref=f12e171]:
+                - link "Tienda Ramiro (@ramirotienda_) Instagram · ramirotienda_ Más de 2.2 K seguidores" [ref=f12e173] [cursor=pointer]:
+                  - /url: /goto?url=CAESYwHrOzAVpioK-lwaU_6unkKZr5QGnnsqTnFUnIsfcUL7ftcEoXLn-EvY_Kt-x4tJ61HYcqwX9N_BHRYvmciERDnRafSmHVfdjJvpLpA2_UpaozwCTfv3mUPDcOPzhKYTWa_NgA
+                  - heading "Tienda Ramiro (@ramirotienda_)" [level=3] [ref=f12e174]
+                  - generic [ref=f12e180]:
+                    - generic [ref=f12e181]: Instagram · ramirotienda_
+                    - generic [ref=f12e183]: Más de 2.2 K seguidores
+                - button "Acerca de este resultado" [ref=f12e189] [cursor=pointer]
+              - generic [ref=f12e196]:
+                - emphasis [ref=f12e197]: Tienda Ramiro
+                - text: De local físico a tienda
+                - emphasis [ref=f12e198]: online
+                - text: Básicos cómodos & modernos ✨ Unisex Traemos por pedido | Envíos sin cargo Escribínos por DM.
+          - generic [ref=f12e202]:
+            - generic [ref=f12e205]:
+              - link "ramiro colarossi | Tienda online Rapilist https://www.rapilist.com › tienda" [ref=f12e207] [cursor=pointer]:
+                - /url: /goto?url=CAEStQEB6zswFWX1t7bUIHgb-WRCRU176BZF9DjM6tD9omTni8cai3mOFmW_f46692HIsnpQz1MuM0NWTbBZf0lVpf2ixO22HfgIgQpHMMwrUhyIwu75nf6AKXtAjF6o9zOj8jVkhbKqXr1KYq6rIqcuotgwpoQLGdHtVdyb7ttzar0S5NHXc4C4z9klZiqZmAeEl5eKWOFGlndGV_vM9kLIvSITpenr9ssSsgpTeHREHI2nayx5o_7j
+                - heading "ramiro colarossi | Tienda online" [level=3] [ref=f12e208]
+                - generic [ref=f12e214]:
+                  - generic [ref=f12e215]: Rapilist
+                  - generic [ref=f12e217]: https://www.rapilist.com › tienda
+              - button "Acerca de este resultado" [ref=f12e223] [cursor=pointer]
+            - generic [ref=f12e230]:
+              - text: ramiro colarossi — Comprá
+              - emphasis [ref=f12e231]: online
+              - text: ": catálogo, envíos y medios de pago. Tienda oficial en Rapilist."
+          - generic [ref=f12e235]:
+            - generic [ref=f12e238]:
+              - link "RAMIRO SIERRA Comercial Papelera https://www.comercialpapelera.com.co › tienda › RAMI..." [ref=f12e240] [cursor=pointer]:
+                - /url: /goto?url=CAESwQEB6zswFfWAwQRzE88CVeotzT36uuOjMUXp2BDgXY98M3knL51YgOxf_dN2nfCL9ETmpepGkH8eQQW8mWAygLoBEXr6oew5Bf29Dgeryca3bak_ixAup3t1FxubVvOQqmXRiceOWFzeY34pEzjCUDise6uJm2erxXuBZH7n8p1U4hk95O3IECIqm8362SwC8fr3goY88mGAMWvkVd3nPuM2qXESGa-0tG2ULI36Kr1Uex_7UcG0SjXE_XfbAaBUmpjV
+                - heading "RAMIRO SIERRA" [level=3] [ref=f12e241]
+                - generic [ref=f12e247]:
+                  - generic [ref=f12e248]: Comercial Papelera
+                  - generic [ref=f12e250]: https://www.comercialpapelera.com.co › tienda › RAMI...
+              - button "Acerca de este resultado" [ref=f12e256] [cursor=pointer]
+            - generic [ref=f12e263]:
+              - text: Compra
+              - emphasis [ref=f12e264]: Online
+              - text: . Retira en nuestras tiendas. Atención al Cliente. Llámanos al 601-2150623. Compra fácil ...
+          - generic [ref=f12e268]:
+            - generic [ref=f12e271]:
+              - link "Ramiro, el príncipe miedoso Edelvives https://www.edelvives.com › Home › Tienda" [ref=f12e273] [cursor=pointer]:
+                - /url: /goto?url=CAESugEB6zswFcnBOZofZ-Cxh7lbg1HUCpUO2Q_mJupBX42A4gD5usY8V_aDdsmgOg9Wo07-W6s4fEMFntlKi_RJBLqfLM52D6OGZ84QmOfiyVMGerQJqN0jAFd7BKqDrZ0ZXJF88Mj2yt984EbRiwJ2Br_U45QjKhmum_5Q5mbwdKebNMaO8X4O_QCb1YWRSSInG-SaShb2l5hwVWl7QbE89pKg7a2kmXBKpXfQyxBgvn8Gtbfxs7AZQwOh3Mk
+                - heading "Ramiro, el príncipe miedoso" [level=3] [ref=f12e274]
+                - generic [ref=f12e280]:
+                  - generic [ref=f12e281]: Edelvives
+                  - generic [ref=f12e283]: https://www.edelvives.com › Home › Tienda
+              - button "Acerca de este resultado" [ref=f12e289] [cursor=pointer]
+            - generic [ref=f12e294]: Género. Narrativa ; Temática. Sentimiento / Emociones ; Área de conocimiento. Ciencias humanas ; Información técnica. Título. Ramiro, el príncipe miedoso. Texto.
+            - generic [ref=f12e296]: EUR 13.40
+          - generic [ref=f12e302]:
+            - generic [ref=f12e305]:
+              - link "▷ TIENDA RAMIRO TAMAYO en ZAPOPAN - Directorio PYME pymes.org.mx https://pymes.org.mx › pyme › tienda-ramiro-tamayo-9..." [ref=f12e307] [cursor=pointer]:
+                - /url: /goto?url=CAESdwHrOzAVibCv98NxyDoqGW4PZO1ZYortcGT4nLWwe8sQqPh1UFQf7sNZdKrffgf0wjpL740D48S5X0o69YOVrvrXIut5KCkwnaOJKgJTfJ-HPTKqznOWGe1QFcVsdD02DE0A_-npDV3dPOW6jEzNOw2NmrF8kf7g
+                - heading "▷ TIENDA RAMIRO TAMAYO en ZAPOPAN - Directorio PYME" [level=3] [ref=f12e308]
+                - generic [ref=f12e314]:
+                  - generic [ref=f12e315]: pymes.org.mx
+                  - generic [ref=f12e317]: https://pymes.org.mx › pyme › tienda-ramiro-tamayo-9...
+              - button "Acerca de este resultado" [ref=f12e323] [cursor=pointer]
+            - generic [ref=f12e330]:
+              - text: ¿Qué ofrece
+              - emphasis [ref=f12e331]: TIENDA RAMIRO
+              - text: TAMAYO? · Ropa y accesorios de moda · Calzado para todas las edades · Electrónica de consumo y accesorios · Artículos para el hogar y ...
+          - generic [ref=f12e335]:
+            - generic [ref=f12e338]:
+              - link "RAMIRO EL PERRO JARDINERO (Nuevo) Yelmo De Mambrino Libros https://yelmodemambrino.com › tienda › ramiro-el-perr..." [ref=f12e340] [cursor=pointer]:
+                - /url: /goto?url=CAESfgHrOzAVl42wuaOmLGEqDpjOTjd-oMy2_A64goz9ZrC-LevPQabM5qczEEH4J4PLLgbenmIUj0niLW30cBWF5s5nAkhk-lzHdvyjjOlGC-RoyN7IJ1i1-VGBb1Rs3dOOOorfctZC08OSMRPZgJTuQrSoOPO1L1qeVEJ9KSS50g
+                - heading "RAMIRO EL PERRO JARDINERO (Nuevo)" [level=3] [ref=f12e341]
+                - generic [ref=f12e347]:
+                  - generic [ref=f12e348]: Yelmo De Mambrino Libros
+                  - generic [ref=f12e350]: https://yelmodemambrino.com › tienda › ramiro-el-perr...
+              - button "Acerca de este resultado" [ref=f12e356] [cursor=pointer]
+            - generic [ref=f12e363]:
+              - text: Ir al contenido. 10% de descuento comprando en la tienda
+              - emphasis [ref=f12e364]: online
+              - text: y Envio Gratis por compras mayores a $2000. Whatsapp Envelope Instagram. Búsqueda de productos ...
+          - generic [ref=f12e368]:
+            - generic [ref=f12e371]:
+              - link "Ramiro Ibáñez · Agostado 2021 Palo Cortado All Natural Bilbao https://www.allnaturalbilbao.com › tienda › ramiro-iban..." [ref=f12e373] [cursor=pointer]:
+                - /url: /goto?url=CAESjAEB6zswFTQuuUvFh8x0omj-QZwF1kiFuERkviZCn39h266EPRluz63Hkdb8sQ_Fvzd02eca5r_tYaB8ePr_jCBvFNmi0TAFtDHMP3GDQ4W-KGfuBh9tpXvw9L-BzaFk7pKYoKrotPaz-XwdTg0wZzNvZyTtiw5wLcoz0wA9EfX3ObXOOSs4hWOYRm-6Qg
+                - heading "Ramiro Ibáñez · Agostado 2021 Palo Cortado" [level=3] [ref=f12e374]
+                - generic [ref=f12e380]:
+                  - generic [ref=f12e381]: All Natural Bilbao
+                  - generic [ref=f12e383]: https://www.allnaturalbilbao.com › tienda › ramiro-iban...
+              - button "Acerca de este resultado" [ref=f12e389] [cursor=pointer]
+            - generic [ref=f12e394]: El cotizado Agostado 2021 Palo Cortado de Ramiro Ibáñez (Cota 45). Vino histórico de edición limitada elaborado con castas antiguas y suelos de albariza.
+            - generic [ref=f12e396]: EUR 54.99
+          - list [ref=f12e414]:
+            - listitem [ref=f12e416]:
+              - generic [ref=f12e423] [cursor=pointer]:
+                - generic [ref=f12e429]:
+                  - generic [ref=f12e435]: Sangría Ramune
+                  - group [ref=f12e436]:
+                    - generic [ref=f12e438]: $2.79
+                  - generic [ref=f12e440]:
+                    - generic [ref=f12e441]: lilikomarket.com
+                    - generic [ref=f12e445]: y más
+                  - img [ref=f12e446]:
+                    - img [ref=f12e447]: 4.8(98)
+                - 'button "Sangría Ramune. Precio actual: $2.79. lilikomarket.com y más. Calificación: 4.8 de 5. 98 opiniones. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e451]'
+            - listitem [ref=f12e453]:
+              - generic [ref=f12e460] [cursor=pointer]:
+                - generic [ref=f12e466]:
+                  - generic [ref=f12e472]: Licor Romana Amaro
+                  - group [ref=f12e473]:
+                    - generic [ref=f12e475]:
+                      - generic [ref=f12e476]: $24.99
+                      - generic [ref=f12e477]: $25/750ml
+                  - generic [ref=f12e478]:
+                    - generic [ref=f12e479]: Hopewell Super Buy Rite
+                    - generic [ref=f12e483]: y más
+                  - img [ref=f12e484]:
+                    - img [ref=f12e485]: 4.0(1)
+                - 'button "Licor Romana Amaro. Precio actual: $24.99. $25/750ml. Hopewell Super Buy Rite y más. Calificación: 4.0 de 5. 1 opiniones. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e489]'
+            - listitem [ref=f12e491]:
+              - generic [ref=f12e498] [cursor=pointer]:
+                - generic [ref=f12e504]:
+                  - generic [ref=f12e510]: Shampoo de romero.
+                  - group [ref=f12e511]:
+                    - generic [ref=f12e513]: $6.00
+                  - generic [ref=f12e515]: aeromall.com.sv
+                - 'button "Shampoo de romero.. Precio actual: $6.00. aeromall.com.sv. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e520]'
+            - listitem [ref=f12e522]:
+              - generic [ref=f12e529] [cursor=pointer]:
+                - generic [ref=f12e535]:
+                  - generic [ref=f12e541]: Quinceanera Ramo
+                  - group [ref=f12e542]:
+                    - generic [ref=f12e544]: $150.00
+                  - generic [ref=f12e546]: Boutique Moroleon Quinceañeras
+                - 'button "Quinceanera Ramo. Precio actual: $150.00. Boutique Moroleon Quinceañeras. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e551]'
+            - listitem [ref=f12e553]:
+              - generic [ref=f12e560] [cursor=pointer]:
+                - generic [ref=f12e566]:
+                  - generic [ref=f12e572]: Licor Ramazzotti Amaro
+                  - group [ref=f12e573]:
+                    - generic [ref=f12e575]: $32.99
+                  - generic [ref=f12e577]:
+                    - generic [ref=f12e578]: McScrooges Wine & Spirits
+                    - generic [ref=f12e582]: y más
+                  - img [ref=f12e583]:
+                    - img [ref=f12e584]: 4.6(29)
+                - 'button "Licor Ramazzotti Amaro. Precio actual: $32.99. McScrooges Wine & Spirits y más. Calificación: 4.6 de 5. 29 opiniones. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e588]'
+            - listitem [ref=f12e590]:
+              - generic [ref=f12e597] [cursor=pointer]:
+                - generic [ref=f12e603]:
+                  - generic [ref=f12e609]: RAMO MIXTO
+                  - group [ref=f12e610]:
+                    - generic [ref=f12e612]: $69.00
+                  - generic [ref=f12e614]: BloomNation - Miriam flower shop
+                - 'button "RAMO MIXTO. Precio actual: $69.00. BloomNation - Miriam flower shop. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e619]'
+            - listitem [ref=f12e621]:
+              - generic [ref=f12e628] [cursor=pointer]:
+                - generic [ref=f12e634]:
+                  - generic [ref=f12e640]: Ramazzotti Amaro 750ml
+                  - group [ref=f12e641]:
+                    - generic [ref=f12e643]: $26.99
+                  - generic [ref=f12e645]:
+                    - generic [ref=f12e646]: Buy Rite of Brick
+                    - generic [ref=f12e650]: y más
+                - 'button "Ramazzotti Amaro 750ml. Precio actual: $26.99. Buy Rite of Brick y más. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e651]'
+            - listitem [ref=f12e653]:
+              - generic [ref=f12e660] [cursor=pointer]:
+                - generic [ref=f12e666]:
+                  - generic [ref=f12e672]: Shampoo Alma de Romero Sábila 500 ml
+                  - group [ref=f12e673]:
+                    - generic [ref=f12e675]:
+                      - generic [ref=f12e676]: $19.45
+                      - generic [ref=f12e677]: $0.04/ml
+                  - generic [ref=f12e678]:
+                    - generic [ref=f12e679]: RUUFE
+                    - generic [ref=f12e683]: y más
+                  - img [ref=f12e684]:
+                    - img [ref=f12e685]: 5.0(1)
+                - 'button "Shampoo Alma de Romero Sábila 500 ml. Precio actual: $19.45. $0.04/ml. RUUFE y más. Calificación: 5.0 de 5. 1 opiniones. Ve al visualizador de productos correspondiente a este artículo." [ref=f12e689]'
+          - generic [ref=f12e693]:
+            - heading "Resultados web" [level=2] [ref=f12e694]
+            - generic [ref=f12e695]:
+              - generic [ref=f12e698]:
+                - link "Ramiro Díaz - Tienda de ropa en Santander, Cantabria nicanora.es https://nicanora.es › Tiendas de ropa" [ref=f12e700] [cursor=pointer]:
+                  - /url: /goto?url=CAESZwHrOzAVldsLdtFK_pCa6J3MVb24q7KKnWfgLxay8GoQTMCTEvKX6BGHzhOqO1SdB8lqjsRjYETmD-WpUUioXig6pASLvVAkciPRct-aYi0iiFPEYTJsaHZUFE3x4XyRz5TJDXgWCNI
+                  - heading "Ramiro Díaz - Tienda de ropa en Santander, Cantabria" [level=3] [ref=f12e701]
+                  - generic [ref=f12e707]:
+                    - generic [ref=f12e708]: nicanora.es
+                    - generic [ref=f12e710]: https://nicanora.es › Tiendas de ropa
+                - button "Acerca de este resultado" [ref=f12e716] [cursor=pointer]
+              - generic [ref=f12e723]:
+                - text: Ubicada en la céntrica calle Juan de Herrera, la
+                - emphasis [ref=f12e724]: tienda Ramiro
+                - text: Díaz es una referencia consolidada en la moda masculina en Santander.
+          - generic [ref=f12e728]:
+            - generic [ref=f12e731]:
+              - link "Ramiro De Maeztu Y El Ideal De La Burguesía En España. ... La Perecquiana https://laperecquiana.com › Tienda" [ref=f12e733] [cursor=pointer]:
+                - /url: /goto?url=CAESzAEB6zswFZc4NPoldlmoJ0dV7f5zu5HRYsPpjY2-aNae4mD5-hzkHvFvd8LcgiSjZ8D6_T0Noae7VStdPtsRciwcd3b0waIyH4NH_vNwyzo0Ksq1kVZGpnxK7clJSNKELiy2M6ZIo21mWEKoXpgSv0M-evdoGkZTwB1ooX-HL1kpzw1SRTfnWOGF8nUPbnE9zyLjvS0zsQA_J1Vf8vPHV6v1-fN_fzPJfFRPjFpmhDW_kJp3regtvNrjrxJaeiz2INNbQVZAIP8cAvLSVyg
+                - heading "Ramiro De Maeztu Y El Ideal De La Burguesía En España. ..." [level=3] [ref=f12e734]
+                - generic [ref=f12e740]:
+                  - generic [ref=f12e741]: La Perecquiana
+                  - generic [ref=f12e743]: https://laperecquiana.com › Tienda
+              - button "Acerca de este resultado" [ref=f12e749] [cursor=pointer]
+            - generic [ref=f12e754]: Esta obra ofrece una investigación minuciosa sobre el ideario de Ramiro de Maeztu, analizando su evolución desde los planteamientos de la Generación del 98 ...
+            - generic [ref=f12e757]:
+              - generic [ref=f12e758]: EUR 42.00
+              - text: ·
+              - generic [ref=f12e759]: Disponible
+        - navigation [ref=f12e764]:
+          - heading "Navegación de páginas" [level=1] [ref=f12e765]
+          - text: "1"
+          - link "Page 2" [ref=f12e768] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+online&sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&ei=R2Lgas_bCdmrqtsPqsm1uA8&start=10&sa=N&sstk=AS6-VmL5zoR-PjFUYjHeXTz_wChMK22BWV1_3DZi02YAFf9Ge5ELHe42PHnauHXm1Hdz8RKC93EJZjNa2CQuSFvkrJaellJuWhbcJQ&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQ8tMDegQINRAE
+            - text: "2"
+          - link "Page 3" [ref=f12e770] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+online&sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&ei=R2Lgas_bCdmrqtsPqsm1uA8&start=20&sa=N&sstk=AS6-VmL5zoR-PjFUYjHeXTz_wChMK22BWV1_3DZi02YAFf9Ge5ELHe42PHnauHXm1Hdz8RKC93EJZjNa2CQuSFvkrJaellJuWhbcJQ&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQ8tMDegQINRAG
+            - text: "3"
+          - link "Page 4" [ref=f12e772] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+online&sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&ei=R2Lgas_bCdmrqtsPqsm1uA8&start=30&sa=N&sstk=AS6-VmL5zoR-PjFUYjHeXTz_wChMK22BWV1_3DZi02YAFf9Ge5ELHe42PHnauHXm1Hdz8RKC93EJZjNa2CQuSFvkrJaellJuWhbcJQ&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQ8tMDegQINRAI
+            - text: "4"
+          - heading [level=2] [ref=f12e774]:
+            - link "Siguiente" [ref=f12e775] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22+online&sca_esv=06eb4749832549b6&sxsrf=APpeQntWFz1dzqjo8nebWKXcHx3Ge1sERQ:1793090119167&ei=R2Lgas_bCdmrqtsPqsm1uA8&start=10&sa=N&sstk=AS6-VmL5zoR-PjFUYjHeXTz_wChMK22BWV1_3DZi02YAFf9Ge5ELHe42PHnauHXm1Hdz8RKC93EJZjNa2CQuSFvkrJaellJuWhbcJQ&ved=2ahUKEwiPm-mc5dmXAxXZlWoFHapkDfcQ8NMDegQINRAK
+        - navigation
+    - contentinfo [ref=f12e778]:
+      - heading "Vínculos a pie de página" [level=1] [ref=f12e779]
+      - generic [ref=f12e783]:
+        - generic [ref=f12e787]:
+          - button "Cuba - Según tu actividad anterior" [ref=f12e789] [cursor=pointer]:
+            - generic [ref=f12e790]: Cuba
+            - generic [ref=f12e792]:
+              - text: "-"
+              - generic [ref=f12e793]: Según tu actividad anterior
+          - text: "-"
+          - button "Actualizar ubicación" [ref=f12e795] [cursor=pointer]
+        - generic [ref=f12e798]:
+          - link "Ayuda" [ref=f12e799] [cursor=pointer]:
+            - /url: https://support.google.com/websearch/?p=ws_results_help&hl=es-US&fg=1
+          - button "Enviar comentarios" [ref=f12e801] [cursor=pointer]
+          - link "Privacidad" [ref=f12e803] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=es-US&fg=1
+          - link "Condiciones" [ref=f12e804] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=es-US&fg=1

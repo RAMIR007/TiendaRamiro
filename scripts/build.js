@@ -13,6 +13,7 @@ const requiredFiles = [
   'admin.html',
   'reset-password.html',
   'robots.txt',
+  'sitemap.xml',
   '_headers',
   'css/store.css',
   'css/admin.css',

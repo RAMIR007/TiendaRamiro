@@ -1,0 +1,328 @@
+- generic [active] [ref=f15e1]:
+  - generic:
+    - generic:
+      - link "Ir al contenido principal" [ref=f15e2] [cursor=pointer]
+      - link "Ayuda sobre la accesibilidad" [ref=f15e3] [cursor=pointer]:
+        - /url: https://support.google.com/websearch/answer/181196?hl=es-US
+  - generic [ref=f15e8]:
+    - search [ref=f15e9]:
+      - generic [ref=f15e11]:
+        - link "Ir a la página principal de Google" [ref=f15e13] [cursor=pointer]:
+          - /url: https://www.google.com/webhp?hl=es&sa=X&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQPHoECAYQBA
+        - generic [ref=f15e22]:
+          - combobox "Buscar" [ref=f15e24]: "\"Tienda Ramiro\" \"Tienda Ramiro\""
+          - generic [ref=f15e25]:
+            - button "Borrar" [ref=f15e29] [cursor=pointer]
+            - generic [ref=f15e34]:
+              - button "Búsqueda por voz" [ref=f15e37] [cursor=pointer]
+              - button "Búsqueda por imagen" [ref=f15e42] [cursor=pointer]
+    - generic [ref=f15e45]:
+      - button "Configuración" [ref=f15e47] [cursor=pointer]
+      - button "Compartir" [ref=f15e52] [cursor=pointer]
+      - generic [ref=f15e58]:
+        - button "Aplicaciones de Google" [ref=f15e60] [cursor=pointer]
+        - link "Iniciar sesión" [ref=f15e65] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?hl=es&passive=true&continue=https://www.google.com/search%3Fq%3D%2522Tienda%2BRamiro%2522&ec=futura_srp_og_si_72236_p
+  - generic [ref=f15e67]:
+    - navigation [ref=f15e73]:
+      - generic [ref=f15e79]:
+        - list [ref=f15e80]:
+          - listitem [ref=f15e81]:
+            - link "Modo IA" [ref=f15e84] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&udm=50&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVZ3sDGOCIu5PewtlX01UmoxZZOXIjPqhJtdMK3MVQydY0lKHEQsysyDR-rL7xYtwxi8SazILfoqw6mwVEz3JXyytVRXwbVOd_BW7oXjdExPqpnMSKe9vQ6obzmy0KPGW7wTzV5w&vsint=&aep=1&ntc=1&cs=0&sa=X&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ2J8OegQIFBAD
+          - listitem [ref=f15e88]:
+            - link "Todo" [disabled] [ref=f15e89]
+          - listitem [ref=f15e92]:
+            - link "Shopping" [ref=f15e93] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&udm=28&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVZ3sDGOCIu5PewtlX01UmoxZZOXIjPqhJtdMK3MVQydY0lKHEQsysyDR-rL7xYtwxi8SazILfoqw6mwVEz3JXyytVRXwbVOd_BW7oXjdExPqpnMSKe9vQ6obzmy0KPGW7wTzV5w&q=%22Tienda+Ramiro%22&ved=1t:220175&ictx=111
+          - listitem [ref=f15e96]:
+            - link "Imágenes" [ref=f15e97] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&udm=2&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVZ3sDGOCIu5PewtlX01UmoxZZOXIjPqhJtdMK3MVQydY0lKHEQsysyDR-rL7xYtwxi8SazILfoqw6mwVEz3JXyytVRXwbVOd_BW7oXjdExPqpnMSKe9vQ6obzmy0KPGW7wTzV5w&q=%22Tienda+Ramiro%22&sa=X&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQtKgLegQIFxAB
+          - listitem [ref=f15e100]:
+            - link "Vídeos" [ref=f15e101] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&udm=vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVZ3sDGOCIu5PewtlX01UmoxZZOXIjPqhJtdMK3MVQydY0lKHEQsysyDR-rL7xYtwxi8SazILfoqw6mwVEz3JXyytVRXwbVOd_BW7oXjdExPqpnMSKe9vQ6obzmy0KPGW7wTzV5w&q=%22Tienda+Ramiro%22&sa=X&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQtKgLegQIGRAB
+          - listitem [ref=f15e104]:
+            - link "Noticias" [ref=f15e105] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&q=%22Tienda+Ramiro%22&tbm=nws&source=lnms&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVZ3sDGOCIu5PewtlX01UmoxZZOXIjPqhJtdMK3MVQydY0lKHEQsysyDR-rL7xYtwxi8SazILfoqw6mwVEz3JXyytVRXwbVOd_BW7oXjdExPqpnMSKe9vQ6obzmy0KPGW7wTzV5w&sa=X&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ0pQJegQIFhAB
+          - listitem [ref=f15e108]:
+            - link "Vídeos cortos" [ref=f15e109] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&udm=short_vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYj5hVXnKLsPy2Lg0IRoQUOVZ3sDGOCIu5PewtlX01UmoxZZOXIjPqhJtdMK3MVQydY0lKHEQsysyDR-rL7xYtwxi8SazILfoqw6mwVEz3JXyytVRXwbVOd_BW7oXjdExPqpnMSKe9vQ6obzmy0KPGW7wTzV5w&q=%22Tienda+Ramiro%22&sa=X&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQs6gLegQIGBAB
+          - listitem [ref=f15e112]:
+            - button [ref=f15e113] [cursor=pointer]:
+              - generic "Más filtros" [ref=f15e114]: Más
+        - button "Herramientas" [ref=f15e121] [cursor=pointer]
+    - heading "Resultados de búsqueda" [level=1] [ref=f15e128]
+    - generic [ref=f15e133]:
+      - generic [ref=f15e134]:
+        - generic [ref=f15e140]:
+          - heading "Cuba" [level=2] [ref=f15e141]
+          - generic [ref=f15e150]:
+            - text: ∙
+            - button "Elegir área" [ref=f15e151] [cursor=pointer]
+          - button "Cómo se utiliza la ubicación" [ref=f15e154] [cursor=pointer]
+        - generic [ref=f15e171]:
+          - generic [ref=f15e189]:
+            - heading [level=2] [ref=f15e195]:
+              - strong [ref=f15e196]: Visión general creada por IA
+            - generic [ref=f15e201]:
+              - generic [ref=f15e202]:
+                - text: Existen varios negocios con el nombre de
+                - strong [ref=f15e203]: Tienda Ramiro
+                - text: en diferentes países y localidades, ya que
+                - mark [ref=f15e204]: es un nombre comercial común
+                - text: .
+                - generic [ref=f15e208]:
+                  - link "Яндекс" [ref=f15e209] [cursor=pointer]:
+                    - /url: /goto?url=CAEScQHrOzAVkko_En-EbmOTmyd9mFpuz0xZLvQ8Mt0XA3W5eKLc81lYyUX06_hAwA9oE-BaOy3-Fx-ScbTh9eMoNnoFjLrjOuIhU9A9pk5VR6ODBwgbfv4VYimWDMqK4kSe1WQXU1reaNqnsi4hhXq2WbxC
+                  - button "Яндекс (+2) - Resultados relacionados" [ref=f15e210] [cursor=pointer]:
+                    - generic [ref=f15e212]:
+                      - generic [ref=f15e213]: Яндекс
+                      - generic [ref=f15e214]: "+2"
+              - generic [ref=f15e219]: "Algunos de los principales registros incluyen:"
+              - list [ref=f15e220]:
+                - listitem [ref=f15e222]:
+                  - generic [ref=f15e223]:
+                    - strong [ref=f15e224]: "Puyango, Ecuador:"
+                    - text: Ubicada en la Av. Panamericana, ofrece productos para las necesidades del día a día.
+                - listitem [ref=f15e226]:
+                  - generic [ref=f15e227]:
+                    - strong [ref=f15e228]: "Juan José Castelli, Argentina:"
+                    - text: Tienda de servicio local y artículos generales.
+                - listitem [ref=f15e230]:
+                  - generic [ref=f15e231]:
+                    - strong [ref=f15e232]: "Cinco Saltos, Argentina:"
+                    - text: Registrada en la guía comercial local como tienda de indumentaria, ropa informal y zapatería (vía
+                    - link [ref=f15e236] [cursor=pointer]:
+                      - /url: /goto?url=CAESgAEB6zswFUP1NK1s7QcvrZtKE6acBfBVLwxi1ljl7huxAQ7oLQefr2fgItbqFA96bslkQTK3Z_hFPKa4HzAg-cCp23p104TQYScCdoun_FHoxtmeE_kVC4Ep2Y1_v2mMZEsknaUJb-2ljYCvNH5I3CECmlKxs-f47kDM8s2b3rdeog
+                      - text: Guía Cores
+                    - text: ).
+                - listitem [ref=f15e238]:
+                  - generic [ref=f15e239]:
+                    - strong [ref=f15e240]: "La Paz, Bolivia:"
+                    - text: Minimarket o tienda de productos en la zona de San Antonio (Avenida Ciudad del Niño).
+                - listitem [ref=f15e242]:
+                  - generic [ref=f15e243]:
+                    - strong [ref=f15e244]: "Santander, Colombia:"
+                    - text: Tienda de abarrotes o productos alimenticios en el departamento de Tolima.
+                - listitem [ref=f15e246]:
+                  - generic [ref=f15e247]:
+                    - strong [ref=f15e248]: "Tienda Online (Instagram):"
+                    - link [ref=f15e252] [cursor=pointer]:
+                      - /url: /goto?url=CAESYwHrOzAVamrHOZM5d_6NGIE2TR7ooD3ebFuiaiJ62ZeU1Pi3szLgoKlW3HJb_VFN1ZvtIK_KhDU6d_j9txVlFCmGODcjXPJVJXnNmVrmSc1xZ_wT5wiy-GLR0achHBvF75Y4RQ
+                      - text: Tienda Ramiro (@ramirotienda_)
+                    - text: dedicada a la venta de básicos de moda y ropa unisex por pedido.
+                  - generic [ref=f15e256]:
+                    - link [ref=f15e257] [cursor=pointer]:
+                      - /url: /goto?url=CAESgAEB6zswFUP1NK1s7QcvrZtKE6acBfBVLwxi1ljl7huxAQ7oLQefr2fgItbqFA96bslkQTK3Z_hFPKa4HzAg-cCp23p104TQYScCdoun_FHoxtmeE_kVC4Ep2Y1_v2mMZEsknaUJb-2ljYCvNH5I3CECmlKxs-f47kDM8s2b3rdeog
+                    - button [ref=f15e258] [cursor=pointer]:
+                      - generic [ref=f15e260]:
+                        - generic [ref=f15e261]: Guía Cores
+                        - generic [ref=f15e262]: "+5"
+              - generic [ref=f15e269]:
+                - text: ¿Podrías indicarme la
+                - strong [ref=f15e270]: ciudad, provincia o país
+                - text: de la Tienda Ramiro que estás buscando para darte la dirección exacta o su teléfono?
+            - generic [ref=f15e276]:
+              - generic [ref=f15e279]:
+                - text: Las respuestas de la IA pueden contener errores.
+                - link [ref=f15e280] [cursor=pointer]:
+                  - /url: https://support.google.com/websearch?p=ai_overviews
+                  - text: Más información
+              - generic [ref=f15e281]:
+                - generic [ref=f15e282]:
+                  - status [ref=f15e283]
+                  - button [ref=f15e285] [cursor=pointer]
+                - button [ref=f15e295] [cursor=pointer]
+                - generic [ref=f15e301]:
+                  - button [ref=f15e303] [cursor=pointer]
+                  - button [ref=f15e308] [cursor=pointer]
+                - button [ref=f15e315] [cursor=pointer]
+          - button "Mostrar más Visión general creada por IA" [ref=f15e323]:
+            - generic [ref=f15e324] [cursor=pointer]: Mostrar más
+      - main [ref=f15e331]:
+        - generic [ref=f15e335]:
+          - generic [ref=f15e338]:
+            - heading "Результаты поиска" [level=2] [ref=f15e339]
+            - generic [ref=f15e340]:
+              - generic [ref=f15e343]:
+                - link "Tienda Ramiro, магазин продуктов, Толима Яндекс https://yandex.ru › maps › org › t..." [ref=f15e345] [cursor=pointer]:
+                  - /url: /goto?url=CAEScQHrOzAVZtlKogpdetO8k1COuSKJkn1VtRHJu1ohOm4g-oCPdr4VqfdZV7MeRJ9GGXtZ897F_XOFdP0DCYYvFj5ej0VFT4xsiQFcxo-hYON7h2kiWOVGiWc1ud17c9YJKOTPJxEwgxbsazdC9N_KPkp-
+                  - heading "Tienda Ramiro, магазин продуктов, Толима" [level=3] [ref=f15e346]
+                  - generic [ref=f15e352]:
+                    - generic [ref=f15e353]: Яндекс
+                    - generic [ref=f15e355]: https://yandex.ru › maps › org › t...
+                - generic [ref=f15e357]:
+                  - generic [ref=f15e358]: ·
+                  - link "Traducir esta página" [ref=f15e359] [cursor=pointer]:
+                    - /url: /goto?url=CAESugEB6zswFSYbCd6WMmGKFMPzvrBKj0O_D-CK-EQf4VVS8HKNkf_Kvt-XZqSFSzyqxN-5jUQgKwx_KekLDzqCozjLGuyQ-zvUr2Xpj8vPx0fzqVaZoZRzvN1VgV4o714NWW_aiCZlUaYGt2OsI0VS7QfSnpZr3yb2kEQNrMB2OmmvNXZmJ6jsEQUBDCn3JG7rRQebDWm1qXHV1CLRJUuJh0Lyj8yQ4Z6iZKGffdFURS7QBsn21McOJ6DEOO0
+                - button "Acerca de este resultado" [ref=f15e364] [cursor=pointer]
+              - generic [ref=f15e371]:
+                - text: Магазин продуктов
+                - emphasis [ref=f15e372]: Tienda Ramiro
+                - text: по адресу Толима. Смотреть часы работы. Построить маршрут в Яндекс Картах.
+          - generic [ref=f15e376]:
+            - generic [ref=f15e379]:
+              - link "TIENDA RAMIRO Guía Cores https://www.guiacores.com.ar › index" [ref=f15e381] [cursor=pointer]:
+                - /url: /goto?url=CAESgAEB6zswFRn7AE8Bs99NaWqLDKF7gTiXzJEyFi7WovSQYb1x4-5f0g7UeLy7GxDRk3dW4XqWf4re6IZFYYzmGLoMEHToJVCGCJTFWs2UIBQTGeSRtxv8rb6UpVSz8KiQYIVNgVsvK-SPKmPBSpDC0kty92m7NNXA1IRFxdmzDAwHPA
+                - heading "TIENDA RAMIRO" [level=3] [ref=f15e382]
+                - generic [ref=f15e391]:
+                  - generic [ref=f15e392]: Guía Cores
+                  - generic [ref=f15e394]: https://www.guiacores.com.ar › index
+              - button "Acerca de este resultado" [ref=f15e400] [cursor=pointer]
+            - generic [ref=f15e407]:
+              - text: Su búsqueda
+              - emphasis [ref=f15e408]: TIENDA RAMIRO
+              - text: ha generado 1 coincidencias (0.4926 segundos). ¡Gracias, me fue útil! Ver todas las localidades, Cinco Saltos (1). Ver abiertos ...
+          - generic [ref=f15e412]:
+            - generic [ref=f15e415]:
+              - link "Tienda Ramiro (@ramirotienda_) Instagram · ramirotienda_ Más de 2.2 K seguidores" [ref=f15e417] [cursor=pointer]:
+                - /url: /goto?url=CAESYwHrOzAVZzHaEkz_t8sINoDuHPqn1IpqHRsu4nGzGkzsUuuyA3wg9KWtX2CwdDDLBQZERwI_95GUEMXEL0h_NGxAoEp0PuHr0_ysnyCK79-EfnUsutaK0hv7JETKOZ75soeTcg
+                - heading "Tienda Ramiro (@ramirotienda_)" [level=3] [ref=f15e418]
+                - generic [ref=f15e424]:
+                  - generic [ref=f15e425]: Instagram · ramirotienda_
+                  - generic [ref=f15e427]: Más de 2.2 K seguidores
+              - button "Acerca de este resultado" [ref=f15e433] [cursor=pointer]
+            - generic [ref=f15e440]:
+              - emphasis [ref=f15e441]: Tienda Ramiro
+              - text: De local físico a tienda online Básicos cómodos & modernos ✨ Unisex Traemos por pedido | Envíos sin cargo Escribínos por DM.
+          - generic [ref=f15e445]:
+            - generic [ref=f15e448]:
+              - link "Tienda Ramiro | Juan José Castelli Facebook · Tienda Ramiro Más de 160 seguidores" [ref=f15e450] [cursor=pointer]:
+                - /url: /goto?url=CAESdAHrOzAVP-oD-X4GBMx8iT5sPhMS-Bfju9JyNA6Adf8hW8v2Cbx9CViAbRO9yINlG5dKNWYL-gJ-SGM8fqjsietT0mpTXJhrXTQt_DLs_SWUfng066i7HoW8rQZakAs2engtSBlBYztF-dja4UX5OeVVAMqi
+                - heading "Tienda Ramiro | Juan José Castelli" [level=3] [ref=f15e451]
+                - generic [ref=f15e457]:
+                  - generic [ref=f15e458]: Facebook · Tienda Ramiro
+                  - generic [ref=f15e460]: Más de 160 seguidores
+              - button "Acerca de este resultado" [ref=f15e466] [cursor=pointer]
+            - generic [ref=f15e473]:
+              - text: Juan José Castelli, Argentina, 3705. Details. +54 364 450-3477. Contact info. Photos. See all. Posts.
+              - emphasis [ref=f15e474]: Tienda Ramiro
+              - text: updated their bio. Aug 18, 2020.
+            - 'img "Calificación: 5.0 de 5, (1) opiniones de usuarios" [ref=f15e479]': 5.0(1)
+          - generic [ref=f15e486]:
+            - generic [ref=f15e489]:
+              - link "«Una tienda sólo sobrevive si tiene alma y escaparates ... El Diario Montañés https://www.eldiariomontanes.es › Cantabria" [ref=f15e491] [cursor=pointer]:
+                - /url: /goto?url=CAESkwEB6zswFX6DR2FP4zdktH6udiVWDDdSbRBDjYuc3LNTRYgQCz_WtHhnXjc3kFD_AVu8kIGIU4UJdyEkmLDeaoC4ghdwCGIXubyaAQpcwarctJrRth_2hULAM-PSXmeV_L_bbbPtktlivAZ3w65gAtRYgOpgtKhCkCzZV-Jb19Dd05HY1IYMXlbOmHNYn5ayBnm8ZT8
+                - heading "«Una tienda sólo sobrevive si tiene alma y escaparates ..." [level=3] [ref=f15e492]
+                - generic [ref=f15e498]:
+                  - generic [ref=f15e499]: El Diario Montañés
+                  - generic [ref=f15e501]: https://www.eldiariomontanes.es › Cantabria
+              - button "Acerca de este resultado" [ref=f15e507] [cursor=pointer]
+            - generic [ref=f15e513]:
+              - generic [ref=f15e514]: 9 dic 2017 —
+              - generic [ref=f15e515]:
+                - text: No fue hasta el año 93 cuando bajé al centro con la
+                - emphasis [ref=f15e516]: tienda Ramiro
+                - text: Díaz, en Juan de Herrera, esquina con el Ayuntamiento. La tienda tuvo un ...
+          - generic [ref=f15e520]:
+            - generic [ref=f15e523]:
+              - link "RAMIRO RAMIREZ RAMOS | Menú | Monterrey | App de ... Uber Eats https://www.ubereats.com › store › la-carpa-azul" [ref=f15e525] [cursor=pointer]:
+                - /url: /goto?url=CAESwwEB6zswFSiqegUzEoOEGQUpRtvuET49uvTxYcE5WDtSoB1GlyV_Z7Rkrr_-Gc0iISXtUpFmYhmF9DPav8XdXvCez3li4M1um8GCIkjJmDbvq1zwCEkAt_GpA0I_8Mwn0XKjF7AhfdW-S7VXTd95PJjtxLl5PB2mBPGUF0PQget9hpgvY9yOqEBIkWOBr_xRwRjtAYSZJXBz9jeq-lGZZsPFwzLpX2v8BTyWkr0UVSiM_LJup50h92VAE3spnx2Uxocn4S8
+                - heading "RAMIRO RAMIREZ RAMOS | Menú | Monterrey | App de ..." [level=3] [ref=f15e526]
+                - generic [ref=f15e532]:
+                  - generic [ref=f15e533]: Uber Eats
+                  - generic [ref=f15e535]: https://www.ubereats.com › store › la-carpa-azul
+              - button "Acerca de este resultado" [ref=f15e541] [cursor=pointer]
+            - generic [ref=f15e548]:
+              - emphasis [ref=f15e549]: "Tienda: RAMIRO"
+              - text: "RAMIREZ RAMOS ; Ubicación: Calle 10, COL JARDINES DE ANAHUAC 2 SEC, SAN NICOLAS DE LOS GARZA, NL ; Calificación: N/D - (N/D calificaciones) ; Tipos ..."
+          - generic [ref=f15e553]:
+            - generic [ref=f15e556]:
+              - link "Tienda Ramiro - Магазин продуктов Яндекс https://yandex.ru › maps › org › t..." [ref=f15e558] [cursor=pointer]:
+                - /url: /goto?url=CAEScQHrOzAVs8y3C7tFacWVI7SbGQaTWW5wknu_11hkoj6Ex7tyRb8Qk63uuqV2Y3KsNwQ0NBhq3tGx5woLgDJmoI_MfnruGh4dfsacnA0Sn-wmb87xDJ4E3BAlrI4sOVMwBn1FU9AdzfTT2j3iIUIheoFE
+                - heading "Tienda Ramiro - Магазин продуктов" [level=3] [ref=f15e559]
+                - generic [ref=f15e565]:
+                  - generic [ref=f15e566]: Яндекс
+                  - generic [ref=f15e568]: https://yandex.ru › maps › org › t...
+              - generic [ref=f15e570]:
+                - generic [ref=f15e571]: ·
+                - link "Traducir esta página" [ref=f15e572] [cursor=pointer]:
+                  - /url: /goto?url=CAESugEB6zswFeKfmXAh2Bji7TYV6-gXdDY5O6OuSKt1gk__bEBtKaj2Q1TWGIaxeKYTlZigrLnv5p3nxNxOezfhboxKrxjlgADvFbtBu8RZDppxt4av2zfzhCEKwYYusH6mfEQfctFIqiecKjsjv8E3PhPTiapnAiiyNr642_dYtUljSkh6TLAmNE64Zr242b44cpdmhrS5qP5pBzXeDwnptxYTaBI4ihGfIe5KJuGy4ecrPHtv70DOYheMjKg
+              - button "Acerca de este resultado" [ref=f15e577] [cursor=pointer]
+            - generic [ref=f15e584]:
+              - text: Магазин продуктов
+              - emphasis [ref=f15e585]: Tienda Ramiro
+              - text: по адресу департамент Ла-Пас, провинция Мурильо, Ла Пас, Сан Антонио, Avenida Ciudad del Niño. Построить маршрут в Яндекс ...
+          - generic [ref=f15e589]:
+            - generic [ref=f15e592]:
+              - link "Tienda Ramiro en Puyango Ubica Ecuador https://www.ubica.ec › Puyango" [ref=f15e594] [cursor=pointer]:
+                - /url: /goto?url=CAEScQHrOzAVN6rFWviKs7cycx3GWG65UBKBjtX-UNWTs-V83G5ZDNflPhQCBHECK2zOe3aX7RTXQfx_BL_3m9cf_IBNk7e2qtZdR2qzrhh48k0hFJ4izQnDgWyV1WYzcLiLizsqdQx2GtoBmoiTCne-z6hC
+                - heading "Tienda Ramiro en Puyango" [level=3] [ref=f15e595]
+                - generic [ref=f15e601]:
+                  - generic [ref=f15e602]: Ubica Ecuador
+                  - generic [ref=f15e604]: https://www.ubica.ec › Puyango
+              - button "Acerca de este resultado" [ref=f15e610] [cursor=pointer]
+            - generic [ref=f15e617]:
+              - emphasis [ref=f15e618]: Tienda Ramiro
+              - text: está ubicado en Reina Del Cisne Av Panamericano y Sn, Puyango, Ecuador. Acerca de
+              - emphasis [ref=f15e619]: Tienda Ramiro
+              - text: .
+              - emphasis [ref=f15e620]: Tienda Ramiro
+              - text: es un establecimiento ubicado en ...
+          - generic [ref=f15e626]:
+            - generic [ref=f15e629]:
+              - 'link "Ramiro corre: comedia de celular roto y tienda de reparación TikTok · Omarbeltran11 Más de 821.8 K vistas · hace 1 año" [ref=f15e631] [cursor=pointer]':
+                - /url: /goto?url=CAESewHrOzAVsYDaLGKTeF6vmQJ5jpTm1Z7r5SrilMNDJSj66j2kP4dIr56ObSc7HQEo3dTKFVKnoicnTf3MatCnj6eRnBaYiA-C-JzSg3DQPexbB8iLVVWlrTKlI2rBSu1455lMofKod_SeJiBwTSrzhacv8hlEJUVeLy5pZA
+                - 'heading "Ramiro corre: comedia de celular roto y tienda de reparación" [level=3] [ref=f15e632]'
+                - generic [ref=f15e638]:
+                  - generic [ref=f15e639]: TikTok · Omarbeltran11
+                  - generic [ref=f15e641]: Más de 821.8 K vistas · hace 1 año
+              - button "Acerca de este resultado" [ref=f15e647] [cursor=pointer]
+            - generic [ref=f15e652]:
+              - 'link "Ramiro corre: comedia de celular roto y tienda de reparación de omarbeltrann11 en TikTok. Reproducir en TikTok. 1:01" [ref=f15e653] [cursor=pointer]':
+                - /url: /goto?url=CAESewHrOzAVsYDaLGKTeF6vmQJ5jpTm1Z7r5SrilMNDJSj66j2kP4dIr56ObSc7HQEo3dTKFVKnoicnTf3MatCnj6eRnBaYiA-C-JzSg3DQPexbB8iLVVWlrTKlI2rBSu1455lMofKod_SeJiBwTSrzhacv8hlEJUVeLy5pZA
+                - generic [ref=f15e654]: 1:01
+              - generic [ref=f15e666]: ramiro corre comedia, ramiro celular roto tienda, ramiro chiste celular, ramiro y las churpias farmacia ramiro, ramiro aparece comedia ...
+        - navigation [ref=f15e670]:
+          - heading "Navegación de páginas" [level=1] [ref=f15e671]
+          - text: "1"
+          - link "Page 2" [ref=f15e674] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=10&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAE
+            - text: "2"
+          - link "Page 3" [ref=f15e676] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=20&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAG
+            - text: "3"
+          - link "Page 4" [ref=f15e678] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=30&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAI
+            - text: "4"
+          - link "Page 5" [ref=f15e680] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=40&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAK
+            - text: "5"
+          - link "Page 6" [ref=f15e682] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=50&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAM
+            - text: "6"
+          - link "Page 7" [ref=f15e684] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=60&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAO
+            - text: "7"
+          - link "Page 8" [ref=f15e686] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=70&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAQ
+            - text: "8"
+          - link "Page 9" [ref=f15e688] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=80&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAS
+            - text: "9"
+          - link "Page 10" [ref=f15e690] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=90&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8tMDegQIHxAU
+            - text: "10"
+          - heading [level=2] [ref=f15e692]:
+            - link "Siguiente" [ref=f15e693] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22&sca_esv=06eb4749832549b6&sxsrf=APpeQnuF0_D2On_EeaCH4n5K4XgguqMjYQ:1793090135260&ei=V2LgaqK_D4imqtsPlte0oAM&start=10&sa=N&sstk=AS6-VmLDiRfxwQNRNRALjxOQZZShVNFLaU5jM2y3RnKD6bk9hQa-C4agxD2KGXzA1Pylb65Y8gdAnKucfIL-bY9KR7XhNbp-pW0-1Q&ved=2ahUKEwjixr-k5dmXAxUIk2oFHZYrDTQQ8NMDegQIHxAW
+        - navigation
+    - contentinfo [ref=f15e696]:
+      - heading "Vínculos a pie de página" [level=1] [ref=f15e697]
+      - generic [ref=f15e701]:
+        - generic [ref=f15e705]:
+          - button "Cuba - Según tu actividad anterior" [ref=f15e707] [cursor=pointer]:
+            - generic [ref=f15e708]: Cuba
+            - generic [ref=f15e710]:
+              - text: "-"
+              - generic [ref=f15e711]: Según tu actividad anterior
+          - text: "-"
+          - button "Actualizar ubicación" [ref=f15e713] [cursor=pointer]
+        - generic [ref=f15e716]:
+          - link "Ayuda" [ref=f15e717] [cursor=pointer]:
+            - /url: https://support.google.com/websearch/?p=ws_results_help&hl=es-US&fg=1
+          - button "Enviar comentarios" [ref=f15e719] [cursor=pointer]
+          - link "Privacidad" [ref=f15e721] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=es-US&fg=1
+          - link "Condiciones" [ref=f15e722] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=es-US&fg=1

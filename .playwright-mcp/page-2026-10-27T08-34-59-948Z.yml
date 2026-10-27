@@ -1,0 +1,244 @@
+- generic [active] [ref=f5e1]:
+  - generic:
+    - generic:
+      - link "Ir al contenido principal" [ref=f5e2] [cursor=pointer]
+      - link "Ayuda sobre la accesibilidad" [ref=f5e3] [cursor=pointer]:
+        - /url: https://support.google.com/websearch/answer/181196?hl=es-US
+  - generic [ref=f5e8]:
+    - search [ref=f5e9]:
+      - generic [ref=f5e11]:
+        - link "Ir a la página principal de Google" [ref=f5e13] [cursor=pointer]:
+          - /url: https://www.google.com/webhp?hl=es&sa=X&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0QPHoECAYQBA
+        - generic [ref=f5e22]:
+          - combobox "Buscar" [ref=f5e24]: "\"Tienda Ramiro\" Cuba \"Tienda Ramiro\" Cuba"
+          - generic [ref=f5e25]:
+            - button "Borrar" [ref=f5e29] [cursor=pointer]
+            - generic [ref=f5e34]:
+              - button "Búsqueda por voz" [ref=f5e37] [cursor=pointer]
+              - button "Búsqueda por imagen" [ref=f5e42] [cursor=pointer]
+    - generic [ref=f5e45]:
+      - button "Configuración" [ref=f5e47] [cursor=pointer]
+      - button "Compartir" [ref=f5e52] [cursor=pointer]
+      - generic [ref=f5e58]:
+        - button "Aplicaciones de Google" [ref=f5e60] [cursor=pointer]
+        - link "Iniciar sesión" [ref=f5e65] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?hl=es&passive=true&continue=https://www.google.com/search%3Fq%3D%2522Tienda%2BRamiro%2522%2BCuba&ec=futura_srp_og_si_72236_p
+  - generic [ref=f5e67]:
+    - navigation [ref=f5e73]:
+      - generic [ref=f5e79]:
+        - list [ref=f5e80]:
+          - listitem [ref=f5e81]:
+            - link "Modo IA" [ref=f5e84] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22+Cuba&sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&udm=50&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEM-F9N1kPlVNjMn81QbLMSWjzaOlhZfI5JUKBJU19cdwpIJtmW8GuJ0mxGxzAqf2pDq7amrhc08b2ibX0ND2Q41hT1fL7thpQGySSuvbJtPA6FeGSA&vsint=&aep=1&ntc=1&cs=0&sa=X&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0Q2J8OegQIExAD
+          - listitem [ref=f5e88]:
+            - link "Todo" [disabled] [ref=f5e89]
+          - listitem [ref=f5e92]:
+            - link "Shopping" [ref=f5e93] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&udm=28&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEM-F9N1kPlVNjMn81QbLMSWjzaOlhZfI5JUKBJU19cdwpIJtmW8GuJ0mxGxzAqf2pDq7amrhc08b2ibX0ND2Q41hT1fL7thpQGySSuvbJtPA6FeGSA&q=%22Tienda+Ramiro%22+Cuba&ved=1t:220175&ictx=111
+          - listitem [ref=f5e96]:
+            - link "Imágenes" [ref=f5e97] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&udm=2&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEM-F9N1kPlVNjMn81QbLMSWjzaOlhZfI5JUKBJU19cdwpIJtmW8GuJ0mxGxzAqf2pDq7amrhc08b2ibX0ND2Q41hT1fL7thpQGySSuvbJtPA6FeGSA&q=%22Tienda+Ramiro%22+Cuba&sa=X&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0QtKgLegQIGBAB
+          - listitem [ref=f5e100]:
+            - link "Noticias" [ref=f5e101] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&q=%22Tienda+Ramiro%22+Cuba&tbm=nws&source=lnms&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEM-F9N1kPlVNjMn81QbLMSWjzaOlhZfI5JUKBJU19cdwpIJtmW8GuJ0mxGxzAqf2pDq7amrhc08b2ibX0ND2Q41hT1fL7thpQGySSuvbJtPA6FeGSA&sa=X&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0Q0pQJegQIFhAB
+          - listitem [ref=f5e104]:
+            - link "Vídeos" [ref=f5e105] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&udm=vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEM-F9N1kPlVNjMn81QbLMSWjzaOlhZfI5JUKBJU19cdwpIJtmW8GuJ0mxGxzAqf2pDq7amrhc08b2ibX0ND2Q41hT1fL7thpQGySSuvbJtPA6FeGSA&q=%22Tienda+Ramiro%22+Cuba&sa=X&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0QtKgLegQIFxAB
+          - listitem [ref=f5e108]:
+            - link "Maps" [ref=f5e109] [cursor=pointer]:
+              - /url: https://maps.google.com/maps?sca_esv=06eb4749832549b6&output=search&q=%22Tienda+Ramiro%22+Cuba&source=lnms&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEM-F9N1kPlVNjMn81QbLMSWjzaOlhZfI5JUKBJU19cdwpIJtmW8GuJ0mxGxzAqf2pDq7amrhc08b2ibX0ND2Q41hT1fL7thpQGySSuvbJtPA6FeGSA&entry=mc&ved=1t:200715&ictx=111
+          - listitem [ref=f5e112]:
+            - button [ref=f5e113] [cursor=pointer]:
+              - generic "Más filtros" [ref=f5e114]: Más
+        - button "Herramientas" [ref=f5e121] [cursor=pointer]
+    - heading "Resultados de búsqueda" [level=1] [ref=f5e128]
+    - generic [ref=f5e133]:
+      - generic [ref=f5e150]:
+        - heading "Buscando Pensando un poco más" [level=2] [ref=f5e154]:
+          - generic [ref=f5e155]:
+            - generic [ref=f5e156]: Buscando
+            - generic [ref=f5e166]: Pensando un poco más
+        - progressbar "Generando" [ref=f5e169]
+      - main [ref=f5e220]:
+        - generic [ref=f5e224]:
+          - generic [ref=f5e227]:
+            - heading "Resultados web" [level=2] [ref=f5e228]
+            - generic [ref=f5e229]:
+              - generic [ref=f5e232]:
+                - link "Gracias a todos los comercios de La Cumbre que ... Facebook · Sergio Cepeda Más de 90 reacciones · hace 5 meses" [ref=f5e234] [cursor=pointer]:
+                  - /url: /goto?url=CAESzwEB6zswFW3lDgksaZt6N8mcA1h8WRO2UZudiY0LdKYIsV24gYm_6AhPrAnDYZ-AbPmLdFJVxDvo5Ml7kc6-QObwNnPZksy0D6_88u6BJRKgiAwHYV82yNx5EqAJa3iasSvRVX4g-4HA7KXqyXlWiNUBz2iBk46EojSD2B08D10iAiL8aA5NfOMDJYhydgTUlgCg5G5chvRG-qjPhzrpQr_8N6r7VQRo7LEFELMZfclxuVxRhMABSHTUjfM9ogl0yDWtadD7qKdDOFqzAp0_K3k
+                  - heading "Gracias a todos los comercios de La Cumbre que ..." [level=3] [ref=f5e235]
+                  - generic [ref=f5e241]:
+                    - generic [ref=f5e242]: Facebook · Sergio Cepeda
+                    - generic [ref=f5e244]: Más de 90 reacciones · hace 5 meses
+                - button "Acerca de este resultado" [ref=f5e250] [cursor=pointer]
+              - generic [ref=f5e257]:
+                - text: ...
+                - emphasis [ref=f5e258]: Tienda Ramiro
+                - text: ", Peñihuen y Tienda Juan y Juan fueron ornamentadas con elementos de distintas épocas utilizados en el funcionamiento del ..."
+          - generic [ref=f5e264]:
+            - generic [ref=f5e267]:
+              - link "Un amigo que no necesita presentación… Muchas gracias por ... Facebook · Maná Music Más de 70 reacciones · hace 4 años" [ref=f5e269] [cursor=pointer]:
+                - /url: /goto?url=CAES0QEB6zswFUNvyK3_hbqw3G2rsvqCGn1OzlkujPWDMLqqAaKnE6soiiO-LjPvoWos2ghGrq-2-FLYKeht-J2ULW_u3fnQQ2G2K9K_NRzgC3u9acoY1MPzJeQS4P07ly4Q4FbUzjZwY4j8NDprVwi5PlUm-1lUfE-tghHm5US4cGZ5nrI90wcRytQFfu9HrkeOPPH1bGIKbmvuuZM1c2L7Mrsmm4QvNYe1znqCwDtZTsk4W_Li5sg3FSKZ6l_WFn8_Ze4XavwhEjvAM2UJlqit0K8zpQ
+                - heading "Un amigo que no necesita presentación… Muchas gracias por ..." [level=3] [ref=f5e270]
+                - generic [ref=f5e276]:
+                  - generic [ref=f5e277]: Facebook · Maná Music
+                  - generic [ref=f5e279]: Más de 70 reacciones · hace 4 años
+              - button "Acerca de este resultado" [ref=f5e285] [cursor=pointer]
+            - generic [ref=f5e290]:
+              - link "Un amigo que no necesita presentación… Muchas gracias por ... de Maná Music en Facebook. Reproducir en Facebook. 1:31" [ref=f5e291] [cursor=pointer]:
+                - /url: /goto?url=CAES0QEB6zswFUNvyK3_hbqw3G2rsvqCGn1OzlkujPWDMLqqAaKnE6soiiO-LjPvoWos2ghGrq-2-FLYKeht-J2ULW_u3fnQQ2G2K9K_NRzgC3u9acoY1MPzJeQS4P07ly4Q4FbUzjZwY4j8NDprVwi5PlUm-1lUfE-tghHm5US4cGZ5nrI90wcRytQFfu9HrkeOPPH1bGIKbmvuuZM1c2L7Mrsmm4QvNYe1znqCwDtZTsk4W_Li5sg3FSKZ6l_WFn8_Ze4XavwhEjvAM2UJlqit0K8zpQ
+                - generic [ref=f5e292]: 1:31
+              - generic [ref=f5e304]: Creo que debo visitar tu tienda Ramiro hay muchas sorpresas por ahí. 4y. Andres Alan Garnica. Qué micrófono es ? 4y · 1 like. Andrés Gutiérrez ...
+          - generic [ref=f5e309]:
+            - generic [ref=f5e312]:
+              - link "Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S ... Facebook · Julissa's Más de 70 reacciones · hace 2 semanas" [ref=f5e314] [cursor=pointer]:
+                - /url: /goto?url=CAESywEB6zswFTx4vkEVqcbXLgriJjn0eMOpM5r7GrppVza3-jXmlQJmybJAhZmZM3G6a6s9jns403LbcqK4jsilB9-mhW9Zj433TJraeSYBAtgX5LGjAmFVYtOV4pXV3OI0J67gv5EgY1aRL-K8EYKErscf7BG6hJMVsaXSjNKnNNeuiyU1jPLc8V_pm9VaX8xf5JmMwDGPrAVcm9B7JFIqsmmXwnhkN2x5Oh5KOopvC7DzeJib_vJmcNtLy1kQk1n0M5eios3Fd_YKlO-K2g
+                - heading "Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S ..." [level=3] [ref=f5e315]
+                - generic [ref=f5e321]:
+                  - generic [ref=f5e322]: Facebook · Julissa's
+                  - generic [ref=f5e324]: Más de 70 reacciones · hace 2 semanas
+              - button "Acerca de este resultado" [ref=f5e330] [cursor=pointer]
+            - generic [ref=f5e337]:
+              - text: Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 Visita
+              - emphasis [ref=f5e338]: tienda Ramiro
+              - text: priale mz c lt 03 Pedidos 940924569.
+            - link [aria-hidden] [ref=f5e341] [cursor=pointer]:
+              - /url: /goto?url=CAESywEB6zswFSS4ZxibDEYzO0i2V09Yb_NUNU5t2DEqo1ESAOK6O2FTPjAHR6EdVazSNnc5vG6C6S88QFVcSdY8wc1exZfC38CbuQ-T8bfLWakQ_eKnQP_EQwEMMWTjfwA9PEQhFjJwVX4jiLTlLjVsfeoqspemB37GZbYYGWq59bH0w9_sls250P3jft6NnbtM6-drLP-0bxcteyef0OLEcVbewEVyYrXtw4DSM4lx0-rPSQPgA0-gVXq_EvSRgkZXWvaTeOkI8bvNoOJolg
+          - generic [ref=f5e347]:
+            - heading "Imágenes" [level=2] [ref=f5e351]
+            - generic [ref=f5e355]:
+              - generic [ref=f5e359] [cursor=pointer]:
+                - link "Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 ... Facebook" [ref=f5e360]:
+                  - /url: /goto?url=CAESywEB6zswFSS4ZxibDEYzO0i2V09Yb_NUNU5t2DEqo1ESAOK6O2FTPjAHR6EdVazSNnc5vG6C6S88QFVcSdY8wc1exZfC38CbuQ-T8bfLWakQ_eKnQP_EQwEMMWTjfwA9PEQhFjJwVX4jiLTlLjVsfeoqspemB37GZbYYGWq59bH0w9_sls250P3jft6NnbtM6-drLP-0bxcteyef0OLEcVbewEVyYrXtw4DSM4lx0-rPSQPgA0-gVXq_EvSRgkZXWvaTeOkI8bvNoOJolg
+                - button [ref=f5e362]:
+                  - img "Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 ..." [ref=f5e364]
+                - generic [ref=f5e366]:
+                  - generic [ref=f5e368]: Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 ...
+                  - generic [ref=f5e369]:
+                    - generic [ref=f5e371]: Facebook
+                    - button "Acerca de este resultado" [ref=f5e381]
+              - generic [ref=f5e389] [cursor=pointer]:
+                - link "Gracias a todos los comercios de La Cumbre que decoraron sus ... Facebook" [ref=f5e390]:
+                  - /url: /goto?url=CAESzwEB6zswFWKC5oY8Z-jpqUBiDU_8Ehzd9uujlocb3tfhtP8rAI6fFRoAry7vEcMT0M_Biq1dGTyjYopmZ_pYm7eehIVheNmGg7p_MdTh58VqYE_sciX_W_pcu_h_ytoaPMxuxLanrZmgh0hXPidOJyYQ_eXOPh6A6EbmWASMc3rRpkaiYDHLqn9eXTefOcpa6l3NuWA-mvTGEy7EWuLshewS_hRRzYYvOFQ8IoQlpRwaHwF4FLzsjhScPR3KKF672pb7Y7x8WlRV2VMUGwl3QfA
+                - button [ref=f5e392]:
+                  - img "Gracias a todos los comercios de La Cumbre que decoraron sus ..." [ref=f5e394]
+                - generic [ref=f5e396]:
+                  - generic [ref=f5e398]: Gracias a todos los comercios de La Cumbre que decoraron sus ...
+                  - generic [ref=f5e399]:
+                    - generic [ref=f5e401]: Facebook
+                    - button "Acerca de este resultado" [ref=f5e411]
+              - generic [ref=f5e419] [cursor=pointer]:
+                - link "Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 ... Facebook" [ref=f5e420]:
+                  - /url: /goto?url=CAESywEB6zswFSS4ZxibDEYzO0i2V09Yb_NUNU5t2DEqo1ESAOK6O2FTPjAHR6EdVazSNnc5vG6C6S88QFVcSdY8wc1exZfC38CbuQ-T8bfLWakQ_eKnQP_EQwEMMWTjfwA9PEQhFjJwVX4jiLTlLjVsfeoqspemB37GZbYYGWq59bH0w9_sls250P3jft6NnbtM6-drLP-0bxcteyef0OLEcVbewEVyYrXtw4DSM4lx0-rPSQPgA0-gVXq_EvSRgkZXWvaTeOkI8bvNoOJolg
+                - button [ref=f5e422]:
+                  - img "Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 ..." [ref=f5e424]
+                - generic [ref=f5e426]:
+                  - generic [ref=f5e428]: Nuevo ingreso Wall panel Medidas 17 cm x 2.90 M S/19.80 ...
+                  - generic [ref=f5e429]:
+                    - generic [ref=f5e431]: Facebook
+                    - button "Acerca de este resultado" [ref=f5e441]
+            - button "Mostrar más imágenes" [ref=f5e447] [cursor=pointer]:
+              - separator [aria-hidden] [ref=f5e448]
+          - generic [ref=f5e456]:
+            - heading "Resultados web" [level=2] [ref=f5e457]
+            - generic [ref=f5e458]:
+              - generic [ref=f5e461]:
+                - link "Distribuidores y Mayoristas en Abad | PDF Scribd https://es.scribd.com › document › AVANCE-1" [ref=f5e463] [cursor=pointer]:
+                  - /url: /goto?url=CAESbAHrOzAVDOI0wSPQNqanOezLwsQv8Tjoa8uhd43qjri0MmqGxmRlIdaGSkMnuypLecdNofydCk_qh7gKJ1Hb_XyPg39XhTntAIOLLwXmJiSvHAlokuboYo5oCD6nufzrQVFgCgsZDgSu-YyPsQ
+                  - heading "Distribuidores y Mayoristas en Abad | PDF" [level=3] [ref=f5e464]
+                  - generic [ref=f5e470]:
+                    - generic [ref=f5e471]: Scribd
+                    - generic [ref=f5e473]: https://es.scribd.com › document › AVANCE-1
+                - button "Acerca de este resultado" [ref=f5e479] [cursor=pointer]
+              - generic [ref=f5e486]:
+                - emphasis [ref=f5e487]: Tienda Ramiro Tienda Ramiro
+                - text: Mayorista Ramis Mayorista Ramis Inversiones RAMON Inversiones RAMON Distribuidora Ramón Distribuidora Ramón Tienda Raquel Tienda ...
+          - generic [ref=f5e491]:
+            - generic [ref=f5e494]:
+              - link "PADRON GRAL. Weebly http://visorproyectotabano.weebly.com › uploads" [ref=f5e496] [cursor=pointer]:
+                - /url: /goto?url=CAEShQEB6zswFdXQRobxdFCgC5z0nG1hXdv_ljioeSbfx7rKk3_LFFryv0M-JJo-7CS5-RFsXGIbKgIKinEk0ch5yQ_g7uMO_REjYX0GoNje6EoQOWDCY2C8NOaCX3DsSg8OsiV-N1-NW3hV4msZMZwGPyBlvd5evGghKUAd_7-xFM4iPpOBgfB_
+                - heading "PADRON GRAL." [level=3] [ref=f5e497]
+                - generic [ref=f5e506]:
+                  - generic [ref=f5e507]: Weebly
+                  - generic [ref=f5e509]: http://visorproyectotabano.weebly.com › uploads
+              - generic [ref=f5e511]: PDF
+              - button "Acerca de este resultado" [ref=f5e516] [cursor=pointer]
+            - generic [ref=f5e521]:
+              - generic [ref=f5e523]:
+                - text: ...
+                - emphasis [ref=f5e524]: TIENDA RAMIRO
+                - text: "EN TRAMITE. AZTECA #197. H.F.F.C.C. 2da. SECCION . CERRAJERIA. NO TIENE. 1072. ZAPATA GALVAN. RAMIRO. EN TRAMITE. AV. DE LOS CACTUS. #1830."
+              - generic [ref=f5e525]: 462 páginas
+          - generic [ref=f5e529]:
+            - generic [ref=f5e532]:
+              - link "Gaceta de Madrid num 264 de 1880. Boletín Ordinario Boletín Oficial del Estado https://www.boe.es › gazeta › dias › pdfs › GMD..." [ref=f5e534] [cursor=pointer]:
+                - /url: /goto?url=CAESegHrOzAV72hppe4Zo8RfSYlqJ9_eA-d7ljHUjrcYIUpXGR4ZGOVEv5aQ9gG3WACXqsmkLaqFNX6HzAnzzEe9bwWAKJrxnY_Eoko8Vb9ZmWcDIH7F49CwTE2Uzoks0tx_K_dmhU8DwbdxIiGiN_5oSL13K5mmPt1AwJuf
+                - heading "Gaceta de Madrid num 264 de 1880. Boletín Ordinario" [level=3] [ref=f5e535]
+                - generic [ref=f5e541]:
+                  - generic [ref=f5e542]: Boletín Oficial del Estado
+                  - generic [ref=f5e544]: https://www.boe.es › gazeta › dias › pdfs › GMD...
+              - generic [ref=f5e546]: PDF
+              - button "Acerca de este resultado" [ref=f5e551] [cursor=pointer]
+            - generic [ref=f5e556]:
+              - generic [ref=f5e558]:
+                - text: núméro 73,
+                - emphasis [ref=f5e559]: tienda; Ramiro
+                - text: Vallarino, Almendro, 31; José Bretón .Andrés, Travesía de la Ballesta, 7; José Roseg Martinez, Bar quillo, 41; Agustín García ...
+              - generic [ref=f5e560]: 14 páginas
+          - generic [ref=f5e564]:
+            - generic [ref=f5e567]:
+              - link "Cinco Saltos 100 Años cincosaltos.info https://www.cincosaltos.info › pdf › 100_anos_d..." [ref=f5e569] [cursor=pointer]:
+                - /url: /goto?url=CAESeAHrOzAVxJwF24iECpfKZZ1lLIkuhpyNnBKvsqs4tPolhTNaM2vmbOq9gFpohHHzyHtiHZjrOxlenK5s6BWWJx0IuHWocBG42lQ1RpfedBqL14f0l9kF62YNv964MBKxSIjMYUc4Aob07qEDHc0iTeQM95ncDWW-ZQ
+                - heading "Cinco Saltos 100 Años" [level=3] [ref=f5e570]
+                - generic [ref=f5e576]:
+                  - generic [ref=f5e577]: cincosaltos.info
+                  - generic [ref=f5e579]: https://www.cincosaltos.info › pdf › 100_anos_d...
+              - generic [ref=f5e581]: PDF
+              - button "Acerca de este resultado" [ref=f5e586] [cursor=pointer]
+            - generic [ref=f5e591]:
+              - generic [ref=f5e593]:
+                - emphasis [ref=f5e594]: Tienda Ramiro
+                - text: . Fue en este lugar, en una charla de amigos, que se gesta la creación del Club. Cinco Saltos. En la antigua Avenida del Trabajador, a pocos ...
+              - generic [ref=f5e595]: 245 páginas
+          - generic [ref=f5e599]:
+            - generic [ref=f5e602]:
+              - link "Brigadas de Emergencias en Cochabamba Studocu https://www.studocu.com › ... › energias renovables" [ref=f5e604] [cursor=pointer]:
+                - /url: /goto?url=CAES3AEB6zswFVCCaToFH9e0Q1f0jaKJJQY9LJBViUUVt3mndZgN4f9MJPtsjrqTrHvyPv5VUyOdQkixqL_qvqEvL_XXIyxINl_htGF-IG5lHOHiqIC8Rg-4Mz1yP3Ot5wBZfrWla6o7BfNkOmkYsnk1Ayk__hml9nw9bsfHQYwiQvDM4QnvAJlmBZ4yWuUQGh4bNn6GhR-wabvXa9bP87jOqKVByNPppoluCK-rsC3GlfhR-ColVYp3Nf0vh7F64eXgQGizoKt5zsPZhRXT0zQxON6tBzGT5F1fl0Y8X6u2
+                - heading "Brigadas de Emergencias en Cochabamba" [level=3] [ref=f5e605]
+                - generic [ref=f5e611]:
+                  - generic [ref=f5e612]: Studocu
+                  - generic [ref=f5e614]: https://www.studocu.com › ... › energias renovables
+              - button "Acerca de este resultado" [ref=f5e620] [cursor=pointer]
+            - generic [ref=f5e627]:
+              - emphasis [ref=f5e628]: Tienda Ramiro
+              - text: Percibal Párraga Medrano 70610110. 2 Brigadista Combate Incendio/ Vocero Tienda Adderly Beymar Contreras Apaza 61309862. 3 Brigadista Evacuación ...
+        - navigation [ref=f5e631]:
+          - heading "Navegación de páginas" [level=1] [ref=f5e632]
+          - text: "1"
+          - link "Page 2" [ref=f5e635] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+Cuba&sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&ei=L2LgaqTbGM-Hp84P9LnU6Qo&start=10&sa=N&sstk=AS6-VmKS854jbbfBDhNSzJQo3vAo1hOEq4A1tQCNyW0HMDtdOIHsahILkdBKjN1HjLkcaTnCXtJ5cfUIH3b4a9vahw6BefQA3KUzTA&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0Q8tMDegQILhAE
+            - text: "2"
+          - heading [level=2] [ref=f5e637]:
+            - link "Siguiente" [ref=f5e638] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22+Cuba&sca_esv=06eb4749832549b6&sxsrf=APpeQnvMJyodEJhiNBh8jCHPq1hBBW6DKw:1793090095411&ei=L2LgaqTbGM-Hp84P9LnU6Qo&start=10&sa=N&sstk=AS6-VmKS854jbbfBDhNSzJQo3vAo1hOEq4A1tQCNyW0HMDtdOIHsahILkdBKjN1HjLkcaTnCXtJ5cfUIH3b4a9vahw6BefQA3KUzTA&ved=2ahUKEwjkrr-R5dmXAxXPw8kDHfQcNa0Q8NMDegQILhAG
+        - navigation
+    - contentinfo [ref=f5e641]:
+      - heading "Vínculos a pie de página" [level=1] [ref=f5e642]
+      - generic [ref=f5e646]:
+        - generic [ref=f5e650]:
+          - button "Florida - A través de tu dirección IP" [ref=f5e652] [cursor=pointer]:
+            - generic [ref=f5e653]: Florida
+            - generic [ref=f5e655]:
+              - text: "-"
+              - generic [ref=f5e656]: A través de tu dirección IP
+          - text: "-"
+          - button "Actualizar ubicación" [ref=f5e658] [cursor=pointer]
+        - generic [ref=f5e661]:
+          - link "Ayuda" [ref=f5e662] [cursor=pointer]:
+            - /url: https://support.google.com/websearch/?p=ws_results_help&hl=es-US&fg=1
+          - button "Enviar comentarios" [ref=f5e664] [cursor=pointer]
+          - link "Privacidad" [ref=f5e666] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=es-US&fg=1
+          - link "Condiciones" [ref=f5e667] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=es-US&fg=1

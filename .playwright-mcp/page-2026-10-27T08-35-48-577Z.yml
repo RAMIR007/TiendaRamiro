@@ -1,0 +1,282 @@
+- generic [active] [ref=f18e1]:
+  - generic:
+    - generic:
+      - link "Ir al contenido principal" [ref=f18e2] [cursor=pointer]
+      - link "Ayuda sobre la accesibilidad" [ref=f18e3] [cursor=pointer]:
+        - /url: https://support.google.com/websearch/answer/181196?hl=es-US
+  - generic [ref=f18e8]:
+    - search [ref=f18e9]:
+      - generic [ref=f18e11]:
+        - link "Ir a la página principal de Google" [ref=f18e13] [cursor=pointer]:
+          - /url: https://www.google.com/webhp?hl=es&sa=X&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8QPHoECAYQBA
+        - generic [ref=f18e22]:
+          - combobox "Buscar" [ref=f18e24]: "\"Tienda Ramiro\" Instagram \"Tienda Ramiro\" Instagram"
+          - generic [ref=f18e25]:
+            - button "Borrar" [ref=f18e29] [cursor=pointer]
+            - generic [ref=f18e34]:
+              - button "Búsqueda por voz" [ref=f18e37] [cursor=pointer]
+              - button "Búsqueda por imagen" [ref=f18e42] [cursor=pointer]
+    - generic [ref=f18e45]:
+      - button "Configuración" [ref=f18e47] [cursor=pointer]
+      - button "Compartir" [ref=f18e52] [cursor=pointer]
+      - generic [ref=f18e58]:
+        - button "Aplicaciones de Google" [ref=f18e60] [cursor=pointer]
+        - link "Iniciar sesión" [ref=f18e65] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?hl=es&passive=true&continue=https://www.google.com/search%3Fq%3D%2522Tienda%2BRamiro%2522%2BInstagram&ec=futura_srp_og_si_72236_p
+  - generic [ref=f18e67]:
+    - navigation [ref=f18e73]:
+      - generic [ref=f18e79]:
+        - list [ref=f18e80]:
+          - listitem [ref=f18e81]:
+            - link "Modo IA" [ref=f18e84] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22+Instagram&sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&udm=50&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEK4CaZJDFGJ6BfQmBPqCxP1A0lHhvKsYKH-wKSmdEmy-VhDaE886t17206VZ03saSvNw8oxcFmQTOBkfL7x4H5kgfoIrcaBr8DK3l4eYrRlUx-fFyg&vsint=&aep=1&ntc=1&cs=0&sa=X&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Q2J8OegQIExAD
+          - listitem [ref=f18e88]:
+            - link "Todo" [disabled] [ref=f18e89]
+          - listitem [ref=f18e92]:
+            - link "Shopping" [ref=f18e93] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&udm=28&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEK4CaZJDFGJ6BfQmBPqCxP1A0lHhvKsYKH-wKSmdEmy-VhDaE886t17206VZ03saSvNw8oxcFmQTOBkfL7x4H5kgfoIrcaBr8DK3l4eYrRlUx-fFyg&q=%22Tienda+Ramiro%22+Instagram&ved=1t:220175&ictx=111
+          - listitem [ref=f18e96]:
+            - link "Imágenes" [ref=f18e97] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&udm=2&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEK4CaZJDFGJ6BfQmBPqCxP1A0lHhvKsYKH-wKSmdEmy-VhDaE886t17206VZ03saSvNw8oxcFmQTOBkfL7x4H5kgfoIrcaBr8DK3l4eYrRlUx-fFyg&q=%22Tienda+Ramiro%22+Instagram&sa=X&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8QtKgLegQIFhAB
+          - listitem [ref=f18e100]:
+            - link "Noticias" [ref=f18e101] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&q=%22Tienda+Ramiro%22+Instagram&tbm=nws&source=lnms&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEK4CaZJDFGJ6BfQmBPqCxP1A0lHhvKsYKH-wKSmdEmy-VhDaE886t17206VZ03saSvNw8oxcFmQTOBkfL7x4H5kgfoIrcaBr8DK3l4eYrRlUx-fFyg&sa=X&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Q0pQJegQIGRAB
+          - listitem [ref=f18e104]:
+            - link "Vídeos" [ref=f18e105] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&udm=vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEK4CaZJDFGJ6BfQmBPqCxP1A0lHhvKsYKH-wKSmdEmy-VhDaE886t17206VZ03saSvNw8oxcFmQTOBkfL7x4H5kgfoIrcaBr8DK3l4eYrRlUx-fFyg&q=%22Tienda+Ramiro%22+Instagram&sa=X&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8QtKgLegQIGBAB
+          - listitem [ref=f18e108]:
+            - link "Vídeos cortos" [ref=f18e109] [cursor=pointer]:
+              - /url: /search?sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&udm=short_vids&fbs=ABfTbFUDadgeu2mn4mYJ8iEZ1GUDIYSbg_8HIOW5OUNaSh5T1VzoHI0KTTsB4VNZ5gMkFYgmZOObsdtrMH7mA-7mUYHPMwZMkzb2x61pg9EP1xzGEK4CaZJDFGJ6BfQmBPqCxP1A0lHhvKsYKH-wKSmdEmy-VhDaE886t17206VZ03saSvNw8oxcFmQTOBkfL7x4H5kgfoIrcaBr8DK3l4eYrRlUx-fFyg&q=%22Tienda+Ramiro%22+Instagram&sa=X&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Qs6gLegQIFxAB
+          - listitem [ref=f18e112]:
+            - button [ref=f18e113] [cursor=pointer]:
+              - generic "Más filtros" [ref=f18e114]: Más
+        - button "Herramientas" [ref=f18e121] [cursor=pointer]
+    - heading "Resultados de búsqueda" [level=1] [ref=f18e128]
+    - generic [ref=f18e133]:
+      - generic [ref=f18e150]:
+        - generic [ref=f18e168]:
+          - heading [level=2] [ref=f18e174]:
+            - strong [ref=f18e175]: Visión general creada por IA
+          - generic [ref=f18e180]:
+            - generic [ref=f18e181]:
+              - text: El perfil de Instagram de
+              - strong [ref=f18e182]: Tienda Ramiro
+              - text: es
+              - mark [ref=f18e183]:
+                - link "@ramirotienda_" [ref=f18e187] [cursor=pointer]:
+                  - /url: /goto?url=CAESYwHrOzAVehLP6-qnY2dZH_Ytav9BzXIfEIW9AZVaGN5Sr3sKpXX951vACXSZNmb6Wwds6FtBEIfot33N_KnvsB78rF74Kg6lbT7u85EF2wRMQmfU1wJxsP_t5hOrJBvwXve8VA
+              - text: ", una tienda en línea de básicos cómodos y modernos."
+              - generic [ref=f18e191]:
+                - link "Instagram · ramirotienda_" [ref=f18e192] [cursor=pointer]:
+                  - /url: /goto?url=CAESYwHrOzAVehLP6-qnY2dZH_Ytav9BzXIfEIW9AZVaGN5Sr3sKpXX951vACXSZNmb6Wwds6FtBEIfot33N_KnvsB78rF74Kg6lbT7u85EF2wRMQmfU1wJxsP_t5hOrJBvwXve8VA
+                - button "Instagram · ramirotienda_ - Resultados relacionados" [ref=f18e193] [cursor=pointer]:
+                  - generic [ref=f18e195]:
+                    - generic [ref=f18e196]: Instagram
+                    - generic [ref=f18e197]: ·ramirotienda_
+            - list [ref=f18e202]:
+              - listitem [ref=f18e203]:
+                - generic [ref=f18e204]:
+                  - strong [ref=f18e205]: "Nombre de usuario:"
+                  - link "@ramirotienda_" [ref=f18e209] [cursor=pointer]:
+                    - /url: /goto?url=CAESYwHrOzAVehLP6-qnY2dZH_Ytav9BzXIfEIW9AZVaGN5Sr3sKpXX951vACXSZNmb6Wwds6FtBEIfot33N_KnvsB78rF74Kg6lbT7u85EF2wRMQmfU1wJxsP_t5hOrJBvwXve8VA
+              - listitem [ref=f18e211]:
+                - generic [ref=f18e212]:
+                  - strong [ref=f18e213]: "Tipo de tienda:"
+                  - text: De local físico a tienda online
+              - listitem [ref=f18e215]:
+                - generic [ref=f18e216]:
+                  - strong [ref=f18e217]: "Productos:"
+                  - text: Básicos cómodos y modernos (Unisex)
+              - listitem [ref=f18e219]:
+                - generic [ref=f18e220]:
+                  - strong [ref=f18e221]: "Modalidad:"
+                  - text: Pedidos y envíos sin cargo
+              - listitem [ref=f18e223]:
+                - generic [ref=f18e224]:
+                  - strong [ref=f18e225]: "Contacto:"
+                  - text: Directamente por mensaje directo (DM) en Instagram
+                - generic [ref=f18e229]:
+                  - link "Instagram · ramirotienda_" [ref=f18e230] [cursor=pointer]:
+                    - /url: /goto?url=CAESYwHrOzAVehLP6-qnY2dZH_Ytav9BzXIfEIW9AZVaGN5Sr3sKpXX951vACXSZNmb6Wwds6FtBEIfot33N_KnvsB78rF74Kg6lbT7u85EF2wRMQmfU1wJxsP_t5hOrJBvwXve8VA
+                  - button "Instagram · ramirotienda_ - Resultados relacionados" [ref=f18e231] [cursor=pointer]:
+                    - generic [ref=f18e233]:
+                      - generic [ref=f18e234]: Instagram
+                      - generic [ref=f18e235]: ·ramirotienda_
+            - generic [ref=f18e240]: ¿Estás buscando información sobre un producto en específico o necesitas ayuda para contactar con ellos?
+        - button "Mostrar más Visión general creada por IA" [ref=f18e254]:
+          - generic [ref=f18e255] [cursor=pointer]: Mostrar más
+      - main [ref=f18e262]:
+        - generic [ref=f18e266]:
+          - generic [ref=f18e269]:
+            - heading "Web results" [level=2] [ref=f18e270]
+            - generic [ref=f18e271]:
+              - generic [ref=f18e274]:
+                - link "Tienda Ramiro Instagram https://www.instagram.com › tie..." [ref=f18e276] [cursor=pointer]:
+                  - /url: /goto?url=CAEShQEB6zswFQUPHEllphG1pjMM_0RDqlY-Z4YXdzp7Tl5yLVpPOx5bFoVlnKHn6-rJo3KVINn_YNm0yVB9UiCLVgcXetssbw5E47U_bG3Nmm9Xj693Hp_UUgz5mHCT6e26_fAHrGxBjmmGA4dXIpIYdMv24jrzbLzgp-w0e2UsPljf8Ia3jaIq
+                  - heading "Tienda Ramiro" [level=3] [ref=f18e277]
+                  - generic [ref=f18e283]:
+                    - generic [ref=f18e284]: Instagram
+                    - generic [ref=f18e286]: https://www.instagram.com › tie...
+                - generic [ref=f18e288]:
+                  - generic [ref=f18e289]: ·
+                  - link "Traducir esta página" [ref=f18e290] [cursor=pointer]:
+                    - /url: /goto?url=CAESzwEB6zswFR0oNNFM9RPnPvyp8z9_LroAw1ywsgG21oLlgwiPYlE4HHhszpFn1FVIfhbY2aiyM2vrjhbTz_DVXfVGnEogcggA6s0ivqzRapXvMlFjGDfXoq08c3Q7aq0XARUweuFJGmTMMj4Ned0yp3eXiHrvvF8oC8uC-soKPW6WQRhnaMJ3yw7ePebSn8UJ7n0VIE_oURV6iecPQZCbNv63aPBEsK3NV3FqvZ53LdBcuqs9Sj4X2EO6ltP9xgk35E_Dw-BMb5ZNfVWeYUwqs5U
+                - button "Acerca de este resultado" [ref=f18e295] [cursor=pointer]
+              - generic [ref=f18e302]:
+                - emphasis [ref=f18e303]: Tienda Ramiro
+                - text: . Clothing store. Closed until 10:00 AM. Top · Recent · In the area · Sign up •
+                - emphasis [ref=f18e304]: Instagram
+                - text: .
+          - generic [ref=f18e308]:
+            - generic [ref=f18e311]:
+              - link "Tienda Ramiro (@ramirotienda_) Instagram · ramirotienda_ Más de 2.2 K seguidores" [ref=f18e313] [cursor=pointer]:
+                - /url: /goto?url=CAESYwHrOzAV9WY2uDNipdxm5mbFgkFI7K6Q1aZhw6VYO1RigiSCqyqX4X9W3PI91avfKri7tlRXQJqyq3L78Vq_sKxmtW4z8rhj2v2f50PmwCMvjCzWKtljvNY3zznFmSgdY6LDJw
+                - heading "Tienda Ramiro (@ramirotienda_)" [level=3] [ref=f18e314]
+                - generic [ref=f18e320]:
+                  - generic [ref=f18e321]: Instagram · ramirotienda_
+                  - generic [ref=f18e323]: Más de 2.2 K seguidores
+              - button "Acerca de este resultado" [ref=f18e329] [cursor=pointer]
+            - generic [ref=f18e336]:
+              - emphasis [ref=f18e337]: Tienda Ramiro
+              - text: De local físico a tienda online Básicos cómodos & modernos ✨ Unisex Traemos por pedido | Envíos sin cargo Escribínos por DM.
+          - generic [ref=f18e343]:
+            - generic [ref=f18e346]:
+              - link "Leather | Zapatos | Tenis | Cuero | Un hombre con estilo se ... Instagram · capheroleather Más de 50 \"me gusta\" · hace 6 meses" [ref=f18e348] [cursor=pointer]:
+                - /url: /goto?url=CAESZgHrOzAV6lalEyPdiNqc3TmUOyLtgHulcC2EjlziOzZBMFolhSoyGcTCFmvmHhEBke-TjW3Zskw0iMQsT3IOY6BjpzOWw0oBEQe-i7BUsb-y2irDArEsRqlORJhS53O7GMxHIVrS_w
+                - heading "Leather | Zapatos | Tenis | Cuero | Un hombre con estilo se ..." [level=3] [ref=f18e349]
+                - generic [ref=f18e355]:
+                  - generic [ref=f18e356]: Instagram · capheroleather
+                  - generic [ref=f18e358]: Más de 50 "me gusta" · hace 6 meses
+              - button "Acerca de este resultado" [ref=f18e364] [cursor=pointer]
+            - generic [ref=f18e369]:
+              - link "Leather | Zapatos | Tenis | Cuero | Un hombre con estilo se ... de Caphero | Calzado | Leather | Zapatos | Tenis | Cuero en Instagram. Reproducir en Instagram. 0:26" [ref=f18e370] [cursor=pointer]:
+                - /url: /goto?url=CAESZgHrOzAV6lalEyPdiNqc3TmUOyLtgHulcC2EjlziOzZBMFolhSoyGcTCFmvmHhEBke-TjW3Zskw0iMQsT3IOY6BjpzOWw0oBEQe-i7BUsb-y2irDArEsRqlORJhS53O7GMxHIVrS_w
+                - generic [ref=f18e371]: 0:26
+              - generic [ref=f18e380]: ... tienda. Ramiro Angeli, tu estilo que empieza con cada paso. English ... © 2026 Instagram from Meta.
+          - generic [ref=f18e385]:
+            - generic [ref=f18e388]:
+              - link "Flip Toxqui (@flip_toxqui) Instagram https://www.instagram.com › flip_toxqui" [ref=f18e390] [cursor=pointer]:
+                - /url: /goto?url=CAESYQHrOzAVtNkr0ZRSKk-kcTp3QHdheNcT01w84ax-Ymr7IVVhF0NeYo6jDX_UCbDSGXeszHjY_RQPjOXk2yDn3Hk6-gXQQqo_zmBCVXS_asVTbqt-oea38XDc9Rle5uKCMZQ
+                - heading "Flip Toxqui (@flip_toxqui)" [level=3] [ref=f18e391]
+                - generic [ref=f18e397]:
+                  - generic [ref=f18e398]: Instagram
+                  - generic [ref=f18e400]: https://www.instagram.com › flip_toxqui
+              - button "Acerca de este resultado" [ref=f18e406] [cursor=pointer]
+            - generic [ref=f18e413]:
+              - text: Cada que salgo a la
+              - emphasis [ref=f18e414]: "tienda #ramiro"
+              - text: "#tragedias #mrdrama ..."
+          - generic [ref=f18e418]:
+            - generic [ref=f18e421]:
+              - link "«Una tienda sólo sobrevive si tiene alma y escaparates ... El Diario Montañés https://www.eldiariomontanes.es › Cantabria" [ref=f18e423] [cursor=pointer]:
+                - /url: /goto?url=CAESkwEB6zswFQjQyXndHMYOHnkoIx4mUGNhfISYff6AfCFqY24uZ-PR_D0uHahPI3FDeBBmiqCtmAD_UGxOE5kO9Fjk7iYoMYAOMhpeq7zBJY3uEUnWnM9JWt75wLOCke3NfJmJjUuTS6HaRqj2Xl3qopaTch7IObeOGoWyK0_O5t8nAmvWZ9HCws0_SiSkmdhT3KoWy38
+                - heading "«Una tienda sólo sobrevive si tiene alma y escaparates ..." [level=3] [ref=f18e424]
+                - generic [ref=f18e430]:
+                  - generic [ref=f18e431]: El Diario Montañés
+                  - generic [ref=f18e433]: https://www.eldiariomontanes.es › Cantabria
+              - button "Acerca de este resultado" [ref=f18e439] [cursor=pointer]
+            - generic [ref=f18e445]:
+              - generic [ref=f18e446]: 9 dic 2017 —
+              - generic [ref=f18e447]:
+                - text: No fue hasta el año 93 cuando bajé al centro con la
+                - emphasis [ref=f18e448]: tienda Ramiro
+                - text: Díaz, en Juan de Herrera, esquina con el Ayuntamiento. La tienda tuvo un ...
+          - generic [ref=f18e452]:
+            - generic [ref=f18e455]:
+              - link "Que felicidad 😍 contigo more❤️ Instagram · hinc3_49 5 me gusta · hace 4 semanas" [ref=f18e457] [cursor=pointer]:
+                - /url: /goto?url=CAESYwHrOzAVGYLjn8rGbfuQZ2AsYlbkNpyFy-vlH-d5ocAiG64qzdKOwYyrV1thi3jih5Tc3gQZHdzKfr6WUZjJarue_ccb4RZy0ycwc_8QLlsCX5pKGCdilrNaS0Mq_4zay77Tag
+                - heading "Que felicidad 😍 contigo more❤️" [level=3] [ref=f18e458]
+                - generic [ref=f18e464]:
+                  - generic [ref=f18e465]: Instagram · hinc3_49
+                  - generic [ref=f18e467]: 5 me gusta · hace 4 semanas
+              - button "Acerca de este resultado" [ref=f18e473] [cursor=pointer]
+            - generic [ref=f18e480]:
+              - text: 28 X FIESTAS 1 EVENTOS 1
+              - emphasis [ref=f18e481]: TIENDA Ramiro
+              - text: JEFE Jadasha_PEF --Jugador- MU . Jadasha_PEF 33 X FIESTAS 1 EVENTOS 1 TIENDA V . 36 X FIESTAS 1 ...
+          - generic [ref=f18e487]:
+            - generic [ref=f18e490]:
+              - link "Entrevista al amigo y gran piloto de Enduro.- Alberto el Gringo ... Instagram · todosportoficial 8 me gusta · hace 1 año" [ref=f18e492] [cursor=pointer]:
+                - /url: /goto?url=CAESZgHrOzAV3XNLoxFw5jGrdcK0RZpgyvBKDCh8ccljPMDex0gRiEliH1vRzYfl8I-aJasa_EKijU_k2pHNdG2YAmi6VCLYalyiRaM4NEqhmt0-Onc1-MVLluT4yFIsy7e8drWZUETdSg
+                - heading "Entrevista al amigo y gran piloto de Enduro.- Alberto el Gringo ..." [level=3] [ref=f18e493]
+                - generic [ref=f18e499]:
+                  - generic [ref=f18e500]: Instagram · todosportoficial
+                  - generic [ref=f18e502]: 8 me gusta · hace 1 año
+              - button "Acerca de este resultado" [ref=f18e508] [cursor=pointer]
+            - generic [ref=f18e513]:
+              - link "Entrevista al amigo y gran piloto de Enduro.- Alberto el Gringo ... de Todo Sport Oficial en Instagram. Reproducir en Instagram. 1:48" [ref=f18e514] [cursor=pointer]:
+                - /url: /goto?url=CAESZgHrOzAV3XNLoxFw5jGrdcK0RZpgyvBKDCh8ccljPMDex0gRiEliH1vRzYfl8I-aJasa_EKijU_k2pHNdG2YAmi6VCLYalyiRaM4NEqhmt0-Onc1-MVLluT4yFIsy7e8drWZUETdSg
+                - generic [ref=f18e515]: 1:48
+              - generic [ref=f18e527]: "Te invitamos a seguirnos en nuestra red de Instagram: @todosportoficial ... TUCUMÁN ALDERETES DANDO PASOS tienda -RAMIRO ALMIRON CONDUCTOR GANÓ ..."
+          - generic [ref=f18e532]:
+            - generic [ref=f18e535]:
+              - link "NUEVO MATERIAL ESCOLAR YA DISPONIBLE EN TIENDA ... Instagram https://www.instagram.com › CRogQQHDIYq" [ref=f18e537] [cursor=pointer]:
+                - /url: /goto?url=CAESYwHrOzAVZUVVIctS5qmeUuEJIAqw7A7eL5SJNTctN1WK0piEii6c2ceS8ttdeX0sOHg56PGRJXZ_Vdd5Kedz-6WlD6yJe30duSi0U0pMK_3iQKDtyd3Z6cDoHKXiE60M32TYhw
+                - heading "NUEVO MATERIAL ESCOLAR YA DISPONIBLE EN TIENDA ..." [level=3] [ref=f18e538]
+                - generic [ref=f18e544]:
+                  - generic [ref=f18e545]: Instagram
+                  - generic [ref=f18e547]: https://www.instagram.com › CRogQQHDIYq
+              - button "Acerca de este resultado" [ref=f18e553] [cursor=pointer]
+            - generic [ref=f18e560]:
+              - text: "21 likes, 0 comments - rfh_papeleria_isjosa on July 22, 2021: \"NUEVO MATERIAL ESCOLAR YA DISPONIBLE EN"
+              - emphasis [ref=f18e561]: TIENDA Ramiro
+              - text: Fernández e Hijos Calle Valencia 21 ...
+          - generic [ref=f18e566]:
+            - heading "Más preguntas" [level=2] [ref=f18e568]
+            - generic [ref=f18e569]:
+              - button "¿Cómo entrar a la tienda de Instagram?" [ref=f18e575] [cursor=pointer]
+              - button "¿Cuáles son las mejores tiendas de Instagram?" [ref=f18e589] [cursor=pointer]
+              - button "¿Cómo puedo comprar en Instagram?" [ref=f18e603] [cursor=pointer]
+              - button "¿Cómo puedo vender ropa en Instagram?" [ref=f18e617] [cursor=pointer]
+          - generic [ref=f18e627]:
+            - heading "Resultados web" [level=2] [ref=f18e628]
+            - generic [ref=f18e629]:
+              - generic [ref=f18e632]:
+                - link "Una empresa de ropa usa la bandera confederada como ... BuzzFeed https://www.buzzfeed.com › juliegerstein › una-empres..." [ref=f18e634] [cursor=pointer]:
+                  - /url: /goto?url=CAESlAEB6zswFdk47AHZeRrm0fNdG7-jqBFQkWs9xX3E5z3NGk72_19LV4mQjKwWYRgXKAmsZLSv4EcSy7vMH6hsV0WBE3INhhzI9k_jfxdIY9hm7wdrns9cqKDdulnBxuFRRFbDY6nvi7xDLcWDHiqY8ep-cx6f8HOJ-7nn8bMx2KSFjobSaK9xSKLi8XdUnw6VHpOlbP7X
+                  - heading "Una empresa de ropa usa la bandera confederada como ..." [level=3] [ref=f18e635]
+                  - generic [ref=f18e641]:
+                    - generic [ref=f18e642]: BuzzFeed
+                    - generic [ref=f18e644]: https://www.buzzfeed.com › juliegerstein › una-empres...
+                - button "Acerca de este resultado" [ref=f18e650] [cursor=pointer]
+              - generic [ref=f18e656]:
+                - generic [ref=f18e657]: 11 ago 2015 —
+                - generic [ref=f18e658]:
+                  - text: El fundador de la
+                  - emphasis [ref=f18e659]: tienda Ramiro
+                  - text: Fita le dijo a Al Jazeera America que descubrió la bandera en Baltimore durante un tiempo que pasó en la marina ...
+        - navigation [ref=f18e662]:
+          - heading "Navegación de páginas" [level=1] [ref=f18e663]
+          - text: "1"
+          - link "Page 2" [ref=f18e666] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+Instagram&sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&ei=YWLgaqyGKI2vqtsPvuTH-Ak&start=10&sa=N&sstk=AS6-VmJyj0Ky-IXvkq7CkYFuCeYlNGqIsXrHtpdiPB0OgknAlmA5xsosedN6C6q8cVRh7sKN76cN0qnU6UrclbPMK4NFkTqJcj2NXg&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Q8tMDegQIKhAE
+            - text: "2"
+          - link "Page 3" [ref=f18e668] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+Instagram&sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&ei=YWLgaqyGKI2vqtsPvuTH-Ak&start=20&sa=N&sstk=AS6-VmJyj0Ky-IXvkq7CkYFuCeYlNGqIsXrHtpdiPB0OgknAlmA5xsosedN6C6q8cVRh7sKN76cN0qnU6UrclbPMK4NFkTqJcj2NXg&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Q8tMDegQIKhAG
+            - text: "3"
+          - link "Page 4" [ref=f18e670] [cursor=pointer]:
+            - /url: /search?q=%22Tienda+Ramiro%22+Instagram&sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&ei=YWLgaqyGKI2vqtsPvuTH-Ak&start=30&sa=N&sstk=AS6-VmJyj0Ky-IXvkq7CkYFuCeYlNGqIsXrHtpdiPB0OgknAlmA5xsosedN6C6q8cVRh7sKN76cN0qnU6UrclbPMK4NFkTqJcj2NXg&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Q8tMDegQIKhAI
+            - text: "4"
+          - heading [level=2] [ref=f18e672]:
+            - link "Siguiente" [ref=f18e673] [cursor=pointer]:
+              - /url: /search?q=%22Tienda+Ramiro%22+Instagram&sca_esv=06eb4749832549b6&sxsrf=APpeQntoxhLQpM9UglX96r3CzHNVJPWGBA:1793090145663&ei=YWLgaqyGKI2vqtsPvuTH-Ak&start=10&sa=N&sstk=AS6-VmJyj0Ky-IXvkq7CkYFuCeYlNGqIsXrHtpdiPB0OgknAlmA5xsosedN6C6q8cVRh7sKN76cN0qnU6UrclbPMK4NFkTqJcj2NXg&ved=2ahUKEwjsurqp5dmXAxWNl2oFHT7yEZ8Q8NMDegQIKhAK
+        - navigation
+    - contentinfo [ref=f18e676]:
+      - heading "Vínculos a pie de página" [level=1] [ref=f18e677]
+      - generic [ref=f18e681]:
+        - generic [ref=f18e685]:
+          - button "Cuba - Según tu actividad anterior" [ref=f18e687] [cursor=pointer]:
+            - generic [ref=f18e688]: Cuba
+            - generic [ref=f18e690]:
+              - text: "-"
+              - generic [ref=f18e691]: Según tu actividad anterior
+          - text: "-"
+          - button "Actualizar ubicación" [ref=f18e693] [cursor=pointer]
+        - generic [ref=f18e696]:
+          - link "Ayuda" [ref=f18e697] [cursor=pointer]:
+            - /url: https://support.google.com/websearch/?p=ws_results_help&hl=es-US&fg=1
+          - button "Enviar comentarios" [ref=f18e699] [cursor=pointer]
+          - link "Privacidad" [ref=f18e701] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=es-US&fg=1
+          - link "Condiciones" [ref=f18e702] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=es-US&fg=1

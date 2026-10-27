@@ -211,7 +211,7 @@ Es un sitio estático: no hay compilación ni variables de entorno. Los archivos
 viven en **`public/`**; el resto (`tests/`, `scripts/`, `docs/`, `package.json`) es tooling y
 no se publica.
 
-1. `public/` contiene `index.html`, `admin.html`, `css/`, `js/`, `_headers` y `robots.txt`.
+1. `public/` contiene `index.html`, `admin.html`, `css/`, `js/`, `_headers`, `robots.txt` y `sitemap.xml`.
 2. `wrangler.jsonc` declara `assets.directory: "./public"`.
 3. `public/admin.html` incluye `noindex, nofollow`; `robots.txt` y `_headers` lo refuerzan.
 4. Recomendado: HTTPS. Es obligatorio para que el navegador envíe las peticiones a Supabase sin
@@ -231,6 +231,18 @@ El sitio se despliega como **Worker con static assets**, no como Pages.
 | Production branch | `main` |
 
 Con el repo conectado, cada `git push` a `main` dispara el build y el deploy.
+
+### SEO y visibilidad
+
+- La tienda publica título, descripción, URL canónica, vistas previas Open Graph/Twitter y datos
+  estructurados `OnlineStore`; `robots.txt` enlaza el sitemap público en `public/sitemap.xml`.
+- Tras publicar en un dominio definitivo, actualiza la URL en `public/index.html`, `public/robots.txt`
+  y `public/sitemap.xml`, y registra ese dominio en Google Search Console y Bing Webmaster Tools.
+- El catálogo se carga desde Supabase con JavaScript y actualmente tiene una sola URL pública.
+  Los datos estructurados no sustituyen páginas indexables por producto; si el SEO de cada artículo
+  es prioritario, conviene crear páginas estáticas por producto o prerenderizar el catálogo en el build.
+- Escribe nombres y descripciones originales y útiles, añade fotos propias con texto alternativo y
+  mantén el stock y precios actualizados. No añadas listas de palabras clave repetidas.
 
 **Por qué falló el build anterior:** sin `wrangler.jsonc`, Wrangler tomaba la raíz del repo
 (`assets.directory: "."`), leía 3.611 archivos e intentaba subir
@@ -286,7 +298,7 @@ npm test           # utilidades + integración
   Cubre catálogo, stock, checkout RPC con vale (teléfono, entrega y vendedor), XSS, login,
   usuario pendiente, roles, CRUD con costos y comisiones, pedidos, auditoría y cambio de contraseña.
 
-Estado actual: **18 + 26 comprobaciones en verde**.
+Estado actual: **18 + 27 comprobaciones en verde**.
 
 ---
 
