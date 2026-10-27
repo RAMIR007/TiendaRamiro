@@ -27,6 +27,7 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
    - [`20261025120000_sales.sql`](../supabase/migrations/20261025120000_sales.sql)
    - [`20261026120000_commission_amount.sql`](../supabase/migrations/20261026120000_commission_amount.sql)
    - [`20261027120000_product_media_categories.sql`](../supabase/migrations/20261027120000_product_media_categories.sql)
+   - [`20261027130000_product_images_bucket.sql`](../supabase/migrations/20261027130000_product_images_bucket.sql)
 3. **Solo la primera vez**, ejecuta también
    [`supabase/seed.sql`](../supabase/seed.sql) para cargar los 8 productos de demostración.
 4. En **Table Editor** deberías ver, entre otras, las tablas `profiles`, `products`,
@@ -35,13 +36,14 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
    escrituras restringidas por RLS al rol administrador.
 
 > **Proyecto ya configurado:** si las tres migraciones anteriores ya están aplicadas,
-> ejecuta únicamente `20261027120000_product_media_categories.sql`. Esta migración agrega
-> el bucket de imágenes, las categorías compartidas y los campos de ubicación del proveedor.
+> ejecuta `20261027120000_product_media_categories.sql` y después
+> `20261027130000_product_images_bucket.sql`. La segunda solo crea el bucket de imágenes
+> y sus políticas si aún no existen; no elimina ni modifica buckets/políticas existentes.
 
 Las migraciones crean las tablas, activan RLS, definen los roles y agregan la función
 `create_order()`, que valida stock y precios en el servidor y descuenta inventario
-en una sola transacción. También configuran el bucket público `product-images`; la subida
-y eliminación de archivos requiere una sesión de administrador.
+en una sola transacción. La migración final configura el bucket público `product-images`;
+la subida y eliminación de archivos requiere una sesión de administrador.
 
 > **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutar la migración
 > completa. Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a

@@ -287,10 +287,11 @@ políticas RLS limitan qué puede leer y escribir cada rol. Aun así, conviene:
 
 El proyecto ya está integrado. El análisis de rendimiento y límites está en
 [`docs/SUPABASE.md`](docs/SUPABASE.md); la puesta en marcha y el esquema, en
-[`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md). Para instalaciones existentes, aplica la
-migración [`20261027120000_product_media_categories.sql`](supabase/migrations/20261027120000_product_media_categories.sql)
-después de las tres migraciones anteriores; configura las columnas de ubicación, categorías
-persistentes y el bucket de imágenes con sus políticas RLS.
+[`docs/SUPABASE-SETUP.md`](docs/SUPABASE-SETUP.md). Para instalaciones existentes, aplica
+[`20261027120000_product_media_categories.sql`](supabase/migrations/20261027120000_product_media_categories.sql)
+y luego [`20261027130000_product_images_bucket.sql`](supabase/migrations/20261027130000_product_images_bucket.sql),
+tras las migraciones anteriores; la última crea el bucket de imágenes y agrega sus políticas
+si no existen.
 
 Opciones gratuitas de hosting: Cloudflare Workers, Netlify, GitHub Pages.
 
