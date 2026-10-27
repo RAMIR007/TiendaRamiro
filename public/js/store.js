@@ -490,9 +490,18 @@ function openProductShare(productId) {
   const product = findProduct(productId);
   if (!product) return;
 
-  const link = `${window.location.origin}/index.html#${encodeURIComponent(product.id)}`;
-  const message = `🛍️ *${brandNameText(product)}*\n${formatMoney(product.price)}\n\n👀 Mira el detalle: ${link}\n\nPide desde ${window.location.origin} 📱`;
-  openWhatsApp(`https://wa.me/?text=${encodeURIComponent(message)}`);
+  const primaryImage = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '';
+  const productUrl = `${window.location.origin}/index.html#${encodeURIComponent(product.id)}`;
+  const message = `🛍️ *${brandNameText(product)}*\n${formatMoney(product.price)}\n\n👀 Mira el detalle: ${productUrl}\n\nPide desde ${window.location.origin} 📱`;
+
+  if (primaryImage) {
+    const shareUrl = new URL('https://wa.me/');
+    shareUrl.searchParams.set('text', message + `\n\n📸 ${primaryImage}`);
+    openWhatsApp(shareUrl.toString());
+  } else {
+    openWhatsApp(`https://wa.me/?text=${encodeURIComponent(message)}`);
+  }
+
   showToast('Abre WhatsApp y elige el contacto');
 }
 
