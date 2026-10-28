@@ -637,7 +637,7 @@ tr:hover td {
 /* ------------------------------------------------------------------ */
 
 .modal-content--form {
-  max-width: 600px;
+  max-width: 760px;
   padding: 2rem;
 }
 
@@ -662,6 +662,41 @@ tr:hover td {
   justify-content: flex-end;
   margin-top: 1.5rem;
   flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 0.5rem;
+  }
+
+  .modal-content--form {
+    max-height: calc(100vh - 1rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 1.25rem 1rem;
+  }
+
+  .form-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .form-control,
+  .form-group,
+  .category-picker,
+  .inline-row {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .form-control[type="file"] {
+    font-size: 0.78rem;
+  }
+
+  .modal-actions > .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }
 
 /* ------------------------------------------------------------------ */
