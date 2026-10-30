@@ -258,7 +258,7 @@ create policy "audit_staff_read" on public.audit_logs
 
 drop policy if exists "audit_staff_insert" on public.audit_logs;
 create policy "audit_staff_insert" on public.audit_logs
-  for insert to authenticated with check (true);
+  for insert to authenticated with check (public.is_staff());
 
 drop policy if exists "audit_admin_delete" on public.audit_logs;
 create policy "audit_admin_delete" on public.audit_logs

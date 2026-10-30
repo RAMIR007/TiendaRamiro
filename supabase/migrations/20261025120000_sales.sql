@@ -145,7 +145,8 @@ create policy "orders_admin_read" on public.orders
 
 drop policy if exists "orders_staff_read_own" on public.orders;
 create policy "orders_staff_read_own" on public.orders
-  for select to authenticated using (seller_id = auth.uid());
+  for select to authenticated
+  using (public.is_staff() and seller_id = auth.uid());
 
 drop policy if exists "order_items_staff_read" on public.order_items;
 drop policy if exists "order_items_read" on public.order_items;
@@ -156,6 +157,7 @@ create policy "order_items_read" on public.order_items
     or exists (
       select 1 from public.orders o
       where o.id = order_items.order_id
+        and public.is_staff()
         and o.seller_id = auth.uid()
     )
   );

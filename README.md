@@ -142,7 +142,8 @@ o `pg_dump` con la cadena de conexión del proyecto.
   un producto (cinco veces el límite anterior).
 - **Productos con proveedor y stock flexible:** el stock queda opcional en el formulario para
   productos gestionados directamente por proveedores; también se admite ciudad/municipio y dirección
-  del proveedor si el catálogo necesita ese dato extra.
+  del proveedor si el catálogo necesita ese dato extra. La ubicación se guarda en
+  `product_locations`, protegida por RLS para que solo administradores la consulten o modifiquen.
 - **Subida local de imágenes:** el administrador puede elegir varias fotos desde móvil o portátil;
   se reducen y convierten a WebP/JPEG en el navegador y se guardan en el bucket `product-images`
   de Supabase Storage. Límite: 8 MB por imagen convertida.
@@ -179,6 +180,12 @@ creación de usuarios no está en el panel para ninguno de los dos: se hace en S
 
 > RLS es seguridad **por fila**, no por columna: `staff` puede editar toda la ficha del producto.
 > Si quieres limitarlo a precio y stock, se hace con un RPC o con permisos por columna.
+
+La migración `20261029120000_security_hardening.sql` también corrige el acceso a pedidos de
+cuentas pendientes, restringe la escritura de auditoría a personal aprobado y mueve las
+ubicaciones de proveedores fuera del catálogo público. Copia las ubicaciones existentes a
+`product_locations` antes de retirar esos campos de `products`. Aplícala en Supabase después
+de las migraciones anteriores para que estas protecciones estén activas en el backend.
 
 #### Crear un usuario
 

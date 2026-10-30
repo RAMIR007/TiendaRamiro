@@ -3,8 +3,9 @@
 // Requiere: js/config.js, js/utils.js y js/data.js cargados antes de usar sus funciones.
 
 const SUPABASE_SESSION_KEY = 'rx_sb_session';
-const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at,supplier_city,supplier_municipality,supplier_address';
+const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at';
 const SUPABASE_PRODUCT_COST_SELECT = 'product_costs(cost_cents,commission_percent,commission_type,commission_fixed_cents,supplier)';
+const SUPABASE_PRODUCT_LOCATION_SELECT = 'product_locations(supplier_city,supplier_municipality,supplier_address)';
 const SUPABASE_ORDER_SELECT = [
   'id,created_at,status,client_name,client_phone,client_address,client_notes',
   'total_cents,commission_cents,order_code,delivery_method,payment_method,seller_id,seller_code',
@@ -247,6 +248,9 @@ function mapProductRow(row, includeCosts) {
   const costRow = includeCosts && row.product_costs
     ? (Array.isArray(row.product_costs) ? row.product_costs[0] : row.product_costs)
     : null;
+  const locationRow = includeCosts && row.product_locations
+    ? (Array.isArray(row.product_locations) ? row.product_locations[0] : row.product_locations)
+    : null;
 
   return normalizeProduct({
     id: row.id,
@@ -264,9 +268,9 @@ function mapProductRow(row, includeCosts) {
     commissionType: costRow && costRow.commission_type === 'amount' ? 'amount' : 'percent',
     commissionFixed: costRow ? (Number(costRow.commission_fixed_cents) || 0) / 100 : 0,
     supplier: costRow ? costRow.supplier : null,
-    supplier_city: row.supplier_city || null,
-    supplier_municipality: row.supplier_municipality || null,
-    supplier_address: row.supplier_address || null
+    supplier_city: locationRow ? locationRow.supplier_city : null,
+    supplier_municipality: locationRow ? locationRow.supplier_municipality : null,
+    supplier_address: locationRow ? locationRow.supplier_address : null
   });
 }
 
@@ -283,17 +287,22 @@ function productToRow(product) {
     active: product.active !== false
   };
 
-  if (Object.prototype.hasOwnProperty.call(product, 'supplierCity')) {
-    row.supplier_city = product.supplierCity || null;
-  }
-  if (Object.prototype.hasOwnProperty.call(product, 'supplierMunicipality')) {
-    row.supplier_municipality = product.supplierMunicipality || null;
-  }
-  if (Object.prototype.hasOwnProperty.call(product, 'supplierAddress')) {
-    row.supplier_address = product.supplierAddress || null;
+  return row;
+}
+
+function productToLocationRow(productId, product) {
+  if (!Object.prototype.hasOwnProperty.call(product, 'supplierCity')
+    && !Object.prototype.hasOwnProperty.call(product, 'supplierMunicipality')
+    && !Object.prototype.hasOwnProperty.call(product, 'supplierAddress')) {
+    return null;
   }
 
-  return row;
+  return {
+    product_id: productId,
+    supplier_city: product.supplierCity || null,
+    supplier_municipality: product.supplierMunicipality || null,
+    supplier_address: product.supplierAddress || null
+  };
 }
 
 async function fetchCategoriesFromApi(options = {}) {
@@ -399,7 +408,7 @@ async function fetchProductsFromApi(options = {}) {
   const token = (includeInactive || includeCosts) ? await requireAccessToken() : null;
   const filter = includeInactive ? '' : '&active=eq.true';
   const select = includeCosts
-    ? `${SUPABASE_PRODUCT_SELECT},${SUPABASE_PRODUCT_COST_SELECT}`
+    ? `${SUPABASE_PRODUCT_SELECT},${SUPABASE_PRODUCT_COST_SELECT},${SUPABASE_PRODUCT_LOCATION_SELECT}`
     : SUPABASE_PRODUCT_SELECT;
 
   const rows = await supabaseRequest(
@@ -433,6 +442,18 @@ async function upsertProductCost(productId, product) {
   });
 }
 
+async function upsertProductLocation(productId, product, token) {
+  const row = productToLocationRow(productId, product);
+  if (!row) return;
+
+  await supabaseRequest('/rest/v1/product_locations?on_conflict=product_id', {
+    method: 'POST',
+    token,
+    body: row,
+    prefer: 'resolution=merge-duplicates,return=minimal'
+  });
+}
+
 async function createProductInApi(product) {
   const token = await requireAccessToken();
   const rows = await supabaseRequest('/rest/v1/products?select=id', {
@@ -450,6 +471,7 @@ async function createProductInApi(product) {
   if (product.cost !== undefined && product.cost !== null) {
     await upsertProductCost(row.id, product);
   }
+  await upsertProductLocation(row.id, product, token);
 
   return row.id;
 }
@@ -466,6 +488,7 @@ async function updateProductInApi(productId, product) {
   if (product.cost !== undefined && product.cost !== null) {
     await upsertProductCost(productId, product);
   }
+  await upsertProductLocation(productId, product, token);
 }
 
 async function deleteProductInApi(productId) {

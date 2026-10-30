@@ -28,22 +28,28 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
    - [`20261026120000_commission_amount.sql`](../supabase/migrations/20261026120000_commission_amount.sql)
    - [`20261027120000_product_media_categories.sql`](../supabase/migrations/20261027120000_product_media_categories.sql)
    - [`20261027130000_product_images_bucket.sql`](../supabase/migrations/20261027130000_product_images_bucket.sql)
+   - [`20261029120000_security_hardening.sql`](../supabase/migrations/20261029120000_security_hardening.sql)
 3. **Solo la primera vez**, ejecuta también
    [`supabase/seed.sql`](../supabase/seed.sql) para cargar los 8 productos de demostración.
 4. En **Table Editor** deberías ver, entre otras, las tablas `profiles`, `products`,
-   `categories`, `product_costs`, `orders`, `order_items` y `audit_logs`.
+   `categories`, `product_costs`, `product_locations`, `orders`, `order_items` y `audit_logs`.
 5. En **Storage → Buckets** debe aparecer `product-images`, público para lectura y con
    escrituras restringidas por RLS al rol administrador.
 
-> **Proyecto ya configurado:** si las tres migraciones anteriores ya están aplicadas,
-> ejecuta `20261027120000_product_media_categories.sql` y después
-> `20261027130000_product_images_bucket.sql`. La segunda solo crea el bucket de imágenes
-> y sus políticas si aún no existen; no elimina ni modifica buckets/políticas existentes.
+> **Proyecto ya configurado:** aplica cada migración que todavía no esté instalada, en el
+> orden anterior. Si ya tienes catálogo, pedidos, categorías y el bucket de imágenes, ejecuta
+> la nueva `20261029120000_security_hardening.sql` para proteger las ubicaciones de proveedores,
+> los pedidos asociados a vendedores y los registros de auditoría. No uses la `service_role`
+> desde el navegador.
 
 Las migraciones crean las tablas, activan RLS, definen los roles y agregan la función
 `create_order()`, que valida stock y precios en el servidor y descuenta inventario
-en una sola transacción. La migración final configura el bucket público `product-images`;
-la subida y eliminación de archivos requiere una sesión de administrador.
+en una sola transacción. La migración de Storage configura el bucket público `product-images`;
+la subida y eliminación de archivos requiere una sesión de administrador. La migración de
+seguridad guarda las direcciones de proveedores en una tabla con acceso exclusivo de administrador
+y requiere que los perfiles tengan un rol `staff` o `admin` aprobado para ver pedidos propios.
+Migra las ubicaciones existentes antes de continuar; el SQL las copia a la nueva tabla y luego
+quita esos campos de `products`, para evitar que una consulta pública los exponga.
 
 > **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutar la migración
 > completa. Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a

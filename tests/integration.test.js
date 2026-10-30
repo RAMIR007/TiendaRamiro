@@ -102,6 +102,14 @@ function createMock() {
       { key: 'moda', label: 'Moda & Calzado', emoji: '👟', active: true },
       { key: 'hogar', label: 'Hogar & Accesorios', emoji: '🏠', active: true }
     ],
+    productLocations: [
+      {
+        product_id: '11111111-1111-4111-8111-111111111111',
+        supplier_city: 'La Habana',
+        supplier_municipality: 'Playa',
+        supplier_address: 'Calle privada 10'
+      }
+    ],
     productImages: [],
     orders: clone(ORDERS),
     audit: clone(AUDIT),
@@ -185,7 +193,21 @@ function createMock() {
 
     if (route === '/rest/v1/products' && method === 'GET') {
       const activeOnly = url.searchParams.get('active') === 'eq.true';
-      return respond(state.products.filter((product) => !activeOnly || product.active));
+      const select = url.searchParams.get('select') || '';
+      const withLocations = select.includes('product_locations(');
+      const isAdmin = userId === USERS['admin@test.com'].id;
+      const rows = state.products
+        .filter((product) => !activeOnly || product.active)
+        .map((product) => {
+          if (!withLocations) return product;
+
+          const location = state.productLocations.find((item) => item.product_id === product.id);
+          return {
+            ...product,
+            product_locations: isAdmin && location ? [location] : []
+          };
+        });
+      return respond(rows);
     }
 
     if (route === '/rest/v1/categories' && method === 'GET') {
@@ -221,6 +243,16 @@ function createMock() {
       const inserted = rows.map((row) => ({ ...row, id: randomUUID(), created_at: new Date().toISOString() }));
       state.products.unshift(...inserted);
       return wantsRepresentation ? respond(inserted) : respond(null, 201);
+    }
+
+    if (route === '/rest/v1/product_locations' && method === 'POST') {
+      if (userId !== USERS['admin@test.com'].id) {
+        return respond({ message: 'row-level security policy violation' }, 403);
+      }
+      const index = state.productLocations.findIndex((item) => item.product_id === body.product_id);
+      if (index >= 0) state.productLocations[index] = { ...state.productLocations[index], ...body };
+      else state.productLocations.push(body);
+      return respond(null, 201);
     }
 
     if (route === '/rest/v1/products' && method === 'PATCH') {
@@ -386,6 +418,15 @@ async function login(win, doc, email, password) {
     assert.strictEqual(doc.querySelectorAll('.product-card').length, 3);
     assert.match(doc.getElementById('productsCount').textContent, /3 productos/);
     assert.ok(doc.body.textContent.includes('Auriculares Inalámbricos TWS Pro'));
+  });
+
+  await check('la consulta pública no solicita la ubicación privada de proveedores', () => {
+    const request = storeMock.state.requests.find((item) =>
+      item.route === '/rest/v1/products' && item.method === 'GET'
+    );
+    assert.ok(request);
+    assert.ok(!request.query.get('select').includes('product_locations'));
+    assert.ok(!request.query.get('select').includes('supplier_address'));
   });
 
   await check('sincroniza las categorías guardadas en Supabase', () => {
@@ -567,6 +608,19 @@ async function login(win, doc, email, password) {
     assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 3);
   });
 
+  await check('el administrador lee la ubicación del proveedor desde la tabla protegida', () => {
+    const product = adminWin.eval('productsCache.find((item) => item.id === "11111111-1111-4111-8111-111111111111")');
+    const request = adminMock.state.requests.find((item) =>
+      item.route === '/rest/v1/products'
+      && item.method === 'GET'
+      && item.query.get('select').includes('product_locations')
+    );
+    assert.ok(request);
+    assert.strictEqual(product.supplierCity, 'La Habana');
+    assert.strictEqual(product.supplierMunicipality, 'Playa');
+    assert.strictEqual(product.supplierAddress, 'Calle privada 10');
+  });
+
   await check('crea una categoría compartida y la selecciona en el formulario', async () => {
     adminWin.openCreateModal();
     click(adminDoc.getElementById('addCategoryBtn'));
@@ -609,9 +663,11 @@ async function login(win, doc, email, password) {
     assert.strictEqual(created.price_cents, 1250);
     assert.strictEqual(created.stock, 0);
     assert.strictEqual(created.category, 'accesorios');
-    assert.strictEqual(created.supplier_city, 'La Habana');
-    assert.strictEqual(created.supplier_municipality, 'Playa');
-    assert.strictEqual(created.supplier_address, 'Calle 10 #123');
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(created, 'supplier_city'), false);
+    const createdLocation = adminMock.state.productLocations.find((item) => item.product_id === created.id);
+    assert.strictEqual(createdLocation.supplier_city, 'La Habana');
+    assert.strictEqual(createdLocation.supplier_municipality, 'Playa');
+    assert.strictEqual(createdLocation.supplier_address, 'Calle 10 #123');
     assert.strictEqual(created.description, longDescription);
     assert.strictEqual(created.images.length, 2);
     assert.ok(created.images.some((url) => url.includes('/storage/v1/object/public/product-images/products/')));
@@ -725,6 +781,24 @@ async function login(win, doc, email, password) {
   });
 
   reset.dom.window.close();
+
+  await check('la migración restringe ubicaciones, pedidos de vendedor y auditoría por rol', () => {
+    const migration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261029120000_security_hardening.sql'),
+      'utf8'
+    );
+    assert.match(migration, /alter table public\.product_locations enable row level security/i);
+    assert.match(migration, /revoke all on table public\.product_locations from public, anon/i);
+    assert.ok(
+      migration.indexOf('insert into public.product_locations') < migration.indexOf('drop column if exists supplier_city'),
+      'supplier locations must be copied before the public columns are removed'
+    );
+    assert.match(migration, /information_schema\.columns[\s\S]*?column_name in \('supplier_city', 'supplier_municipality', 'supplier_address'\)/i);
+    assert.match(migration, /create policy "product_locations_admin_all"[\s\S]*?using \(public\.is_admin\(\)\)[\s\S]*?with check \(public\.is_admin\(\)\)/i);
+    assert.match(migration, /create policy "orders_staff_read_own"[\s\S]*?public\.is_staff\(\) and seller_id = auth\.uid\(\)/i);
+    assert.match(migration, /create policy "order_items_read"[\s\S]*?public\.is_staff\(\)[\s\S]*?o\.seller_id = auth\.uid\(\)/i);
+    assert.match(migration, /create policy "audit_staff_insert"[\s\S]*?with check \(public\.is_staff\(\)\)/i);
+  });
 
   /* ---------------------------------------------------------------- */
   console.log(`\n${passed} comprobaciones OK, ${failures.length} fallos\n`);
