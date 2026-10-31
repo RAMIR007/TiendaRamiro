@@ -29,6 +29,7 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
    - [`20261027120000_product_media_categories.sql`](../supabase/migrations/20261027120000_product_media_categories.sql)
    - [`20261027130000_product_images_bucket.sql`](../supabase/migrations/20261027130000_product_images_bucket.sql)
    - [`20261029120000_security_hardening.sql`](../supabase/migrations/20261029120000_security_hardening.sql)
+   - [`20261031120000_supplier_availability.sql`](../supabase/migrations/20261031120000_supplier_availability.sql)
 3. **Solo la primera vez**, ejecuta también
    [`supabase/seed.sql`](../supabase/seed.sql) para cargar los 8 productos de demostración.
 4. En **Table Editor** deberías ver, entre otras, las tablas `profiles`, `products`,
@@ -38,9 +39,9 @@ No necesitas tarjeta: el plan gratuito alcanza para esta tienda.
 
 > **Proyecto ya configurado:** aplica cada migración que todavía no esté instalada, en el
 > orden anterior. Si ya tienes catálogo, pedidos, categorías y el bucket de imágenes, ejecuta
-> la nueva `20261029120000_security_hardening.sql` para proteger las ubicaciones de proveedores,
-> los pedidos asociados a vendedores y los registros de auditoría. No uses la `service_role`
-> desde el navegador.
+> `20261029120000_security_hardening.sql` y `20261031120000_supplier_availability.sql`.
+> La última agrega la disponibilidad con proveedor y actualiza la validación del checkout.
+> No uses la `service_role` desde el navegador.
 
 Las migraciones crean las tablas, activan RLS, definen los roles y agregan la función
 `create_order()`, que valida stock y precios en el servidor y descuenta inventario
@@ -50,6 +51,10 @@ seguridad guarda las direcciones de proveedores en una tabla con acceso exclusiv
 y requiere que los perfiles tengan un rol `staff` o `admin` aprobado para ver pedidos propios.
 Migra las ubicaciones existentes antes de continuar; el SQL las copia a la nueva tabla y luego
 quita esos campos de `products`, para evitar que una consulta pública los exponga.
+La migración de disponibilidad añade `products.supplier_available`: si está activa, el producto
+se puede pedir sin stock local y el servidor no descuenta inventario; si está desactivada, stock
+cero significa agotado. Las funciones de creación de pedidos (incluida la versión antigua de cuatro
+argumentos) conservan la atribución de referidos.
 
 > **Si ya habías ejecutado una versión anterior del SQL**, vuelve a ejecutar la migración
 > completa. Es idempotente: recrea funciones y políticas y actualiza el rol por defecto a

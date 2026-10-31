@@ -245,6 +245,11 @@
           <div class="form-group">
             <label for="pStock">Stock disponible (opcional)</label>
             <input type="number" id="pStock" class="form-control" min="0" step="1" placeholder="ej. 10">
+            <label class="availability-toggle" for="pSupplierAvailable">
+              <input type="checkbox" id="pSupplierAvailable" aria-describedby="pSupplierAvailableHint">
+              <span>Disponible con proveedor (sin control de stock)</span>
+            </label>
+            <small class="form-hint" id="pSupplierAvailableHint">Al marcarlo, el stock se fija en 0. Desmárcalo cuando el proveedor agote el producto.</small>
           </div>
 
           <div class="form-group">

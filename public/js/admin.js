@@ -461,8 +461,9 @@ function renderAdminTable() {
   }
 
   tbody.innerHTML = productsCache.map((product) => {
-    const outOfStock = product.stock <= 0;
-    const lowStock = !outOfStock && product.stock <= 3;
+    const outOfStock = !productCanBeOrdered(product);
+    const supplierAvailable = product.stock <= 0 && product.supplierAvailable;
+    const lowStock = !outOfStock && product.stock > 0 && product.stock <= 3;
     const stockClass = outOfStock ? 'out' : (lowStock ? 'low' : '');
     const inactive = product.active === false;
     const badgeText = inferAutomaticBadge(product) || product.badge || '';
@@ -498,7 +499,7 @@ function renderAdminTable() {
           </div>
         </td>
         ${adminCells}
-        <td><span class="stock-cell ${stockClass}">${product.stock} unid.</span></td>
+        <td><span class="stock-cell ${stockClass}">${supplierAvailable ? 'Disponible · proveedor' : `${product.stock} unid.`}</span></td>
         <td>
           <div class="action-btns">
             <button type="button" class="btn-icon" data-action="edit-product" data-id="${id}"
@@ -620,11 +621,21 @@ function updateMarginPreview() {
   syncCommissionPreview();
 }
 
+function syncSupplierAvailabilityInput() {
+  const availableInput = document.getElementById('pSupplierAvailable');
+  const stockInput = document.getElementById('pStock');
+  if (!availableInput || !stockInput) return;
+
+  stockInput.disabled = availableInput.checked;
+  if (availableInput.checked) stockInput.value = '0';
+}
+
 function openCreateModal() {
   if (!requireAdmin('crear productos')) return;
 
   const form = document.getElementById('productForm');
   if (form) form.reset();
+  syncSupplierAvailabilityInput();
 
   productLocalImages = [];
   const preview = document.getElementById('productImagePreview');
@@ -659,6 +670,8 @@ function openEditModal(productId) {
   document.getElementById('pCategory').value = product.category;
   document.getElementById('pPrice').value = product.price;
   document.getElementById('pStock').value = product.stock;
+  document.getElementById('pSupplierAvailable').checked = product.supplierAvailable;
+  syncSupplierAvailabilityInput();
   document.getElementById('pBadge').value = product.badge || '';
   document.getElementById('pImages').value = product.images.join(', ');
   document.getElementById('pVariants').value = product.variants.join(', ');
@@ -755,8 +768,9 @@ async function handleSaveProduct(event) {
   const category = document.getElementById('pCategory').value;
   const priceRaw = document.getElementById('pPrice').value.trim();
   const stockRaw = document.getElementById('pStock').value.trim();
+  const supplierAvailable = document.getElementById('pSupplierAvailable').checked;
   const price = Number(priceRaw);
-  const stock = stockRaw === '' ? 0 : Number(stockRaw);
+  const stock = supplierAvailable ? 0 : (stockRaw === '' ? 0 : Number(stockRaw));
   const badge = document.getElementById('pBadge').value.trim() || null;
   const description = document.getElementById('pDesc').value.trim();
   const autoBadge = badge || inferAutomaticBadge({
@@ -797,7 +811,7 @@ async function handleSaveProduct(event) {
     return;
   }
 
-  if (stockRaw !== '' && (!Number.isFinite(stock) || stock < 0)) {
+  if (!supplierAvailable && stockRaw !== '' && (!Number.isInteger(stock) || stock < 0)) {
     showToast('El stock debe ser un número entero mayor o igual a 0');
     return;
   }
@@ -860,6 +874,7 @@ async function handleSaveProduct(event) {
     category: validCategory,
     price,
     stock: Math.max(0, Math.floor(Number(stock || 0))),
+    supplierAvailable,
     badge: autoBadge,
     description,
     images: remoteImages.length > 0 ? [...new Set(remoteImages)] : (existing ? existing.images : []),
@@ -995,6 +1010,7 @@ function handleImportFile(event) {
             : STORE_CONFIG.categories[0].key,
           price: Number(item.price) || 0,
           stock: Math.max(0, Math.floor(Number(item.stock) || 0)),
+          supplierAvailable: item.supplierAvailable === true && Number(item.stock) === 0,
           badge: item.badge ? String(item.badge).trim() : null,
           description: String(item.description || '').trim(),
           images: (Array.isArray(item.images) ? item.images : []).filter(isSafeImageUrl),
@@ -1369,6 +1385,7 @@ function closeTopModal() {
 function setupAdminEvents() {
   document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
   document.getElementById('productForm')?.addEventListener('submit', handleSaveProduct);
+  document.getElementById('pSupplierAvailable')?.addEventListener('change', syncSupplierAvailabilityInput);
   document.getElementById('accountForm')?.addEventListener('submit', handleChangePassword);
   document.getElementById('importFile')?.addEventListener('change', handleImportFile);
   document.getElementById('productImageInput')?.addEventListener('change', handleProductImageUpload);

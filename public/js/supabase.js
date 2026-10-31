@@ -3,7 +3,7 @@
 // Requiere: js/config.js, js/utils.js y js/data.js cargados antes de usar sus funciones.
 
 const SUPABASE_SESSION_KEY = 'rx_sb_session';
-const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,badge,description,images,variants,active,created_at';
+const SUPABASE_PRODUCT_SELECT = 'id,name,category,price_cents,stock,supplier_available,badge,description,images,variants,active,created_at';
 const SUPABASE_PRODUCT_COST_SELECT = 'product_costs(cost_cents,commission_percent,commission_type,commission_fixed_cents,supplier)';
 const SUPABASE_PRODUCT_LOCATION_SELECT = 'product_locations(supplier_city,supplier_municipality,supplier_address)';
 const SUPABASE_ORDER_SELECT = [
@@ -258,6 +258,7 @@ function mapProductRow(row, includeCosts) {
     category: row.category,
     price: (Number(row.price_cents) || 0) / 100,
     stock: Number(row.stock) || 0,
+    supplier_available: row.supplier_available === true,
     badge: row.badge,
     description: row.description || '',
     images: Array.isArray(row.images) ? row.images : [],
@@ -280,6 +281,7 @@ function productToRow(product) {
     category: product.category,
     price_cents: toCents(product.price),
     stock: Math.max(0, Math.floor(Number(product.stock) || 0)),
+    supplier_available: product.supplierAvailable === true && Number(product.stock) === 0,
     badge: product.badge || null,
     description: product.description || '',
     images: product.images || [],

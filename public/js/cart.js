@@ -43,7 +43,7 @@ function normalizeCart(raw) {
 }
 
 // Sincroniza el carrito con el catálogo real: elimina productos borrados,
-// refresca precios/nombres/imágenes y recorta cantidades al stock disponible.
+// refresca precios/nombres/imágenes y limita cantidades según el tipo de producto.
 function reconcileWithCatalog() {
   const products = getCachedProducts();
 
@@ -56,9 +56,9 @@ function reconcileWithCatalog() {
   const reconciled = cart
     .map((item) => {
       const product = byId.get(item.id);
-      if (!product || product.stock <= 0) return null;
+      if (!productCanBeOrdered(product)) return null;
 
-      const available = product.stock - (used.get(item.id) || 0);
+      const available = productCartLimit(product) - (used.get(item.id) || 0);
       if (available <= 0) return null;
 
       const quantity = Math.min(item.quantity, available);
@@ -91,12 +91,12 @@ function reconcileWithCatalog() {
     }
   });
 
-  // Último recorte por producto: la suma de variantes tampoco puede pasar el stock.
-  const stockById = new Map(products.map((product) => [product.id, product.stock]));
+  // Último recorte por producto: la suma de variantes respeta el límite de compra.
+  const limitById = new Map(products.map((product) => [product.id, productCartLimit(product)]));
   const usedAfterMerge = new Map();
 
   cart = merged.filter((item) => {
-    const available = stockById.get(item.id) - (usedAfterMerge.get(item.id) || 0);
+    const available = limitById.get(item.id) - (usedAfterMerge.get(item.id) || 0);
     if (available <= 0) return false;
 
     item.quantity = Math.min(item.quantity, available);
@@ -162,7 +162,7 @@ function addToCart(productId, quantity = 1, variant = null) {
     return false;
   }
 
-  if (product.stock <= 0) {
+  if (!productCanBeOrdered(product)) {
     showToast('Producto agotado');
     return false;
   }
@@ -171,7 +171,7 @@ function addToCart(productId, quantity = 1, variant = null) {
   const inCart = cart
     .filter((item) => item.id === productId)
     .reduce((total, item) => total + item.quantity, 0);
-  const available = product.stock - inCart;
+  const available = productCartLimit(product) - inCart;
 
   if (available <= 0) {
     showToast(`Ya tienes todo el stock disponible de "${product.name}"`);
@@ -223,7 +223,7 @@ function updateCartItemQty(cartKey, delta) {
   const otherLines = cart
     .filter((candidate) => candidate.id === item.id && candidate.key !== cartKey)
     .reduce((total, candidate) => total + candidate.quantity, 0);
-  const maxForLine = Math.max(0, product.stock - otherLines);
+  const maxForLine = Math.max(0, productCartLimit(product) - otherLines);
   const nextQuantity = Math.max(0, Math.min(maxForLine, item.quantity + delta));
 
   if (nextQuantity === 0) {

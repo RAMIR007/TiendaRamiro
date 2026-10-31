@@ -440,6 +440,33 @@ async function login(win, doc, email, password) {
     assert.strictEqual(card.querySelector('.btn-add-quick').disabled, true);
   });
 
+  await check('permite comprar productos disponibles con proveedor sin descontar stock local', async () => {
+    storeMock.state.products[2].supplier_available = true;
+    const refreshedRow = (await win.fetchProductsFromApi()).find((product) => product.id === '33333333-3333-4333-8333-333333333333');
+    assert.strictEqual(refreshedRow.supplierAvailable, true);
+    await win.refreshProductsFromServer();
+
+    const card = doc.querySelector('.product-card[data-id="33333333-3333-4333-8333-333333333333"]');
+    assert.ok(!card.classList.contains('is-out'));
+    assert.ok(card.textContent.includes('Disponible con proveedor'));
+    assert.strictEqual(card.querySelector('.btn-add-quick').disabled, false);
+
+    click(card.querySelector('.btn-add-quick'));
+    assert.strictEqual(win.getCartTotals().count, 1);
+    click(card.querySelector('[data-open]'));
+    win.changeModalQty(150);
+    assert.strictEqual(doc.getElementById('modalQty').textContent, '100');
+    click(doc.getElementById('modalAddBtn'));
+    assert.strictEqual(win.getCartTotals().count, 100);
+
+    const modalProduct = storeMock.state.products.find((product) => product.id === '33333333-3333-4333-8333-333333333333');
+    assert.strictEqual(modalProduct.stock, 0);
+
+    win.clearCart();
+    storeMock.state.products[2].supplier_available = false;
+    await win.refreshProductsFromServer();
+  });
+
   await check('rellena la caché local para la próxima visita', () => {
     const cached = JSON.parse(win.localStorage.getItem('rx_store_products'));
     assert.strictEqual(cached.length, 3);
@@ -647,6 +674,8 @@ async function login(win, doc, email, password) {
     adminDoc.getElementById('pCategory').value = 'accesorios';
     adminDoc.getElementById('pPrice').value = '12.50';
     adminDoc.getElementById('pStock').value = '';
+    adminDoc.getElementById('pSupplierAvailable').checked = true;
+    adminDoc.getElementById('pSupplierAvailable').dispatchEvent(new adminWin.Event('change', { bubbles: true }));
     adminDoc.getElementById('pSupplierCity').value = 'La Habana';
     adminDoc.getElementById('pSupplierMunicipality').value = 'Playa';
     adminDoc.getElementById('pSupplierAddress').value = 'Calle 10 #123';
@@ -662,6 +691,7 @@ async function login(win, doc, email, password) {
     assert.ok(created, 'no se creó el producto');
     assert.strictEqual(created.price_cents, 1250);
     assert.strictEqual(created.stock, 0);
+    assert.strictEqual(created.supplier_available, true);
     assert.strictEqual(created.category, 'accesorios');
     assert.strictEqual(Object.prototype.hasOwnProperty.call(created, 'supplier_city'), false);
     const createdLocation = adminMock.state.productLocations.find((item) => item.product_id === created.id);
@@ -798,6 +828,26 @@ async function login(win, doc, email, password) {
     assert.match(migration, /create policy "orders_staff_read_own"[\s\S]*?public\.is_staff\(\) and seller_id = auth\.uid\(\)/i);
     assert.match(migration, /create policy "order_items_read"[\s\S]*?public\.is_staff\(\)[\s\S]*?o\.seller_id = auth\.uid\(\)/i);
     assert.match(migration, /create policy "audit_staff_insert"[\s\S]*?with check \(public\.is_staff\(\)\)/i);
+  });
+
+  await check('la migración de disponibilidad conserva referidos y el inventario físico', () => {
+    const migration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261031120000_supplier_availability.sql'),
+      'utf8'
+    );
+    const orderFunctions = migration.split(/create or replace function public\.create_order/i).slice(1);
+
+    assert.match(migration, /add column if not exists supplier_available boolean not null default false/i);
+    assert.strictEqual(orderFunctions.length, 2, 'deben actualizarse ambas firmas de create_order');
+
+    orderFunctions.forEach((orderFunction) => {
+      assert.match(orderFunction, /v_product\.stock = 0 and not v_product\.supplier_available/i);
+      assert.match(orderFunction, /if v_product\.stock > 0 then\s+update public\.products[\s\S]*?set stock = stock - v_qty/i);
+      assert.match(orderFunction, /v_supplier_order_quantity > 100/i);
+    });
+
+    assert.match(orderFunctions[0], /p_seller_code[\s\S]*?seller_id, seller_code/i);
+    assert.match(orderFunctions[0], /role in \('admin', 'staff'\)/i);
   });
 
   /* ---------------------------------------------------------------- */

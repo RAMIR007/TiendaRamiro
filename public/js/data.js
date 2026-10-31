@@ -19,6 +19,9 @@ function normalizeProduct(raw) {
 
   const price = Number(raw.price);
   const stock = Number(raw.stock);
+  const supplierAvailable = (raw.supplier_available === true || raw.supplierAvailable === true)
+    && Number.isFinite(stock)
+    && stock === 0;
   const category = typeof raw.category === 'string' && raw.category.trim()
     ? raw.category.trim()
     : (STORE_CONFIG.categories[0] ? STORE_CONFIG.categories[0].key : 'general');
@@ -47,6 +50,7 @@ function normalizeProduct(raw) {
     category,
     price: Number.isFinite(price) && price >= 0 ? Math.round(price * 100) / 100 : 0,
     stock: Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : 0,
+    supplierAvailable,
     badge,
     description: typeof raw.description === 'string' ? raw.description.trim() : '',
     images: images.length > 0 ? images : [PRODUCT_PLACEHOLDER_IMAGE],
@@ -75,6 +79,16 @@ function normalizeProduct(raw) {
       ? raw.supplier_address.trim()
       : null
   };
+}
+
+function productCanBeOrdered(product) {
+  return Boolean(product && (product.stock > 0 || product.supplierAvailable));
+}
+
+function productCartLimit(product) {
+  if (!product) return 0;
+  if (product.stock > 0) return product.stock;
+  return product.supplierAvailable ? 100 : 0;
 }
 
 function normalizeProducts(list) {

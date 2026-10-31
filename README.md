@@ -141,9 +141,13 @@ o `pg_dump` con la cadena de conexión del proyecto.
 - **Descripción de productos:** el panel admite hasta **3.000 caracteres** al crear o editar
   un producto (cinco veces el límite anterior).
 - **Productos con proveedor y stock flexible:** el stock queda opcional en el formulario para
-  productos gestionados directamente por proveedores; también se admite ciudad/municipio y dirección
-  del proveedor si el catálogo necesita ese dato extra. La ubicación se guarda en
-  `product_locations`, protegida por RLS para que solo administradores la consulten o modifiquen.
+  productos gestionados directamente por proveedores. La casilla **Disponible con proveedor**
+  aparece en todos los productos: al marcarla fija el stock local en cero, muestra el estado
+  al cliente y permite hacer pedidos sin descontar inventario local; al desmarcarla, un producto
+  con stock cero queda agotado. Los productos con stock positivo siguen usando el control normal.
+  También se admite ciudad/municipio y dirección del proveedor si el catálogo necesita ese dato
+  extra. La ubicación se guarda en `product_locations`, protegida por RLS para que solo
+  administradores la consulten o modifiquen.
 - **Subida local de imágenes:** el administrador puede elegir varias fotos desde móvil o portátil;
   se reducen y convierten a WebP/JPEG en el navegador y se guardan en el bucket `product-images`
   de Supabase Storage. Límite: 8 MB por imagen convertida.
@@ -184,8 +188,10 @@ creación de usuarios no está en el panel para ninguno de los dos: se hace en S
 La migración `20261029120000_security_hardening.sql` también corrige el acceso a pedidos de
 cuentas pendientes, restringe la escritura de auditoría a personal aprobado y mueve las
 ubicaciones de proveedores fuera del catálogo público. Copia las ubicaciones existentes a
-`product_locations` antes de retirar esos campos de `products`. Aplícala en Supabase después
-de las migraciones anteriores para que estas protecciones estén activas en el backend.
+`product_locations` antes de retirar esos campos de `products`. La migración
+`20261031120000_supplier_availability.sql` añade la disponibilidad con proveedor y actualiza
+la validación del pedido en el servidor. Aplica ambas en Supabase después de las migraciones
+anteriores para que estas funciones estén activas en el backend.
 
 #### Crear un usuario
 

@@ -149,11 +149,12 @@ function buildSrcset(url) {
 }
 
 function renderProductCard(product) {
-  const outOfStock = product.stock <= 0;
+  const canBeOrdered = productCanBeOrdered(product);
+  const supplierAvailable = product.stock <= 0 && product.supplierAvailable;
   const srcset = buildSrcset(product.images[0]);
 
   return `
-    <article class="product-card${outOfStock ? ' is-out' : ''}" data-id="${escapeHtml(product.id)}">
+    <article class="product-card${canBeOrdered ? '' : ' is-out'}" data-id="${escapeHtml(product.id)}">
       <div class="product-thumb-wrap">
         <img
           src="${escapeHtml(product.images[0])}"
@@ -161,9 +162,9 @@ function renderProductCard(product) {
           alt="${escapeHtml(product.name)}"
           width="600" height="600" loading="lazy" decoding="async">
         ${product.badge ? `<span class="badge-float">${escapeHtml(product.badge)}</span>` : ''}
-        <span class="stock-indicator${outOfStock ? ' out' : ''}">
+        <span class="stock-indicator${canBeOrdered ? '' : ' out'}">
           <span class="stock-dot" aria-hidden="true"></span>
-          ${outOfStock ? 'Agotado' : `${product.stock} en stock`}
+          ${supplierAvailable ? 'Disponible con proveedor' : (canBeOrdered ? `${product.stock} en stock` : 'Agotado')}
         </span>
       </div>
       <div class="product-info">
@@ -182,7 +183,7 @@ function renderProductCard(product) {
               </svg>
             </button>
             <button type="button" class="btn-add-quick" data-add="${escapeHtml(product.id)}"
-              ${outOfStock ? 'disabled' : ''}
+              ${canBeOrdered ? '' : 'disabled'}
               aria-label="Añadir ${escapeHtml(product.name)} al carrito">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -416,14 +417,18 @@ function openProductModal(productId) {
 
   const stockEl = document.getElementById('modalStock');
   if (stockEl) {
-    stockEl.textContent = product.stock > 0 ? `${product.stock} disponibles` : 'Producto agotado';
-    stockEl.className = `modal-stock${product.stock > 0 ? '' : ' out'}`;
+    const canBeOrdered = productCanBeOrdered(product);
+    stockEl.textContent = product.stock > 0
+      ? `${product.stock} disponibles`
+      : (product.supplierAvailable ? 'Disponible con proveedor' : 'Producto agotado');
+    stockEl.className = `modal-stock${canBeOrdered ? '' : ' out'}`;
   }
 
   const addButton = document.getElementById('modalAddBtn');
   if (addButton) {
-    addButton.disabled = product.stock <= 0;
-    addButton.querySelector('span').textContent = product.stock > 0 ? 'Añadir al Carrito' : 'Agotado';
+    const canBeOrdered = productCanBeOrdered(product);
+    addButton.disabled = !canBeOrdered;
+    addButton.querySelector('span').textContent = canBeOrdered ? 'Añadir al Carrito' : 'Agotado';
   }
 
   setModalGallery(product);
@@ -479,7 +484,7 @@ function selectVariant(variantName, button) {
 }
 
 function changeModalQty(delta) {
-  const max = currentModalProduct ? Math.max(1, currentModalProduct.stock) : 1;
+  const max = currentModalProduct ? Math.max(1, productCartLimit(currentModalProduct)) : 1;
   currentModalQty = Math.min(max, Math.max(1, currentModalQty + delta));
 
   const qtyEl = document.getElementById('modalQty');
@@ -506,12 +511,13 @@ function openProductShare(productId) {
 }
 
 function brandNameText(product) {
-  return `${product.name}${product.stock > 0 ? '' : ' (agotado)'}`;
+  if (product.stock > 0) return product.name;
+  return `${product.name}${product.supplierAvailable ? ' (disponible con proveedor)' : ' (agotado)'}`;
 }
 
 function addCurrentModalToCart() {
   if (!currentModalProduct) return;
-  if (currentModalProduct.stock <= 0) {
+  if (!productCanBeOrdered(currentModalProduct)) {
     showToast('Producto agotado');
     return;
   }
