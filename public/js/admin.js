@@ -1482,6 +1482,28 @@ function setupAdminEvents() {
   });
 
   document.addEventListener('keydown', (event) => {
+    const tab = event.target.closest?.('[role="tab"]');
+    if (tab && ['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
+      const tabList = tab.closest('[role="tablist"]');
+      if (!tabList) return;
+
+      const tabs = Array.from(tabList.querySelectorAll('[role="tab"]'))
+        .filter((item) => !item.hidden);
+      const currentIndex = tabs.indexOf(tab);
+      if (currentIndex < 0 || tabs.length === 0) return;
+      const nextIndex = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      const nextTab = tabs[nextIndex];
+
+      event.preventDefault();
+      switchAdminTab(nextTab.getAttribute('data-tab'));
+      nextTab.focus();
+      return;
+    }
+
     if (event.key === 'Escape') {
       closeTopModal();
       return;

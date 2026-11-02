@@ -414,6 +414,14 @@ async function login(win, doc, email, password) {
     assert.strictEqual(structuredData.name, 'RamiroX Market');
   });
 
+  await check('el enlace de salto enfoca el catálogo principal', () => {
+    const skipLink = doc.querySelector('.skip-link');
+    const main = doc.querySelector('main');
+    assert.strictEqual(skipLink.getAttribute('href'), '#mainContent');
+    assert.strictEqual(main.id, 'mainContent');
+    assert.strictEqual(main.tabIndex, -1);
+  });
+
   await check('renderiza los productos que llegan de Supabase', () => {
     assert.strictEqual(doc.querySelectorAll('.product-card').length, 3);
     assert.match(doc.getElementById('productsCount').textContent, /3 productos/);
@@ -635,6 +643,33 @@ async function login(win, doc, email, password) {
     assert.strictEqual(adminDoc.querySelectorAll('#adminTableBody tr').length, 3);
   });
 
+  await check('el campo para crear categorías tiene una etiqueta accesible', () => {
+    const input = adminDoc.getElementById('newCategoryInput');
+    assert.strictEqual(adminDoc.querySelector('label[for="newCategoryInput"]').textContent, 'Nombre de la categoría');
+    assert.ok(input);
+  });
+
+  await check('las pestañas del panel se recorren con flechas, Inicio y Fin', () => {
+    const productsTab = adminDoc.getElementById('tabBtnProducts');
+    const dispatchKey = (key) => productsTab.ownerDocument.activeElement.dispatchEvent(
+      new adminWin.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+    );
+
+    productsTab.focus();
+    dispatchKey('ArrowRight');
+    assert.strictEqual(adminDoc.activeElement.id, 'tabBtnOrders');
+    assert.strictEqual(adminDoc.getElementById('tabBtnOrders').getAttribute('aria-selected'), 'true');
+
+    dispatchKey('ArrowLeft');
+    assert.strictEqual(adminDoc.activeElement.id, 'tabBtnProducts');
+
+    dispatchKey('End');
+    assert.strictEqual(adminDoc.activeElement.id, 'tabBtnAudit');
+
+    dispatchKey('Home');
+    assert.strictEqual(adminDoc.activeElement.id, 'tabBtnProducts');
+  });
+
   await check('el administrador lee la ubicación del proveedor desde la tabla protegida', () => {
     const product = adminWin.eval('productsCache.find((item) => item.id === "11111111-1111-4111-8111-111111111111")');
     const request = adminMock.state.requests.find((item) =>
@@ -766,6 +801,19 @@ async function login(win, doc, email, password) {
     assert.strictEqual(staffDoc.querySelectorAll('[data-action="delete-product"]').length, 0);
     assert.strictEqual(staffDoc.querySelector('[data-action="import-json"]').hidden, true);
     assert.strictEqual(staffDoc.querySelector('[data-action="clear-audit"]').hidden, true);
+  });
+
+  await check('las pestañas con flechas omiten reportes ocultos para ventas', () => {
+    const productsTab = staffDoc.getElementById('tabBtnProducts');
+    productsTab.focus();
+    productsTab.dispatchEvent(new staffWin.KeyboardEvent('keydown', {
+      key: 'End',
+      bubbles: true,
+      cancelable: true
+    }));
+
+    assert.strictEqual(staffDoc.activeElement.id, 'tabBtnAudit');
+    assert.strictEqual(staffDoc.getElementById('tabBtnAudit').getAttribute('aria-selected'), 'true');
   });
 
   await check('el rol ventas no puede abrir el formulario de creación', () => {
