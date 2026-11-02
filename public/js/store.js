@@ -100,9 +100,13 @@ function renderCategories() {
     }))
   );
 
+  if (!options.some((option) => option.key === currentCategory)) {
+    currentCategory = 'all';
+  }
+
   container.innerHTML = options
-    .map((option, index) => {
-      const isActive = index === 0;
+    .map((option) => {
+      const isActive = option.key === currentCategory;
       return `<button type="button" class="cat-btn${isActive ? ' active' : ''}" data-cat="${escapeHtml(option.key)}" aria-pressed="${isActive}">${escapeHtml(option.label)}</button>`;
     })
     .join('');

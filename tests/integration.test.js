@@ -442,6 +442,19 @@ async function login(win, doc, email, password) {
     assert.ok(doc.querySelector('#categoriesPills [data-cat="moda"]'));
   });
 
+  await check('mantiene el filtro activo al volver a renderizar las categorías', () => {
+    click(doc.querySelector('#categoriesPills [data-cat="moda"]'));
+    win.renderCategories();
+
+    const activeCategory = doc.querySelector('#categoriesPills [data-cat="moda"]');
+    assert.strictEqual(activeCategory.getAttribute('aria-pressed'), 'true');
+    assert.ok(activeCategory.classList.contains('active'));
+    assert.strictEqual(doc.querySelectorAll('.product-card').length, 1);
+
+    click(doc.querySelector('#categoriesPills [data-cat="all"]'));
+    assert.strictEqual(doc.querySelectorAll('.product-card').length, 3);
+  });
+
   await check('el producto agotado no se puede añadir', () => {
     const card = doc.querySelector('.product-card[data-id="33333333-3333-4333-8333-333333333333"]');
     assert.ok(card.classList.contains('is-out'));

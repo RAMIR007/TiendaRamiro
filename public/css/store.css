@@ -1466,6 +1466,8 @@ select.checkout-input option {
   .logo-text h1 {
     font-size: 0.95rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .logo-text span {
@@ -1490,6 +1492,20 @@ select.checkout-input option {
     font-size: 0.82rem;
     min-height: 44px;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .btn-admin-link {
+    width: 44px;
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+    font-size: 0;
+  }
+
+  .logo-text h1 {
+    font-size: 0.8rem;
   }
 }
 
