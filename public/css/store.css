@@ -38,7 +38,14 @@
   --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.45);
   --shadow-glow: 0 0 25px var(--primary-glow);
   
-  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition:
+    background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Reset y Base */
