@@ -600,7 +600,16 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientName').value = 'Carlos Pérez';
     doc.getElementById('clientPhone').value = '5358382989';
     doc.getElementById('clientTimeRange').value = 'Mañana (9:00 — 12:00)';
+    doc.getElementById('clientPaymentNote').value = '27';
+    storeMock.state.lastOrderPayload = null;
 
+    submit(doc.getElementById('checkoutForm'));
+    await tick(50);
+    assert.strictEqual(storeMock.state.lastOrderPayload, null);
+    assert.ok(doc.getElementById('clientPaymentNote').classList.contains('invalid'));
+    assert.match(doc.getElementById('clientPaymentNoteError').textContent, /28/);
+
+    doc.getElementById('clientPaymentNote').value = '30';
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
 
