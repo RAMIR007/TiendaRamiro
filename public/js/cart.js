@@ -488,12 +488,17 @@ function validateCheckout() {
       markInvalid(referenceInput, 'Un punto de referencia ayuda al mensajero a llegar.');
     }
 
-    const amountDueCents = totalOrderValue() + toCents(STORE_CONFIG.deliveryPrice);
-    if (paysWith > 0 && toCents(paysWith) < amountDueCents) {
-      markInvalid(paymentInput, `El billete debe cubrir el total con mensajería (${formatCents(amountDueCents)}).`);
-    } else {
-      setFieldError(paymentInput, '');
-    }
+  }
+
+  const deliveryFeeCents = deliveryMethod === 'domicilio'
+    ? toCents(STORE_CONFIG.deliveryPrice)
+    : 0;
+  const amountDueCents = totalOrderValue() + deliveryFeeCents;
+  if (paysWith > 0 && toCents(paysWith) < amountDueCents) {
+    const deliveryLabel = deliveryFeeCents > 0 ? ' con mensajería' : '';
+    markInvalid(paymentInput, `El billete debe cubrir el total${deliveryLabel} (${formatCents(amountDueCents)}).`);
+  } else {
+    setFieldError(paymentInput, '');
   }
 
   if (timeRange) {
