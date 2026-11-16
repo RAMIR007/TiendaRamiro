@@ -488,8 +488,11 @@ function validateCheckout() {
       markInvalid(referenceInput, 'Un punto de referencia ayuda al mensajero a llegar.');
     }
 
-    if (paysWith && paysWith < totalOrderValue()) {
-      showToast(`Para el vuelto, el billete debe cubrir el total (${formatCents(totalOrderValue())}).`);
+    const amountDueCents = totalOrderValue() + toCents(STORE_CONFIG.deliveryPrice);
+    if (paysWith > 0 && toCents(paysWith) < amountDueCents) {
+      markInvalid(paymentInput, `El billete debe cubrir el total con mensajería (${formatCents(amountDueCents)}).`);
+    } else {
+      setFieldError(paymentInput, '');
     }
   }
 
