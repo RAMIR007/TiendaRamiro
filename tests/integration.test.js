@@ -950,6 +950,9 @@ async function login(win, doc, email, password) {
     assert.match(migration, /if v_product\.stock > 0 then\s+update public\.products[\s\S]*?set stock = stock - v_qty/i);
     assert.match(migration, /revoke all on function public\.create_order\(text, text, text, jsonb\) from public, anon, authenticated/i);
     assert.match(migration, /grant execute on function public\.create_order\(text, text, text, text, text, text, jsonb\) to anon, authenticated/i);
+
+    const supabaseClient = fs.readFileSync(path.join(root, 'public/js/supabase.js'), 'utf8');
+    assert.match(supabaseClient, /order_items\([^)]*commission_type[^)]*commission_fixed_cents[^)]*\)/i);
   });
 
   /* ---------------------------------------------------------------- */
