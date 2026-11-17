@@ -943,7 +943,7 @@ async function login(win, doc, email, password) {
       'utf8'
     );
 
-    assert.match(migration, /create or replace function public\.create_order\([\s\S]*?p_seller_code text,[\s\S]*?p_items jsonb\)/i);
+    assert.match(migration, /create or replace function public\.create_order\([\s\S]*?p_seller_code text,[\s\S]*?p_items jsonb\s*\)/i);
     assert.match(migration, /select cost_cents, commission_type, commission_percent, commission_fixed_cents, supplier[\s\S]*?from public\.product_costs/i);
     assert.match(migration, /if v_commission_type = 'amount' then[\s\S]*?v_commission_unit := v_commission_fixed[\s\S]*?else[\s\S]*?round\(v_product\.price_cents \* v_commission_percent \/ 100\)/i);
     assert.match(migration, /commission_type, commission_percent, commission_fixed_cents,[\s\S]*?commission_cents, supplier/i);
