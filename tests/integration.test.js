@@ -937,6 +937,21 @@ async function login(win, doc, email, password) {
     assert.match(orderFunctions[0], /role in \('admin', 'staff'\)/i);
   });
 
+  await check('la nueva migración conserva comisiones fijas y porcentuales sin alterar el contrato del checkout', () => {
+    const migration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261117120000_fix_order_commissions_and_legacy_rpc.sql'),
+      'utf8'
+    );
+
+    assert.match(migration, /create or replace function public\\.create_order\\([\\s\\S]*?p_seller_code text,[\\s\\S]*?p_items jsonb\\)/i);
+    assert.match(migration, /select cost_cents, commission_type, commission_percent, commission_fixed_cents, supplier[\\s\\S]*?from public\\.product_costs/i);
+    assert.match(migration, /if v_commission_type = 'amount' then[\\s\\S]*?v_commission_unit := v_commission_fixed[\\s\\S]*?else[\\s\\S]*?round\\(v_product\\.price_cents \\* v_commission_percent \\/ 100\\)/i);
+    assert.match(migration, /commission_type, commission_percent, commission_fixed_cents,[\\s\\S]*?commission_cents, supplier/i);
+    assert.match(migration, /if v_product\\.stock > 0 then\\s+update public\\.products[\\s\\S]*?set stock = stock - v_qty/i);
+    assert.match(migration, /revoke all on function public\\.create_order\\(text, text, text, jsonb\\) from public, anon, authenticated/i);
+    assert.match(migration, /grant execute on function public\\.create_order\\(text, text, text, text, text, text, jsonb\\) to anon, authenticated/i);
+  });
+
   /* ---------------------------------------------------------------- */
   console.log(`\n${passed} comprobaciones OK, ${failures.length} fallos\n`);
   if (failures.length > 0) process.exitCode = 1;
