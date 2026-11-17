@@ -1,0 +1,39 @@
+name: RamiroX Market quality checks
+
+on:
+  push:
+    branches:
+      - maintenance/ramirox-market-ci
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ramirox-market-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and static build check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run utility and integration tests
+        run: npm test
+
+      - name: Validate deployable assets
+        run: npm run build

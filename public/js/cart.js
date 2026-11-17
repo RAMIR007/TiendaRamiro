@@ -488,9 +488,17 @@ function validateCheckout() {
       markInvalid(referenceInput, 'Un punto de referencia ayuda al mensajero a llegar.');
     }
 
-    if (paysWith && paysWith < totalOrderValue()) {
-      showToast(`Para el vuelto, el billete debe cubrir el total (${formatCents(totalOrderValue())}).`);
-    }
+  }
+
+  const deliveryFeeCents = deliveryMethod === 'domicilio'
+    ? toCents(STORE_CONFIG.deliveryPrice)
+    : 0;
+  const amountDueCents = totalOrderValue() + deliveryFeeCents;
+  if (paysWith > 0 && toCents(paysWith) < amountDueCents) {
+    const deliveryLabel = deliveryFeeCents > 0 ? ' con mensajería' : '';
+    markInvalid(paymentInput, `El billete debe cubrir el total${deliveryLabel} (${formatCents(amountDueCents)}).`);
+  } else {
+    setFieldError(paymentInput, '');
   }
 
   if (timeRange) {

@@ -537,6 +537,23 @@ async function login(win, doc, email, password) {
     assert.ok(doc.getElementById('clientName').classList.contains('invalid'));
   });
 
+  await check('rechaza un billete que no cubre producto y mensajería antes de crear el pedido', async () => {
+    doc.getElementById('clientName').value = 'María López';
+    doc.getElementById('clientPhone').value = '+53 5838 2989';
+    doc.getElementById('clientMunicipality').value = 'Playa';
+    doc.getElementById('clientAddress').value = 'Calle 23, número 12';
+    doc.getElementById('clientReference').value = 'Frente al parque';
+    doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
+    doc.getElementById('clientPaymentNote').value = '397';
+
+    submit(doc.getElementById('checkoutForm'));
+    await tick(50);
+
+    assert.strictEqual(storeMock.state.lastOrderPayload, null);
+    assert.ok(doc.getElementById('clientPaymentNote').classList.contains('invalid'));
+    assert.match(doc.getElementById('clientPaymentNoteError').textContent, /398/);
+  });
+
   await check('crea el pedido en Supabase, limpia el carrito y abre WhatsApp', async () => {
     doc.getElementById('clientName').value = 'María López';
     doc.getElementById('clientPhone').value = '+53 5838 2989';
@@ -583,7 +600,16 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientName').value = 'Carlos Pérez';
     doc.getElementById('clientPhone').value = '5358382989';
     doc.getElementById('clientTimeRange').value = 'Mañana (9:00 — 12:00)';
+    doc.getElementById('clientPaymentNote').value = '27';
+    storeMock.state.lastOrderPayload = null;
 
+    submit(doc.getElementById('checkoutForm'));
+    await tick(50);
+    assert.strictEqual(storeMock.state.lastOrderPayload, null);
+    assert.ok(doc.getElementById('clientPaymentNote').classList.contains('invalid'));
+    assert.match(doc.getElementById('clientPaymentNoteError').textContent, /28/);
+
+    doc.getElementById('clientPaymentNote').value = '30';
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
 
