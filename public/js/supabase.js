@@ -10,7 +10,7 @@ const SUPABASE_ORDER_SELECT = [
   'id,created_at,status,client_name,client_phone,client_address,client_notes',
   'total_cents,commission_cents,order_code,delivery_method,payment_method,seller_id,seller_code',
   'seller:profiles(name,referral_code)',
-  'order_items(id,name,variant,unit_price_cents,quantity,cost_cents,commission_percent,commission_cents,supplier)'
+  'order_items(id,name,variant,unit_price_cents,quantity,cost_cents,commission_type,commission_percent,commission_fixed_cents,commission_cents,supplier)'
 ].join(',');
 
 class SupabaseError extends Error {
