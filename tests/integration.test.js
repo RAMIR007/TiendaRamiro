@@ -955,6 +955,57 @@ async function login(win, doc, email, password) {
     assert.match(supabaseClient, /order_items\([^)]*commission_type[^)]*commission_fixed_cents[^)]*\)/i);
   });
 
+
+  await check('la RPC propuesta conserva las garantías de la definición activa y calcula comisiones desde el servidor', () => {
+    const activeMigration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261031120000_supplier_availability.sql'),
+      'utf8'
+    );
+    const proposedMigration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261117120000_fix_order_commissions_and_legacy_rpc.sql'),
+      'utf8'
+    );
+    const activeSignature = /create or replace function public\.create_order\(\s*p_client_name text,\s*p_client_phone text,\s*p_client_address text,\s*p_client_notes text,\s*p_delivery_method text,\s*p_seller_code text,\s*p_items jsonb\s*\)[\s\S]*?\$\$;/i;
+    const activeRpc = (activeMigration.match(activeSignature) || [])[0];
+    const proposedRpc = (proposedMigration.match(activeSignature) || [])[0];
+
+    assert.ok(activeRpc, 'no se encontró la RPC de siete argumentos activa en main');
+    assert.ok(proposedRpc, 'no se encontró la RPC de siete argumentos propuesta');
+
+    const sharedContracts = [
+      ['validación del nombre', /length\(trim\(p_client_name\)\) < 3/i],
+      ['normalización del teléfono', /regexp_replace\(coalesce\(p_client_phone, ''\), '\[\^0-9\]', '', 'g'\)/i],
+      ['longitud del teléfono', /length\(v_phone\) < 8 or length\(v_phone\) > 15/i],
+      ['método de entrega permitido', /v_delivery not in \('domicilio', 'recogida'\)/i],
+      ['dirección obligatoria para domicilio', /v_delivery = 'domicilio' and \(v_address is null or length\(v_address\) < 5\)/i],
+      ['lista de artículos no vacía', /p_items is null or jsonb_typeof\(p_items\) <> 'array' or jsonb_array_length\(p_items\) = 0/i],
+      ['máximo de líneas', /jsonb_array_length\(p_items\) > 50/i],
+      ['cantidad válida por línea', /v_qty <= 0 or v_qty > 100/i],
+      ['producto activo bloqueado durante la compra', /where id = \(v_item ->> 'product_id'\)::uuid\s+and active\s+for update/i],
+      ['variante válida', /v_variant is null or not \(v_variant = any \(v_product\.variants\)\)/i],
+      ['stock cero solo con proveedor disponible', /v_product\.stock = 0 and not v_product\.supplier_available/i],
+      ['stock local suficiente', /v_product\.stock > 0 and v_product\.stock < v_qty/i],
+      ['límite agregado de proveedor', /v_supplier_order_quantity > 100/i],
+      ['atribución solo a personal autorizado', /where lower\(referral_code\) = lower\(trim\(p_seller_code\)\)\s+and role in \('admin', 'staff'\)/i],
+      ['total con precio leído del producto', /v_total := v_total \+ \(v_product\.price_cents \* v_qty\)/i],
+      ['descuento solo de inventario local', /if v_product\.stock > 0 then\s+update public\.products\s+set stock = stock - v_qty/i]
+    ];
+
+    sharedContracts.forEach(([label, pattern]) => {
+      assert.match(activeRpc, pattern, 'la RPC activa debe conservar: ' + label);
+      assert.match(proposedRpc, pattern, 'la RPC propuesta debe conservar: ' + label);
+    });
+
+    assert.doesNotMatch(proposedRpc, /v_item\s*->>\s*'(?:price|price_cents|total_cents)'/i,
+      'el checkout no debe aceptar importes enviados por el navegador');
+    assert.match(proposedRpc,
+      /if v_commission_type = 'amount' then\s+v_commission_unit := v_commission_fixed;\s+else\s+v_commission_unit := round\(v_product\.price_cents \* v_commission_percent \/ 100\)::integer;\s+end if;/i);
+    assert.match(proposedRpc, /v_commission_line := v_commission_unit \* v_qty;/i);
+    assert.match(proposedRpc,
+      /commission_type,\s*commission_percent,\s*commission_fixed_cents,\s*commission_cents,\s*supplier/i);
+    assert.match(proposedRpc, /v_commission_total := v_commission_total \+ v_commission_line;/i);
+  });
+
   /* ---------------------------------------------------------------- */
   console.log(`\n${passed} comprobaciones OK, ${failures.length} fallos\n`);
   if (failures.length > 0) process.exitCode = 1;
