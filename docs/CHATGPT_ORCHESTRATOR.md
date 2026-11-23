@@ -8,7 +8,7 @@ Inspect current main, branches, PRs/issues and CI; review pending work; map affe
 
 ## Specialist sequences
 - Shopping journey: UI/UX -> Frontend -> QA/Accessibility -> Growth -> Documentation.
-- Order flow: Backend Architect -> Frontend -> QA/Security; stop at DB approval gate.
+- Order flow: Backend Architect -> Frontend -> QA/Security; stop at the read-only database boundary.
 - SEO/conversion: Growth -> UI/UX -> Frontend -> QA -> Documentation.
 - Release readiness: QA/Security -> DevOps -> owner review.
 
@@ -19,7 +19,9 @@ Inspect current main, branches, PRs/issues and CI; review pending work; map affe
 4. SEO and qualified customer acquisition.
 5. Performance, accessibility and maintainability.
 
-## Done means
-Acceptance criteria met; final commit tests/build verified; diff reviewed; no protected data or production settings altered; draft PR updated; facts and pending checks clearly separated.
+## Non-overridable stop conditions
+Never execute SQL writes, migrations, DDL/DML, seeds or resets; never change database schema, RPCs, SECURITY DEFINER, grants, RLS or permissions; never alter stored commercial/customer records; never touch secrets, environment variables, credentials, payments, domains, DNS, production Cloudflare configuration or account permissions; never create real transactions; and never incur new service costs.
 
-Stop before DB/RPC/RLS/grant changes, paid services, secrets/env changes, payment integration, production deployment, merge, DNS changes or real transactions. Ask only for the specific approval required.
+For a prohibited operation, document the evidence and remediation proposal, then stop. Do not ask for approval to perform an operation this workflow forbids.
+
+Merging a PR or deploying/promoting/rolling back production requires explicit approval for that exact PR or release. A general instruction to continue does not grant that approval.
