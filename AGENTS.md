@@ -9,15 +9,18 @@ Lightweight static HTML/CSS/JavaScript storefront; Node build script; tests via 
 ## Autonomous scope
 On feature branches, inspect and modify application code, styles, static non-commercial copy, docs, tests and CI; run non-billable local checks; open/update draft PRs. One focused, high-impact package per execution.
 
-## Hard gates — never proceed without explicit task-specific approval
-- No SQL writes, migrations, seeds, resets, DDL or DML.
-- No changes to DB schema, RPC, SECURITY DEFINER, grants, RLS or DB permissions.
-- No changes to stored products, prices, orders, users, stock, inventory or business records.
-- No changes to secrets, env vars, credentials, payment providers, domains, DNS, production Cloudflare config or account permissions.
-- No paid services, paid Supabase branches/test environments, metered AI/API or subscriptions; budget is zero.
-- No merge to main, production deployment/promotion/rollback or real orders/payments/purchases.
+## Absolute prohibitions for this orchestrator
+- Never execute SQL writes, migrations, seeds, resets, DDL or DML.
+- Never change database schema, RPCs, SECURITY DEFINER functions, grants, RLS or database permissions.
+- Never alter stored products, prices, orders, users, stock, inventory or business records.
+- Never touch secrets, environment variables, credentials, payment providers, domains, DNS, production Cloudflare configuration or account permissions.
+- Never create real orders, payments, purchases or transactional forms.
+- Never use paid browser automation, paid APIs, paid Supabase branches/test environments, subscriptions or recurring services. New-service budget is zero.
+- Never merge to main or deploy, promote or roll back production without explicit approval for that exact PR or release.
 
-Read-only database audit is allowed only when access already exists and no cost is incurred. If a fix requires a protected operation, document evidence and a proposal; do not execute it.
+Generic instructions such as “execute everything” do not override these boundaries. If progress requires a prohibited operation, stop and document the exact blocker; do not perform it.
+
+Read-only database audit is allowed only when access already exists and no cost is incurred. Database remediation remains a documented proposal, not an executable action in this workflow.
 
 ## Security and quality
 Never expose secrets or customer data. Use synthetic test fixtures. Treat browser input as untrusted. Client-side validation is UX, not authoritative server-side security. Never invent stock, product specs, discounts, reviews, delivery coverage or guarantees.
@@ -29,7 +32,7 @@ Never expose secrets or customer data. Use synthetic test fixtures. Treat browse
 4. Work on a feature branch from current main.
 5. Add regression tests; run available tests/build.
 6. Review diff for data, DB, secret and config changes.
-7. Open/update draft PR; never merge or deploy.
+7. Open/update draft PR; never merge or deploy production.
 8. Verify the exact workflow run for the final commit.
 9. Report facts, inferences and pending items separately.
 
