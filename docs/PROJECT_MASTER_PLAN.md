@@ -10,8 +10,9 @@ A trustworthy storefront that converts qualified traffic into valid, fulfilled o
 
 ## Phase 1 — Order integrity (highest priority)
 - Review checkout, commissions, delivery fee and order payload.
-- Commission/RPC mismatch and legacy RPC exposure require a separately reviewed, owner-approved DB change.
-- No migration or live Supabase write without explicit approval and safe test plan.
+- Commission/RPC mismatch and legacy RPC exposure remain release blockers until independently resolved and verified.
+- The orchestrator is strictly read-only for the database: no SQL writes, migrations, DDL/DML, schema, RPC, SECURITY DEFINER, grants, RLS or permission changes.
+- Document database remediation as a proposal only. Do not create a paid test environment or mutate a live/test database.
 - Verify Cloudflare preview separately from GitHub Actions.
 
 ## Phase 2 — Customer trust and conversion
