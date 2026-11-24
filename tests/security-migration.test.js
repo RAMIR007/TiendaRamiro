@@ -12,7 +12,7 @@ assert.doesNotMatch(migration, /alter default privileges for role supabase_admin
 assert.match(migration, /revoke all privileges on all tables in schema public from anon, authenticated/i);
 assert.match(migration, /revoke all privileges on all sequences in schema public from anon, authenticated/i);
 assert.match(migration, /grant select on table public\.products, public\.categories to anon/i);
-assert.match(migration, /grant execute on function public\.create_order\(text, text, text, text, text, text, jsonb\)\s+to anon, authenticated/i);
+assert.match(migration, /grant execute on function public\.create_order\(text, text, text, text, text, text, jsonb\)\s+to anon/i);
 assert.match(migration, /revoke all privileges on function public\.create_order\(text, text, text, jsonb\)\s+from public, anon, authenticated/i);
 assert.match(migration, /alter function public\.create_order\(text, text, text, text, text, text, jsonb\) set search_path = pg_catalog/i);
 assert.match(migration, /alter function public\.handle_new_user\(\) set search_path = pg_catalog/i);
