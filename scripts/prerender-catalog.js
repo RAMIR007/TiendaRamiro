@@ -158,7 +158,7 @@ function injectCatalogMarkup(html, products, categories) {
       '\n<!-- CATALOG_PRERENDER_END -->\n    </div>');
 
   const countLabel = products.length === 1 ? '1 producto disponible' : products.length + ' productos disponibles';
-  const countPattern = /<span id="productsCount" class="products-count" aria-live="polite">[\\s\\S]*?<\\/span>/;
+  const countPattern = /<span id="productsCount" class="products-count" aria-live="polite">[\s\S]*?<\/span>/;
   if (!countPattern.test(output)) throw new Error('No se encontró el contador público de productos.');
   output = output.replace(countPattern, '<span id="productsCount" class="products-count" aria-live="polite">' + countLabel + '</span>');
 
