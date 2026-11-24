@@ -587,7 +587,6 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
     doc.getElementById('clientPaymentNote').value = '500';
     doc.getElementById('clientEmail').value = 'maria@test.com';
-    doc.getElementById('createCustomerAccount').checked = true;
 
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
@@ -598,9 +597,7 @@ async function login(win, doc, email, password) {
     assert.strictEqual(payload.p_client_phone, '5358382989');
     assert.strictEqual(payload.p_client_email, 'maria@test.com');
     assert.strictEqual(payload.p_delivery_method, 'domicilio');
-    assert.strictEqual(storeMock.state.otpRequests.length, 1);
-    assert.strictEqual(storeMock.state.otpRequests[0].email, 'maria@test.com');
-    assert.strictEqual(storeMock.state.otpRequests[0].create_user, true);
+    assert.strictEqual(storeMock.state.otpRequests.length, 0, 'el checkout no debe enviar correos ni crear cuentas');
     assert.strictEqual(payload.p_client_address, 'Calle 23, número 12, Playa (ref: Frente al parque)');
     assert.match(payload.p_client_notes, /Teléfono fijo: 72001234/);
     assert.match(payload.p_client_notes, /Horario de entrega\/recogida: Tarde/);
@@ -696,28 +693,23 @@ async function login(win, doc, email, password) {
   store.dom.window.close();
 
   /* ---------------------------------------------------------------- */
-  console.log('\nCuenta de cliente — acceso sin contraseña');
+  console.log('\nCuenta de cliente — acceso exclusivo con Google');
   /* ---------------------------------------------------------------- */
 
   const accountMock = createMock();
   const accountLogin = await loadPage('public/account.html', accountMock);
 
-  await check('muestra acceso por correo y proveedores sociales', () => {
+  await check('muestra Google como único método de acceso y mantiene la compra invitada', () => {
     assert.deepStrictEqual(accountLogin.errors, []);
-    assert.ok(accountLogin.doc.getElementById('customerEmail'));
     assert.ok(accountLogin.doc.querySelector('[data-provider="google"]'));
-    assert.ok(accountLogin.doc.querySelector('[data-provider="facebook"]'));
+    assert.strictEqual(accountLogin.doc.querySelector('[data-provider="facebook"]'), null);
+    assert.strictEqual(accountLogin.doc.getElementById('customerLoginForm'), null);
+    assert.strictEqual(accountLogin.doc.getElementById('customerEmail'), null);
+    assert.match(accountLogin.doc.getElementById('accountAuthPanel').textContent, /mismo correo/i);
   });
 
-  await check('envía enlace de acceso sin contraseña y permite crear usuario', async () => {
-    accountLogin.doc.getElementById('customerName').value = 'Cliente';
-    accountLogin.doc.getElementById('customerEmail').value = 'cliente@test.com';
-    submit(accountLogin.doc.getElementById('customerLoginForm'));
-    await tick(100);
-    assert.strictEqual(accountMock.state.otpRequests.length, 1);
-    assert.strictEqual(accountMock.state.otpRequests[0].email, 'cliente@test.com');
-    assert.strictEqual(accountMock.state.otpRequests[0].create_user, true);
-    assert.match(accountLogin.doc.getElementById('accountStatus').textContent, /enlace de acceso/i);
+  await check('rechaza proveedores distintos de Google', () => {
+    assert.throws(() => accountLogin.win.signInCustomerWithOAuth('facebook'), /Proveedor de acceso no permitido/);
   });
 
   accountLogin.dom.window.close();
