@@ -1,13 +1,11 @@
-// scripts/build.js — Verificación previa al despliegue.
-// No compila nada: el sitio es estático y vive en public/.
-// Cloudflare ejecuta `npm run build` (si está configurado) y luego
-// `npx wrangler deploy`, que publica únicamente la carpeta public/.
+// Verifica los activos estáticos y genera HTML inicial con catálogo público.
+// El prerender consulta únicamente productos/categorías públicos con la clave publishable.
 
 const fs = require('fs');
 const path = require('path');
+const { prerenderCatalog } = require('./prerender-catalog');
 
 const publicDir = path.join(__dirname, '..', 'public');
-
 const requiredFiles = [
   'index.html',
   'admin.html',
@@ -31,12 +29,18 @@ const requiredFiles = [
   'img/products/p1-1-800.webp'
 ];
 
-const missing = requiredFiles.filter((file) => !fs.existsSync(path.join(publicDir, file)));
+async function main() {
+  const missing = requiredFiles.filter((file) => !fs.existsSync(path.join(publicDir, file)));
+  if (missing.length > 0) {
+    throw new Error('Faltan archivos de producción en public/:\n  - ' + missing.join('\n  - '));
+  }
 
-if (missing.length > 0) {
-  console.error('Faltan archivos de producción en public/:');
-  missing.forEach((file) => console.error(`  - ${file}`));
-  process.exit(1);
+  const result = await prerenderCatalog(publicDir);
+  console.log('public/ listo: ' + requiredFiles.length + ' archivos, ' +
+    result.products + ' productos y ' + result.categories + ' categorías prerenderizados.');
 }
 
-console.log(`public/ listo para desplegar (${requiredFiles.length} archivos verificados).`);
+main().catch((error) => {
+  console.error('[build]', error.message || error);
+  process.exitCode = 1;
+});
