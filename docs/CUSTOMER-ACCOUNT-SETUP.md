@@ -22,7 +22,8 @@ En Supabase → Authentication → Sign In / Providers:
 - Mantén habilitado Email.
 - Asegura que la confirmación de correo está habilitada.
 - Revisa el template de Magic Link para que use `{{ .ConfirmationURL }}`.
-- Configura SMTP propio antes de abrir el registro a muchos clientes, para mejorar entrega y controlar límites.
+- **Bloqueante para clientes reales:** el SMTP predeterminado de Supabase solo envía a direcciones autorizadas del equipo del proyecto. Configura un SMTP propio antes de que compradores externos puedan recibir enlaces.
+- Configura SMTP propio para mejorar entrega y controlar límites; revisa también los límites de OTP/magic link.
 - En Authentication → Rate Limits, revisa límites de OTP y solicitudes de correo.
 
 El formulario del checkout solo solicita el enlace si el comprador marca expresamente la casilla de crear cuenta. La compra se registra incluso si el envío del enlace falla.
@@ -57,3 +58,8 @@ No guardes App Secret en GitHub ni en código del navegador.
 - No usar pedidos reales para pruebas: las pruebas de integración simulan Supabase.
 
 La RPC `claim_my_orders()` exige una sesión autenticada y un correo confirmado en `auth.users`. Las políticas RLS limitan la consulta de pedidos y líneas al `customer_id` autenticado.
+
+
+## 6. Vinculación de Google/Facebook
+
+Supabase Auth puede enlazar automáticamente identidades que comparten el mismo correo verificado y único. Si el cliente usa otro correo, no se fusionarán automáticamente; el enlace manual es una función beta y no está implementado en esta tienda.
