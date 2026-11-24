@@ -14,14 +14,14 @@ alter default privileges for role postgres in schema public
 alter default privileges for role postgres in schema public
   revoke all on sequences from anon, authenticated;
 alter default privileges for role postgres in schema public
-  revoke execute on functions from anon, authenticated;
+  revoke execute on functions from public, anon, authenticated;
 
 alter default privileges for role supabase_admin in schema public
   revoke all on tables from anon, authenticated;
 alter default privileges for role supabase_admin in schema public
   revoke all on sequences from anon, authenticated;
 alter default privileges for role supabase_admin in schema public
-  revoke execute on functions from anon, authenticated;
+  revoke execute on functions from public, anon, authenticated;
 
 -- Cierra los permisos heredados que hoy existen sobre todas las tablas y secuencias.
 revoke all privileges on all tables in schema public from anon, authenticated;
@@ -50,6 +50,33 @@ alter function public.create_order(text, text, text, text, text, text, jsonb) se
 alter function public.handle_new_user() set search_path = pg_catalog;
 alter function public.is_admin() set search_path = pg_catalog;
 alter function public.is_staff() set search_path = pg_catalog;
+
+-- auth.uid() debe ir cualificado porque el search_path queda restringido a pg_catalog.
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog
+as $function$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$function$;
+
+create or replace function public.is_staff()
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog
+as $function$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'staff')
+  );
+$function$;
 alter function public.set_updated_at() set search_path = pg_catalog;
 
 -- La firma antigua no debe permitir saltarse teléfono y método de entrega.
