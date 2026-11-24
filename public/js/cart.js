@@ -653,7 +653,6 @@ async function checkoutWhatsApp() {
 
   try {
     const localTotalCents = getCartTotals().totalCents;
-    let registered = false;
     let totalCents = localTotalCents;
     let orderCode = '';
 
@@ -672,28 +671,22 @@ async function checkoutWhatsApp() {
         }))
       });
 
-      registered = true;
       totalCents = result.totalCents || localTotalCents;
       orderCode = result.orderCode;
       rememberSellerCode(data.sellerCode);
     } catch (error) {
       console.error('[checkout]', error);
+      const reason = error && error.status === 0
+        ? 'No se pudo conectar con el sistema'
+        : (error.message || 'No se pudo registrar el pedido');
 
-      if (error && error.status === 0) {
-        // Sin conexión: no se pierde la venta; se ofrece enviar igual por WhatsApp.
-        const proceed = window.confirm(
-          'No se pudo registrar el pedido en el sistema. ¿Quieres enviarlo igual por WhatsApp?'
-        );
-        if (!proceed) return;
-      } else {
-        showToast(error.message || 'No se pudo registrar el pedido');
+      showToast(reason + '. El pedido no se ha enviado. Conservamos tus datos y el carrito; inténtalo de nuevo.');
 
-        if (typeof refreshProductsFromServer === 'function') {
-          await refreshProductsFromServer({ silent: true });
-        }
+      if (error && error.status !== 0 && typeof refreshProductsFromServer === 'function') {
+        await refreshProductsFromServer({ silent: true });
         syncCartWithCatalog();
-        return;
       }
+      return;
     }
 
     const message = buildWhatsAppMessage(data, totalCents, orderCode);
@@ -710,9 +703,7 @@ async function checkoutWhatsApp() {
     const timeInput = document.getElementById('clientTimeRange');
     if (timeInput) timeInput.value = '';
 
-    showToast(registered
-      ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
-      : 'Pedido enviado por WhatsApp. No se pudo registrar en el panel.');
+    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmar tu compra.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);
