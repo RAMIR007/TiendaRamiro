@@ -1,65 +1,46 @@
 # Configuración de acceso de clientes — RamiroX Market
 
-La interfaz y las RPC están preparadas para correo sin contraseña y para iniciar OAuth con Google/Facebook. Los proveedores sociales requieren credenciales externas y no se activan solo por mostrar los botones.
+## Modelo elegido
 
-## 1. URL de retorno de Auth
+La tienda mantiene el checkout de invitados como flujo principal. No se exige iniciar sesión ni crear una cuenta para comprar.
 
-En Supabase → Authentication → URL Configuration:
+La única opción de acceso de clientes es **Google OAuth**. Se ha retirado el envío de enlaces mágicos por correo y no se ofrece Facebook ni registro con contraseña en esta etapa. Por tanto, el flujo de cuenta no necesita SMTP.
 
-- Configura el Site URL con el dominio público real de la tienda.
-- Añade como Redirect URL autorizada la ruta `/account.html` del dominio público.
-- Añade la ruta equivalente del entorno Preview que se vaya a probar. No uses comodines amplios si puedes evitarlo.
+Para vincular pedidos de invitado, el cliente debe iniciar sesión con Google usando exactamente el mismo correo que escribió en el checkout. La función `claim_my_orders()` solo reclama pedidos cuando Auth confirma el correo y RLS limita el historial al propietario autenticado. Un correo diferente no se vincula automáticamente.
+
+## 1. Configurar Google OAuth
+
+1. Abre Google Cloud Console y crea un OAuth Client ID de tipo **Web application**.
+2. En Supabase → Authentication → Providers → Google, habilita Google e introduce el Client ID y Client Secret.
+3. Copia la **Callback URL** que muestra Supabase y añádela en Google Cloud como Authorized redirect URI. Es la URL de callback de Supabase, no la ruta `/account.html`.
+4. En Supabase → Authentication → URL Configuration, configura el Site URL con el dominio público real de la tienda.
+5. Añade como Redirect URL autorizada la ruta `/account.html` del dominio público y la ruta equivalente del Preview que se vaya a probar. Evita comodines amplios.
+6. Guarda el Client Secret únicamente en la configuración segura de Supabase. Nunca lo pongas en GitHub, JavaScript público, variables `NEXT_PUBLIC_*` ni en este repositorio.
 
 Dominio que figura actualmente como canónico en el HTML:
 `https://tiendaramiro.ramiroxavier07.workers.dev/account.html`
 
-Si Cloudflare usa otro dominio definitivo, sustituye esta URL por el dominio final antes de activar el registro público.
+Si Cloudflare utiliza otro dominio definitivo, sustituye esta URL por el dominio real antes de activar el acceso público.
 
-## 2. Correo sin contraseña
+## 2. Qué ocurre con los clientes
 
-En Supabase → Authentication → Sign In / Providers:
+- El cliente puede completar el pedido como invitado, aunque no tenga Google o no quiera usarlo.
+- El correo del checkout se conserva en el pedido, pero no inicia sesión ni envía correos.
+- Desde «Mi cuenta», el cliente puede continuar con Google.
+- Después del retorno OAuth, la tienda ejecuta `claim_my_orders()` y muestra los pedidos vinculados a ese correo verificado.
+- Si el correo de Google no coincide con el del pedido, el pedido no se reclama automáticamente.
 
-- Mantén habilitado Email.
-- Asegura que la confirmación de correo está habilitada.
-- Revisa el template de Magic Link para que use `{{ .ConfirmationURL }}`.
-- **Bloqueante para clientes reales:** el SMTP predeterminado de Supabase solo envía a direcciones autorizadas del equipo del proyecto. Configura un SMTP propio antes de que compradores externos puedan recibir enlaces.
-- Configura SMTP propio para mejorar entrega y controlar límites; revisa también los límites de OTP/magic link.
-- En Authentication → Rate Limits, revisa límites de OTP y solicitudes de correo.
+## 3. Pruebas antes de producción
 
-El formulario del checkout solo solicita el enlace si el comprador marca expresamente la casilla de crear cuenta. La compra se registra incluso si el envío del enlace falla. Tras verificar el correo, el sistema vincula pedidos y guarda en el perfil el nombre, teléfono y dirección de la compra más reciente vinculada.
-
-## 3. Google
-
-1. Crea un OAuth Client ID de tipo Web en Google Cloud Console.
-2. En Supabase → Authentication → Providers → Google, habilita Google e introduce Client ID y Client Secret.
-3. Copia la Callback URL que muestra Supabase y añádela como Authorized redirect URI en Google Cloud.
-4. Comprueba que `/account.html` del dominio de la tienda está en Redirect URLs autorizadas de Supabase.
-
-No guardes Client Secret en GitHub, JavaScript público, variables `NEXT_PUBLIC_*` ni en este repositorio.
-
-## 4. Facebook
-
-1. Crea una aplicación en Meta for Developers y añade el producto Facebook Login.
-2. En Supabase → Authentication → Providers → Facebook, habilita el proveedor e introduce App ID y App Secret.
-3. Copia la Callback URL que muestra Supabase y configúrala en Facebook Login → Valid OAuth Redirect URIs.
-4. Verifica los permisos de email y que el dominio de la tienda esté configurado en la aplicación de Meta.
-5. Añade `/account.html` a Redirect URLs autorizadas de Supabase.
-
-No guardes App Secret en GitHub ni en código del navegador.
-
-## 5. Prueba previa a producción
-
-- Probar correo con una dirección de control propia.
-- Verificar que el enlace devuelve a `/account.html` y crea sesión.
-- Confirmar que un pedido con el mismo correo verificado se reclama.
+- Configurar primero las credenciales OAuth en Supabase y las URLs autorizadas.
+- Probar el inicio de sesión con una cuenta Google de control.
+- Probar un pedido de invitado simulado con el mismo correo y confirmar su reclamación.
 - Confirmar que una cuenta con otro correo no puede consultar ese pedido.
-- Probar Google/Facebook solo después de configurar credenciales.
 - Probar en Preview antes de publicar.
-- No usar pedidos reales para pruebas: las pruebas de integración simulan Supabase.
+- No crear pedidos comerciales reales para pruebas.
 
-La RPC `claim_my_orders()` exige una sesión autenticada y un correo confirmado en `auth.users`. Las políticas RLS limitan la consulta de pedidos y líneas al `customer_id` autenticado.
+## 4. Funciones aplazadas
 
+Facebook OAuth, registro con contraseña y acceso por enlace de correo quedan fuera de esta etapa. Podrán evaluarse más adelante. No se necesita contratar SMTP para el flujo Google OAuth.
 
-## 6. Vinculación de Google/Facebook
-
-Supabase Auth puede enlazar automáticamente identidades que comparten el mismo correo verificado y único. Si el cliente usa otro correo, no se fusionarán automáticamente; el enlace manual es una función beta y no está implementado en esta tienda.
+La protección de pedidos sigue dependiendo de RLS y de la RPC `claim_my_orders()`, que exige sesión autenticada y correo confirmado en Supabase Auth.
