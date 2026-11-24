@@ -655,13 +655,19 @@ async function checkoutWhatsApp() {
     const localTotalCents = getCartTotals().totalCents;
     let totalCents = localTotalCents;
     let orderCode = '';
+    const registrationNotes = [
+      data.notes ? 'Comentarios: ' + data.notes : '',
+      data.phoneLandline ? 'Teléfono fijo: ' + data.phoneLandline : '',
+      data.timeRange ? 'Horario de entrega/recogida: ' + data.timeRange : '',
+      data.paysWith > 0 ? 'Paga con: ' + formatCents(toCents(data.paysWith)) : ''
+    ].filter(Boolean).join('\n');
 
     try {
       const result = await createOrderInApi({
         name: data.name,
         phone: data.phone,
         address: data.fullAddress,
-        notes: data.notes,
+        notes: registrationNotes,
         deliveryMethod: data.deliveryMethod,
         sellerCode: data.sellerCode,
         items: cart.map((item) => ({
