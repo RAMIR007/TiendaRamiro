@@ -49,4 +49,16 @@ assert.match(privateMigration, /alter policy orders_admin_read on public\.orders
 assert.match(privateMigration, /security invoker/i);
 assert.match(privateMigration, /create or replace function public\.create_order\([\s\S]*?security invoker/i);\nassert.match(privateMigration, /create or replace function public\.claim_my_orders\(\)[\s\S]*?security invoker/i);\nassert.match(privateMigration, /create or replace function private\.create_order\([\s\S]*?security definer/i);
 
+
+const profileMigration = fs.readFileSync(
+  path.join(__dirname, '..', 'supabase/migrations/20261124111630_customer_profile_contact.sql'),
+  'utf8'
+);
+assert.match(profileMigration, /add column if not exists phone text/i);
+assert.match(profileMigration, /add column if not exists address text/i);
+assert.match(profileMigration, /email_confirmed_at is not null/i);
+assert.match(profileMigration, /where o\.customer_id = v_user_id/i);
+assert.match(profileMigration, /update public\.profiles p/i);
+assert.match(profileMigration, /grant execute on function private\.claim_my_orders\(\) to authenticated/i);
+
 console.log('Seguridad, aislamiento privado y vinculación de cuentas SQL: todas las comprobaciones OK.');
