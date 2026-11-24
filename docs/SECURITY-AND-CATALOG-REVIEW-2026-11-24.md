@@ -69,7 +69,7 @@ El build falla si no puede obtener productos/categorías activos, para evitar pu
 
 ## Validación automatizada
 
-- GitHub Actions run #56: pruebas y build correctos; 47 comprobaciones, 0 fallos.
+- GitHub Actions run #73: pruebas y build correctos; 47 comprobaciones, 0 fallos.
 - El build generó 8 productos y 9 categorías prerenderizados.
 - Las pruebas de cuenta usan Supabase simulado; no se enviaron correos reales ni se crearon pedidos reales.
 
