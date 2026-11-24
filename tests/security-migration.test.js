@@ -44,7 +44,7 @@ assert.match(privateMigration, /create schema if not exists private/i);
 assert.match(privateMigration, /alter function public\.is_admin\(\) set schema private/i);
 assert.match(privateMigration, /alter function public\.claim_my_orders\(\) set schema private/i);
 assert.match(privateMigration, /grant execute on function private\.claim_my_orders\(\) to authenticated/i);
-assert.match(privateMigration, /alter policy orders_customer_read_own/i) === false;
+assert.doesNotMatch(privateMigration, /alter policy orders_customer_read_own/i);
 assert.match(privateMigration, /alter policy orders_admin_read on public\.orders using \(private\.is_admin\(\)\)/i);
 assert.match(privateMigration, /security invoker/i);
 assert.doesNotMatch(privateMigration, /create or replace function public\.create_order\([\s\S]*?security definer/i);
