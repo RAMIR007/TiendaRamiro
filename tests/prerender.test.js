@@ -38,6 +38,7 @@ assert.equal(itemList.itemListElement[0].item.offers.price, '28.00');
 const html = [
   '<html><head><link rel="canonical" href="https://example.test/"></head><body>',
   '<div id="categoriesPills" class="categories-pills" role="group" aria-label="Filtrar por categoría"><!-- Generado desde STORE_CONFIG.categories --></div>',
+  '<span id="productsCount" class="products-count" aria-live="polite">Cargando...</span>',
   '<main><div id="productsGrid" class="products-grid"><!-- Inyectado dinámicamente por store.js --></div></main>',
   '</body></html>'
 ].join('\n');
