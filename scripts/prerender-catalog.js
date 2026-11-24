@@ -157,6 +157,11 @@ function injectCatalogMarkup(html, products, categories) {
       products.map((product) => renderProductCard(product, categories)).join('\n') +
       '\n<!-- CATALOG_PRERENDER_END -->\n    </div>');
 
+  const countLabel = products.length === 1 ? '1 producto disponible' : products.length + ' productos disponibles';
+  const countPattern = /<span id="productsCount" class="products-count" aria-live="polite">[\\s\\S]*?<\\/span>/;
+  if (!countPattern.test(output)) throw new Error('No se encontró el contador público de productos.');
+  output = output.replace(countPattern, '<span id="productsCount" class="products-count" aria-live="polite">' + countLabel + '</span>');
+
   output = output.replace(/<script[^>]*id="catalog-prerender-data"[^>]*>[\s\S]*?<\/script>\s*/g, '');
   output = output.replace(/<script[^>]*id="catalog-item-list-jsonld"[^>]*>[\s\S]*?<\/script>\s*/g, '');
 
