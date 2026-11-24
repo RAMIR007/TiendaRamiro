@@ -275,7 +275,7 @@ async function completeCustomerAuthRedirect() {
   const errorDescription = params.get('error_description') || params.get('error');
   if (errorDescription) {
     history.replaceState(null, '', window.location.pathname + window.location.search);
-    throw new SupabaseError(decodeURIComponent(errorDescription.replace(/\+/g, ' ')), 400, null);
+    throw new SupabaseError(errorDescription, 400, null);
   }
 
   const accessToken = params.get('access_token');
