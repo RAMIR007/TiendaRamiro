@@ -72,6 +72,7 @@ const PRODUCTS = [
 const ORDERS = [
   {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    customer_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
     created_at: '2026-10-24T12:00:00Z',
     status: 'pendiente',
     client_name: 'María López',
@@ -91,7 +92,8 @@ const AUDIT = [
 const USERS = {
   'admin@test.com': { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'admin@test.com', password: 'Admin12345', name: 'Administrador', role: 'admin' },
   'ventas@test.com': { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: 'ventas@test.com', password: 'Ventas12345', name: 'Ventas', role: 'staff' },
-  'pending@test.com': { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', email: 'pending@test.com', password: 'Pending12345', name: 'Pendiente', role: 'pending' }
+  'pending@test.com': { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', email: 'pending@test.com', password: 'Pending12345', name: 'Pendiente', role: 'pending' },
+  'cliente@test.com': { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', email: 'cliente@test.com', name: 'Cliente', role: 'customer' }
 };
 
 function createMock() {
@@ -113,6 +115,8 @@ function createMock() {
     productImages: [],
     orders: clone(ORDERS),
     audit: clone(AUDIT),
+    otpRequests: [],
+    claimedOrders: 1,
     profiles: Object.fromEntries(Object.values(USERS).map((user) => [
       user.id,
       { id: user.id, name: user.name, role: user.role }
@@ -167,6 +171,11 @@ function createMock() {
         expires_in: 3600,
         user: { id: user.id, email: user.email }
       });
+    }
+
+    if (route === '/auth/v1/otp' && method === 'POST') {
+      state.otpRequests.push({ email: body.email, create_user: body.create_user, data: body.data, redirect_to: url.searchParams.get('redirect_to') });
+      return respond({}, 200);
     }
 
     if (route === '/auth/v1/recover' && method === 'POST') {
@@ -280,6 +289,11 @@ function createMock() {
     }
 
     if (route === '/rest/v1/orders' && method === 'GET') {
+      const customerFilter = url.searchParams.get('customer_id');
+      if (customerFilter) {
+        const customerId = customerFilter.replace(/^eq\./, '');
+        return respond(state.orders.filter((order) => order.customer_id === customerId));
+      }
       return respond(state.orders);
     }
 
@@ -295,6 +309,10 @@ function createMock() {
       const id = String(url.searchParams.get('id') || '').replace(/^eq\./, '');
       state.orders = state.orders.filter((order) => order.id !== id);
       return respond(null, 204);
+    }
+
+    if (route === '/rest/v1/rpc/claim_my_orders' && method === 'POST') {
+      return respond(state.claimedOrders);
     }
 
     if (route === '/rest/v1/rpc/create_order' && method === 'POST') {
@@ -568,6 +586,8 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientReference').value = 'Frente al parque';
     doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
     doc.getElementById('clientPaymentNote').value = '500';
+    doc.getElementById('clientEmail').value = 'maria@test.com';
+    doc.getElementById('createCustomerAccount').checked = true;
 
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
@@ -576,7 +596,11 @@ async function login(win, doc, email, password) {
     assert.ok(payload, 'no se llamó a create_order');
     assert.strictEqual(payload.p_client_name, 'María López');
     assert.strictEqual(payload.p_client_phone, '5358382989');
+    assert.strictEqual(payload.p_client_email, 'maria@test.com');
     assert.strictEqual(payload.p_delivery_method, 'domicilio');
+    assert.strictEqual(storeMock.state.otpRequests.length, 1);
+    assert.strictEqual(storeMock.state.otpRequests[0].email, 'maria@test.com');
+    assert.strictEqual(storeMock.state.otpRequests[0].create_user, true);
     assert.strictEqual(payload.p_client_address, 'Calle 23, número 12, Playa (ref: Frente al parque)');
     assert.match(payload.p_client_notes, /Teléfono fijo: 72001234/);
     assert.match(payload.p_client_notes, /Horario de entrega\/recogida: Tarde/);
@@ -670,6 +694,47 @@ async function login(win, doc, email, password) {
   });
 
   store.dom.window.close();
+
+  /* ---------------------------------------------------------------- */
+  console.log('\nCuenta de cliente — acceso sin contraseña');
+  /* ---------------------------------------------------------------- */
+
+  const accountMock = createMock();
+  const accountLogin = await loadPage('public/account.html', accountMock);
+
+  await check('muestra acceso por correo y proveedores sociales', () => {
+    assert.deepStrictEqual(accountLogin.errors, []);
+    assert.ok(accountLogin.doc.getElementById('customerEmail'));
+    assert.ok(accountLogin.doc.querySelector('[data-provider="google"]'));
+    assert.ok(accountLogin.doc.querySelector('[data-provider="facebook"]'));
+  });
+
+  await check('envía enlace de acceso sin contraseña y permite crear usuario', async () => {
+    accountLogin.doc.getElementById('customerName').value = 'Cliente';
+    accountLogin.doc.getElementById('customerEmail').value = 'cliente@test.com';
+    submit(accountLogin.doc.getElementById('customerLoginForm'));
+    await tick(100);
+    assert.strictEqual(accountMock.state.otpRequests.length, 1);
+    assert.strictEqual(accountMock.state.otpRequests[0].email, 'cliente@test.com');
+    assert.strictEqual(accountMock.state.otpRequests[0].create_user, true);
+    assert.match(accountLogin.doc.getElementById('accountStatus').textContent, /enlace de acceso/i);
+  });
+
+  accountLogin.dom.window.close();
+
+  const accountCallback = await loadPage('public/account.html', accountMock, {
+    url: 'http://localhost/account.html#access_token=token-dddddddd-dddd-4ddd-8ddd-dddddddddddd&refresh_token=refresh-customer&expires_in=3600'
+  });
+
+  await check('verifica la sesión, reclama pedidos del mismo correo y muestra el historial propio', async () => {
+    await tick(120);
+    assert.strictEqual(accountCallback.doc.getElementById('customerDashboard').hidden, false);
+    assert.match(accountCallback.doc.getElementById('claimSummary').textContent, /1 pedido/);
+    assert.ok(accountCallback.doc.getElementById('customerOrdersList').textContent.includes('Pedido'));
+    assert.strictEqual(accountCallback.win.sessionStorage.getItem('rx_sb_session') !== null, true);
+  });
+
+  accountCallback.dom.window.close();
 
   /* ---------------------------------------------------------------- */
   console.log('\nPanel — autenticación Supabase');
