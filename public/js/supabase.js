@@ -239,28 +239,11 @@ async function requestPasswordReset(email, redirectTo) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Cuenta de cliente: correo sin contraseña y OAuth                   */
+/* Cuenta de cliente: acceso OAuth solo con Google                    */
 /* ------------------------------------------------------------------ */
 
-async function requestCustomerMagicLink(email, name, redirectTo) {
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-  if (!normalizedEmail) {
-    throw new SupabaseError('Escribe tu correo electrónico.', 400, null);
-  }
-
-  const query = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : '';
-  await supabaseRequest(`/auth/v1/otp${query}`, {
-    method: 'POST',
-    body: {
-      email: normalizedEmail,
-      create_user: true,
-      data: { name: String(name || '').trim() }
-    }
-  });
-}
-
 function signInCustomerWithOAuth(provider, redirectTo) {
-  const allowedProviders = ['google', 'facebook'];
+  const allowedProviders = ['google'];
   if (!allowedProviders.includes(provider)) {
     throw new SupabaseError('Proveedor de acceso no permitido.', 400, null);
   }
