@@ -316,6 +316,16 @@ async function fetchCustomerOrders(limit = 50) {
   return Array.isArray(rows) ? rows : [];
 }
 
+async function fetchCustomerProfile() {
+  const token = await requireAccessToken();
+  const user = await getCurrentUser();
+  const rows = await supabaseRequest(
+    `/rest/v1/profiles?select=name,phone,address&id=eq.${encodeURIComponent(user.id)}&limit=1`,
+    { token }
+  );
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Catálogo                                                            */
 /* ------------------------------------------------------------------ */
