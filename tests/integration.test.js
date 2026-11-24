@@ -545,6 +545,7 @@ async function login(win, doc, email, password) {
   await check('rechaza un billete que no cubre producto y mensajería antes de crear el pedido', async () => {
     doc.getElementById('clientName').value = 'María López';
     doc.getElementById('clientPhone').value = '+53 5838 2989';
+    doc.getElementById('clientPhoneLandline').value = '72001234';
     doc.getElementById('clientMunicipality').value = 'Playa';
     doc.getElementById('clientAddress').value = 'Calle 23, número 12';
     doc.getElementById('clientReference').value = 'Frente al parque';
@@ -577,6 +578,9 @@ async function login(win, doc, email, password) {
     assert.strictEqual(payload.p_client_phone, '5358382989');
     assert.strictEqual(payload.p_delivery_method, 'domicilio');
     assert.strictEqual(payload.p_client_address, 'Calle 23, número 12, Playa (ref: Frente al parque)');
+    assert.match(payload.p_client_notes, /Teléfono fijo: 72001234/);
+    assert.match(payload.p_client_notes, /Horario de entrega\/recogida: Tarde/);
+    assert.match(payload.p_client_notes, /Paga con: \$500 USD/);
     assert.strictEqual(payload.p_items.length, 2);
     assert.strictEqual(payload.p_items[0].quantity, 12);
     assert.strictEqual(payload.p_items[1].quantity, 3);
