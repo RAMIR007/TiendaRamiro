@@ -26,7 +26,7 @@ En Supabase → Authentication → Sign In / Providers:
 - Configura SMTP propio para mejorar entrega y controlar límites; revisa también los límites de OTP/magic link.
 - En Authentication → Rate Limits, revisa límites de OTP y solicitudes de correo.
 
-El formulario del checkout solo solicita el enlace si el comprador marca expresamente la casilla de crear cuenta. La compra se registra incluso si el envío del enlace falla.
+El formulario del checkout solo solicita el enlace si el comprador marca expresamente la casilla de crear cuenta. La compra se registra incluso si el envío del enlace falla. Tras verificar el correo, el sistema vincula pedidos y guarda en el perfil el nombre, teléfono y dirección de la compra más reciente vinculada.
 
 ## 3. Google
 
