@@ -463,7 +463,7 @@ function validateCheckout() {
   const emailIsValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   if (!emailIsValid) {
     markInvalid(emailInput, 'Escribe un correo electrónico válido.');
-  } else {  } else {
+  } else {
     setFieldError(emailInput, '');
   }
 
