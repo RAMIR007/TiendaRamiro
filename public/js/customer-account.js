@@ -3,8 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashboard = document.getElementById('customerDashboard');
   const status = document.getElementById('accountStatus');
   const dashboardStatus = document.getElementById('dashboardStatus');
-  const loginForm = document.getElementById('customerLoginForm');
-  const sendButton = document.getElementById('sendMagicLinkBtn');
 
   const setStatus = (message, isError = false) => {
     status.textContent = message;
@@ -83,31 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  loginForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const email = document.getElementById('customerEmail').value.trim().toLowerCase();
-    const name = document.getElementById('customerName').value.trim();
-    if (!email) return;
-
-    sendButton.disabled = true;
-    sendButton.textContent = 'Enviando…';
-    try {
-      await requestCustomerMagicLink(email, name, new URL('/account.html', window.location.origin).toString());
-      setStatus('Te enviamos un enlace de acceso. Abre el correo y pulsa el enlace para verificar tu cuenta.');
-    } catch (error) {
-      setStatus(error.message || 'No se pudo enviar el enlace. Inténtalo más tarde.', true);
-    } finally {
-      sendButton.disabled = false;
-      sendButton.textContent = 'Enviar enlace de acceso';
-    }
-  });
-
-  document.querySelectorAll('[data-provider]').forEach((button) => {
+  document.querySelectorAll('[data-provider="google"]').forEach((button) => {
     button.addEventListener('click', () => {
+      button.disabled = true;
+      button.textContent = 'Conectando con Google…';
       try {
-        signInCustomerWithOAuth(button.dataset.provider, new URL('/account.html', window.location.origin).toString());
+        signInCustomerWithOAuth('google', new URL('/account.html', window.location.origin).toString());
       } catch (error) {
-        setStatus(error.message || 'No se pudo iniciar el acceso.', true);
+        button.disabled = false;
+        button.textContent = 'Continuar con Google';
+        setStatus(error.message || 'No se pudo iniciar el acceso con Google.', true);
       }
     });
   });
