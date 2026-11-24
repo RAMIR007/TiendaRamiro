@@ -28,7 +28,7 @@ revoke all privileges on all tables in schema public from anon, authenticated;
 revoke all privileges on all sequences in schema public from anon, authenticated;
 
 -- El público solo puede leer los datos que forman el catálogo.
-grant select on table public.products, public.categories to anon;
+grant select on table public.products, public.categories to anon, authenticated;
 grant select on table public.products, public.categories to authenticated;
 
 -- El panel usa authenticated; RLS sigue determinando qué filas puede tocar.
