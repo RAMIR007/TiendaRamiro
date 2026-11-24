@@ -5,7 +5,7 @@
 - El cliente no necesita iniciar sesión ni crear una cuenta de Auth antes de comprar.
 - El formulario recoge nombre, teléfono y datos de entrega.
 - La RPC pública create_order (firma de siete argumentos) valida los datos y crea el pedido y sus líneas desde el servidor.
-- El pedido conserva los datos de contacto del cliente en public.orders; esto constituye el registro comercial del cliente y del pedido.
+- El pedido conserva los datos de contacto en public.orders: nombre, teléfono principal, dirección/municipio/referencia y, dentro de client_notes, teléfono fijo, horario elegido, importe del billete y comentarios. Esto constituye el registro comercial del cliente y del pedido.
 - No se crea una cuenta de inicio de sesión ni se asigna un perfil de personal. Para crear una cuenta de cliente con acceso futuro haría falta añadir correo/identidad verificada y un flujo de autenticación separado.
 
 ## Hallazgos confirmados en Supabase
