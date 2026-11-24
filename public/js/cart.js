@@ -430,6 +430,8 @@ function validateCheckout() {
   const sellerInput = document.getElementById('sellerCodeInput');
   const notesInput = document.getElementById('clientNotes');
   const paymentInput = document.getElementById('clientPaymentNote');
+  const emailInput = document.getElementById('clientEmail');
+  const createAccountInput = document.getElementById('createCustomerAccount');
 
   const name = nameInput ? nameInput.value.trim() : '';
   const phone = getDigits(phoneInput ? phoneInput.value : '');
@@ -442,6 +444,8 @@ function validateCheckout() {
   const sellerCode = sellerInput ? sellerInput.value.trim().toUpperCase() : '';
   const notes = notesInput ? notesInput.value.trim() : '';
   const paysWith = paymentInput ? Number(paymentInput.value) || 0 : 0;
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+  const createAccount = Boolean(createAccountInput && createAccountInput.checked);
 
   let ok = true;
   let firstInvalid = null;
@@ -456,6 +460,15 @@ function validateCheckout() {
     setFieldError(nameInput, '');
   } else {
     markInvalid(nameInput, 'Escribe tu nombre completo (mínimo 3 letras).');
+  }
+
+  const emailIsValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!emailIsValid) {
+    markInvalid(emailInput, 'Escribe un correo electrónico válido.');
+  } else if (createAccount && !email) {
+    markInvalid(emailInput, 'Necesitas un correo para crear tu cuenta.');
+  } else {
+    setFieldError(emailInput, '');
   }
 
   const { minPhoneDigits, maxPhoneDigits } = STORE_CONFIG.checkout;
@@ -517,7 +530,8 @@ function validateCheckout() {
 
   return {
     ok, firstInvalid, name, phone, phoneLandline, deliveryMethod,
-    municipality, address, reference, timeRange, sellerCode, notes, paysWith, fullAddress
+    municipality, address, reference, timeRange, sellerCode, notes, paysWith, fullAddress,
+    email, createAccount
   };
 }
 
@@ -670,6 +684,7 @@ async function checkoutWhatsApp() {
         notes: registrationNotes,
         deliveryMethod: data.deliveryMethod,
         sellerCode: data.sellerCode,
+        email: data.email,
         items: cart.map((item) => ({
           product_id: item.id,
           variant: item.variant,
@@ -695,21 +710,41 @@ async function checkoutWhatsApp() {
       return;
     }
 
+    let accountLinkSent = false;
+    if (data.createAccount) {
+      try {
+        await requestCustomerMagicLink(
+          data.email,
+          data.name,
+          new URL('/account.html', window.location.origin).toString()
+        );
+        accountLinkSent = true;
+      } catch (error) {
+        console.warn('[auth] No se pudo enviar el enlace de acceso:', error);
+      }
+    }
+
     const message = buildWhatsAppMessage(data, totalCents, orderCode);
     openWhatsApp(buildWhatsAppUrl(message));
 
     clearCart();
     closeCartDrawer();
 
-    ['clientName', 'clientPhone', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
+    ['clientName', 'clientPhone', 'clientEmail', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
       'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
       const input = document.getElementById(id);
       if (input) input.value = '';
     });
     const timeInput = document.getElementById('clientTimeRange');
     if (timeInput) timeInput.value = '';
+    const accountInput = document.getElementById('createCustomerAccount');
+    if (accountInput) accountInput.checked = false;
 
-    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmar tu compra.');
+    showToast(data.createAccount
+      ? (accountLinkSent
+        ? 'Pedido registrado. Revisa tu correo para activar tu cuenta y envía el mensaje en WhatsApp.'
+        : 'Pedido registrado. No pudimos enviar el enlace de cuenta; puedes intentarlo desde Mi cuenta. Envía el mensaje en WhatsApp.')
+      : 'Pedido registrado. Envía el mensaje en WhatsApp para confirmar tu compra.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);
@@ -763,7 +798,7 @@ function setupCartEvents() {
     });
   }
 
-  ['clientName', 'clientPhone', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
+  ['clientName', 'clientPhone', 'clientEmail', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
     'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
     const input = document.getElementById(id);
     if (!input) return;
