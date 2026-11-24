@@ -80,3 +80,29 @@ El build falla si no puede obtener productos/categorías activos, para evitar pu
 - El preview de Cloudflare que se comprobó anteriormente todavía servía una versión anterior; el despliegue de los últimos cambios no está confirmado.
 - Los proveedores OAuth, el SMTP de Auth y la URL de retorno deben revisarse antes de anunciar el registro a clientes.
 - No se han cambiado productos, precios, pedidos existentes, inventario ni lógica de comisiones.
+
+## Bloqueo P1 confirmado en la base viva — 24 de noviembre de 2026
+
+Esta sección se basa en consultas `SELECT` de solo lectura al proyecto Supabase activo. No se ejecutaron migraciones ni operaciones de escritura durante esta revisión.
+
+- El historial vivo registra las cuatro migraciones `20261124110711`, `20261124110804`, `20261124111358` y `20261124111630`.
+- El historial **no** registra `20261117120000_fix_order_commissions_and_legacy_rpc`.
+- La definición activa de `private.create_order(..., p_items jsonb)` consulta `commission_percent`, pero no lee `commission_type` ni `commission_fixed_cents`; tampoco guarda esos campos en `order_items`.
+- La función activa de ocho argumentos delega en esa función de siete argumentos. El cliente de checkout envía siempre `p_client_email` (como texto o `null`), por lo que el recorrido actual usa la firma de ocho argumentos.
+- Una consulta agregada encontró **6 productos activos con comisión fija positiva** y **0 productos activos con comisión porcentual positiva**. La función activa no aplica esas seis comisiones fijas; para esos productos la comisión registrada puede quedar en cero.
+
+**Conclusión:** el hito A de integridad de comisiones sigue bloqueado. El checkout sí calcula el precio del producto y valida stock/variantes desde el servidor, pero la comisión fija no está aplicada en la RPC activa.
+
+### Riesgo de orden de migraciones
+
+El archivo `20261117120000_fix_order_commissions_and_legacy_rpc.sql` de esta rama, tal como está escrito, reemplaza `public.create_order` de siete argumentos por una función `SECURITY DEFINER` con `search_path = public`. El estado vivo actual, después de `20261124111358_private_security_functions`, usa una función pública `SECURITY INVOKER` que delega en `private.create_order`.
+
+Aplicar ese archivo después del estado actual sobrescribiría el wrapper público con una implementación privilegiada en `public`, deshaciendo parte del aislamiento de seguridad. Además, no actualiza la función privada de siete argumentos que usa la RPC actual de ocho argumentos. **No aplicar ese archivo tal como está.**
+
+Una futura propuesta debe ser una migración nueva y posterior al último número aplicado, actualizar directamente la implementación privada de siete argumentos para calcular y guardar comisión fija/porcentual, y conservar los wrappers públicos `SECURITY INVOKER`, sus permisos y las políticas RLS. Este orquestador no puede ejecutar ni aplicar esa migración.
+
+### Riesgo residual de privilegios por defecto
+
+La consulta de ACL confirmó que los privilegios actuales de tablas públicas están restringidos para `anon`, y que la firma antigua de cuatro argumentos no es ejecutable por `anon` ni `authenticated`. Sin embargo, los privilegios por defecto de objetos futuros creados por `supabase_admin` en `public` todavía incluyen permisos para `anon` y `authenticated`. Los objetos existentes no muestran esos grants amplios; el riesgo afecta a futuros objetos creados con ese rol y requiere una revisión separada con el rol propietario adecuado.
+
+No se modificó ningún permiso, función, tabla, producto, precio, pedido, usuario ni inventario durante esta auditoría.
