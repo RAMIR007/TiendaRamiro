@@ -710,6 +710,14 @@ async function checkoutWhatsApp() {
       return;
     }
 
+    // El pedido ya está confirmado: abre WhatsApp y vacía el carrito antes
+    // de cualquier petición secundaria de Auth para evitar duplicados y retrasos.
+    const message = buildWhatsAppMessage(data, totalCents, orderCode);
+    openWhatsApp(buildWhatsAppUrl(message));
+
+    clearCart();
+    closeCartDrawer();
+
     let accountLinkSent = false;
     if (data.createAccount) {
       try {
@@ -723,12 +731,6 @@ async function checkoutWhatsApp() {
         console.warn('[auth] No se pudo enviar el enlace de acceso:', error);
       }
     }
-
-    const message = buildWhatsAppMessage(data, totalCents, orderCode);
-    openWhatsApp(buildWhatsAppUrl(message));
-
-    clearCart();
-    closeCartDrawer();
 
     ['clientName', 'clientPhone', 'clientEmail', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
       'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
