@@ -1,5 +1,5 @@
 -- Endurecimiento de permisos para el catálogo público y el checkout de invitados.
--- Propuesta versionada: no se ejecuta en la base de datos real desde este cambio.
+-- Aplicada en el proyecto Supabase RamiroTienda el 2026-11-24.
 --
 -- El único acceso anónimo de escritura será public.create_order(...) (7 args).
 -- Esa RPC es intencionalmente pública para permitir pedidos como invitado:
@@ -8,7 +8,7 @@
 
 begin;
 
--- Evita que las próximas tablas, secuencias y funciones hereden permisos amplios.
+-- Restringe los defaults del rol postgres. Los defaults de supabase_admin requieren una sesión con ese rol.
 alter default privileges for role postgres in schema public
   revoke all on tables from anon, authenticated;
 alter default privileges for role postgres in schema public
