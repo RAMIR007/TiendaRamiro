@@ -20,10 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'Tus pedidos vinculados aparecerán aquí.';
     dashboardStatus.textContent = 'Cargando tus pedidos…';
 
+    const profileDetails = document.getElementById('customerProfileDetails');
     const list = document.getElementById('customerOrdersList');
     list.replaceChildren();
 
     try {
+      const profile = await fetchCustomerProfile();
+      const savedDetails = profile
+        ? [profile.name, profile.phone, profile.address].filter(Boolean).join(' · ')
+        : '';
+      profileDetails.textContent = savedDetails || 'Todavía no hay datos de contacto guardados.';
+
       const orders = await fetchCustomerOrders();
       if (orders.length === 0) {
         dashboardStatus.textContent = 'Todavía no hay pedidos vinculados a esta cuenta.';
