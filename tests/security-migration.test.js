@@ -17,11 +17,10 @@ assert.match(migration, /revoke all privileges on function public\.create_order\
 assert.match(migration, /alter function public\.create_order\(text, text, text, text, text, text, jsonb\) set search_path = pg_catalog/i);
 assert.match(migration, /alter function public\.handle_new_user\(\) set search_path = pg_catalog/i);
 assert.match(migration, /grant execute on function public\.is_admin\(\), public\.is_staff\(\) to authenticated/i);
-assert.match(migration, /create or replace function public\.is_admin\(\)[\\s\\S]*auth\\.uid\\(\)/i);\nassert.match(migration, /revoke execute on all functions in schema public from public, anon, authenticated/i);
+assert.match(migration, /create or replace function public\.is_admin\(\)[\s\S]*auth\.uid\(\)/i);
+assert.match(migration, /revoke execute on all functions in schema public from public, anon, authenticated/i);
 assert.doesNotMatch(migration, /grant\s+(?:insert|update|delete)[\s\S]{0,120}public\.orders\s+to anon/i);
 assert.doesNotMatch(migration, /grant\s+(?:insert|update|delete)[\s\S]{0,120}public\.profiles\s+to anon/i);
-
-console.log('Seguridad SQL propuesta: todas las comprobaciones OK.');
 
 const customerMigration = fs.readFileSync(
   path.join(__dirname, '..', 'supabase/migrations/20261124110804_customer_accounts.sql'),
@@ -35,3 +34,5 @@ assert.match(customerMigration, /create policy orders_customer_read_own/i);
 assert.match(customerMigration, /create policy order_items_customer_read_own/i);
 assert.match(customerMigration, /grant execute on function public\.claim_my_orders\(\) to authenticated/i);
 assert.doesNotMatch(customerMigration, /grant execute on function public\.claim_my_orders\(\) to anon/i);
+
+console.log('Seguridad y vinculación de cuentas SQL: todas las comprobaciones OK.');
