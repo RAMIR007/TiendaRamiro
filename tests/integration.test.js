@@ -120,6 +120,7 @@ function createMock() {
     users: USERS,
     requests: [],
     lastOrderPayload: null,
+    failNextOrder: false,
     lastOrderPatch: null,
     productCosts: [],
     passwordUpdates: [],
@@ -298,6 +299,10 @@ function createMock() {
 
     if (route === '/rest/v1/rpc/create_order' && method === 'POST') {
       state.lastOrderPayload = body;
+      if (state.failNextOrder) {
+        state.failNextOrder = false;
+        return respond({ msg: 'Servicio temporalmente no disponible' }, 503);
+      }
 
       const totalCents = body.p_items.reduce((sum, item) => {
         const product = state.products.find((candidate) => candidate.id === item.product_id);
@@ -590,6 +595,27 @@ async function login(win, doc, email, password) {
     assert.ok(voucher.includes('Forma de pago: Efectivo'));
     assert.ok(voucher.includes('Vuelto: $102 USD'));
     assert.ok(voucher.includes('La mensajería es obligatoria pagarla aunque el cliente no se quede con el producto.'));
+  });
+
+  await check('no envía por WhatsApp ni vacía el carrito si Supabase no registra el pedido', async () => {
+    win.addToCart('11111111-1111-4111-8111-111111111111');
+    doc.getElementById('clientName').value = 'Ana Gómez';
+    doc.getElementById('clientPhone').value = '5358382989';
+    doc.getElementById('clientMunicipality').value = 'Playa';
+    doc.getElementById('clientAddress').value = 'Calle 23, número 12';
+    doc.getElementById('clientReference').value = 'Frente al parque';
+    doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
+    doc.getElementById('clientPaymentNote').value = '100';
+    win.__lastOpened = null;
+    storeMock.state.failNextOrder = true;
+
+    submit(doc.getElementById('checkoutForm'));
+    await tick(260);
+
+    assert.strictEqual(win.__lastOpened, null);
+    assert.strictEqual(win.getCartTotals().count, 1);
+    assert.strictEqual(doc.getElementById('clientName').value, 'Ana Gómez');
+    win.clearCart();
   });
 
   await check('genera el vale de recogida con sus campos y sin datos de mensajería', async () => {
