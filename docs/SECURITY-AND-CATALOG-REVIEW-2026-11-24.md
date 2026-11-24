@@ -34,10 +34,18 @@ Proyecto: `RamiroTienda` (`zpttucawhdmhgqeuzaup`).
 - Añade políticas RLS de solo lectura para que cada cliente consulte únicamente sus pedidos y líneas.
 - Las dos migraciones aparecen registradas en el historial de Supabase y se verificaron columnas, funciones, privilegios y políticas.
 
+### `20261124111358_private_security_functions`
+
+- Crea el esquema no expuesto `private`.
+- Mueve allí las funciones `SECURITY DEFINER` de checkout, reclamación de pedidos y comprobación de roles.
+- Mantiene las rutas públicas `create_order` y `claim_my_orders` como wrappers `SECURITY INVOKER`.
+- Actualiza las políticas RLS para usar `private.is_admin()` y `private.is_staff()`.
+- Se verificó que las funciones privilegiadas ya no están en el esquema público y que el asesor de Supabase dejó de reportarlas.
+
 ## Hallazgos y avisos de seguridad restantes
 
-- Supabase Advisors sigue mostrando la RPC de checkout como `SECURITY DEFINER` pública; es intencional para permitir pedidos como invitado, pero necesita protección antiabuso/rate limiting antes de campañas de alto tráfico.
-- `is_admin()`, `is_staff()` y `claim_my_orders()` son funciones `SECURITY DEFINER` ejecutables por usuarios autenticados porque las políticas/RPC las necesitan. Conviene mover los helpers internos a un esquema no expuesto en una futura revisión.
+- Supabase Advisors ya no reporta funciones `SECURITY DEFINER` expuestas en `public`. El único aviso actual es la protección de contraseñas filtradas desactivada.
+- La RPC pública de checkout sigue aceptando pedidos de invitados por diseño; requiere protección antiabuso/rate limiting antes de campañas de alto tráfico.
 - La protección de contraseñas filtradas sigue desactivada en Supabase Auth. Debe activarse desde Authentication → Security and Protection.
 - Google/Facebook requieren configuración OAuth externa y URLs de retorno autorizadas. La interfaz está preparada, pero no se afirma que los proveedores estén activos.
 - No se han creado pedidos reales para probar la vinculación. Las pruebas de checkout/cuenta se hacen con Supabase simulado.
