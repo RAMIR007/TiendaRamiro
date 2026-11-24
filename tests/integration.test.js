@@ -93,7 +93,7 @@ const USERS = {
   'admin@test.com': { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'admin@test.com', password: 'Admin12345', name: 'Administrador', role: 'admin' },
   'ventas@test.com': { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: 'ventas@test.com', password: 'Ventas12345', name: 'Ventas', role: 'staff' },
   'pending@test.com': { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', email: 'pending@test.com', password: 'Pending12345', name: 'Pendiente', role: 'pending' },
-  'cliente@test.com': { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', email: 'cliente@test.com', name: 'Cliente', role: 'customer' }
+  'cliente@test.com': { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', email: 'cliente@test.com', name: 'Cliente', phone: '5355551234', address: 'Calle 10, Playa', role: 'customer' }
 };
 
 function createMock() {
@@ -119,7 +119,7 @@ function createMock() {
     claimedOrders: 1,
     profiles: Object.fromEntries(Object.values(USERS).map((user) => [
       user.id,
-      { id: user.id, name: user.name, role: user.role }
+      { id: user.id, name: user.name, phone: user.phone || null, address: user.address || null, role: user.role }
     ])),
     users: USERS,
     requests: [],
@@ -731,6 +731,8 @@ async function login(win, doc, email, password) {
     assert.strictEqual(accountCallback.doc.getElementById('customerDashboard').hidden, false);
     assert.match(accountCallback.doc.getElementById('claimSummary').textContent, /1 pedido/);
     assert.ok(accountCallback.doc.getElementById('customerOrdersList').textContent.includes('Pedido'));
+    assert.match(accountCallback.doc.getElementById('customerProfileDetails').textContent, /5355551234/);
+    assert.match(accountCallback.doc.getElementById('customerProfileDetails').textContent, /Calle 10, Playa/);
     assert.strictEqual(accountCallback.win.sessionStorage.getItem('rx_sb_session') !== null, true);
   });
 
