@@ -145,7 +145,7 @@ function buildItemList(products, categories, canonicalUrl) {
 
 function injectCatalogMarkup(html, products, categories) {
   const categoryPattern = /<div id="categoriesPills" class="categories-pills" role="group" aria-label="Filtrar por categoría">[\s\S]*?<\/div>/;
-  const gridPattern = /<div id="productsGrid" class="products-grid">[\s\S]*?<\/div>/;
+  const gridPattern = /<div id="productsGrid" class="products-grid">[\s\S]*?(?:<!-- CATALOG_PRERENDER_END -->\s*)?<\/div>/;
   if (!categoryPattern.test(html) || !gridPattern.test(html)) {
     throw new Error('No se encontraron los contenedores públicos del catálogo en index.html.');
   }
@@ -153,8 +153,9 @@ function injectCatalogMarkup(html, products, categories) {
   let output = html
     .replace(categoryPattern, '<div id="categoriesPills" class="categories-pills" role="group" aria-label="Filtrar por categoría">\n' +
       renderCategories(categories) + '\n    </div>')
-    .replace(gridPattern, '<div id="productsGrid" class="products-grid">\n' +
-      products.map((product) => renderProductCard(product, categories)).join('\n') + '\n    </div>');
+    .replace(gridPattern, '<div id="productsGrid" class="products-grid">\n<!-- CATALOG_PRERENDER_START -->\n' +
+      products.map((product) => renderProductCard(product, categories)).join('\n') +
+      '\n<!-- CATALOG_PRERENDER_END -->\n    </div>');
 
   output = output.replace(/<script[^>]*id="catalog-prerender-data"[^>]*>[\s\S]*?<\/script>\s*/g, '');
   output = output.replace(/<script[^>]*id="catalog-item-list-jsonld"[^>]*>[\s\S]*?<\/script>\s*/g, '');
