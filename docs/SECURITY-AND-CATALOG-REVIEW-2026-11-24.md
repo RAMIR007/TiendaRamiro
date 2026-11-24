@@ -52,6 +52,12 @@ El build consulta los campos públicos de productos/categorías y genera:
 
 El build falla si no puede obtener productos/categorías activos, para evitar publicar una página con catálogo vacío.
 
+## Validación automatizada
+
+- GitHub Actions run #56: pruebas y build correctos; 47 comprobaciones, 0 fallos.
+- El build generó 8 productos y 9 categorías prerenderizados.
+- Las pruebas de cuenta usan Supabase simulado; no se enviaron correos reales ni se crearon pedidos reales.
+
 ## Despliegue y límites
 
 - PR #5 permanece abierta y en borrador.
