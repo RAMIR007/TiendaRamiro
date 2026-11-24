@@ -47,7 +47,9 @@ assert.match(privateMigration, /grant execute on function private\.claim_my_orde
 assert.doesNotMatch(privateMigration, /alter policy orders_customer_read_own/i);
 assert.match(privateMigration, /alter policy orders_admin_read on public\.orders using \(private\.is_admin\(\)\)/i);
 assert.match(privateMigration, /security invoker/i);
-assert.match(privateMigration, /create or replace function public\.create_order\([\s\S]*?security invoker/i);\nassert.match(privateMigration, /create or replace function public\.claim_my_orders\(\)[\s\S]*?security invoker/i);\nassert.match(privateMigration, /create or replace function private\.create_order\([\s\S]*?security definer/i);
+assert.match(privateMigration, /create or replace function public\.create_order\([\s\S]*?security invoker/i);
+assert.match(privateMigration, /create or replace function public\.claim_my_orders\(\)[\s\S]*?security invoker/i);
+assert.match(privateMigration, /create or replace function private\.create_order\([\s\S]*?security definer/i);
 
 
 const profileMigration = fs.readFileSync(
