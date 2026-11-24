@@ -2,14 +2,14 @@
 
 ## Checkout de invitados y cuenta de cliente
 
-- El cliente puede comprar sin iniciar sesión ni crear una cuenta.
-- El formulario permite indicar correo electrónico y ofrece una casilla opcional para solicitar la creación de cuenta.
-- El correo se guarda en `orders.customer_email`; no se usa como prueba de identidad.
-- Si el comprador marca la casilla, Supabase Auth envía un enlace de acceso sin contraseña. La cuenta se activa al verificar el enlace.
-- Después de iniciar sesión con un correo verificado, `claim_my_orders()` vincula los pedidos no reclamados que coincidan con ese correo verificado.
-- La cuenta de cliente muestra el historial asociado a su propio `customer_id`. RLS limita la lectura de pedidos y líneas a su propietario; administradores y vendedores conservan sus políticas existentes.
-- Google y Facebook aparecen como métodos alternativos en `account.html`. Para que funcionen, hay que habilitar cada proveedor en Supabase Auth, registrar sus credenciales OAuth y añadir la URL de retorno del dominio desplegado. Esto no se puede completar con las herramientas de base de datos disponibles aquí.
-- No se crea una cuenta si el comprador no marca la casilla. El checkout sigue siendo independiente de Auth.
+- El cliente puede completar la compra como invitado; no necesita iniciar sesión ni crear una cuenta.
+- El checkout permite introducir un correo opcional y lo envía como `p_client_email` a la RPC de ocho argumentos. El correo se guarda en `orders.customer_email`, pero **no demuestra identidad** ni inicia una sesión.
+- No existe una casilla de alta de cuenta dentro del checkout ni se envían enlaces mágicos de acceso por correo.
+- Después de comprar, el cliente puede abrir «Mi cuenta» e iniciar sesión con **Google OAuth**, usando exactamente el mismo correo que indicó en el pedido.
+- El frontend de cuenta solo permite Google. Facebook, registro de clientes con contraseña y acceso por enlace de correo están aplazados.
+- Tras el retorno OAuth, `claim_my_orders()` exige un usuario autenticado con correo confirmado y vincula solo pedidos no reclamados que coincidan con ese correo.
+- La cuenta muestra los pedidos asociados a su propio `customer_id`. RLS limita la lectura de pedidos y líneas a su propietario; administradores y vendedores conservan sus políticas existentes.
+- Google OAuth todavía requiere configuración externa en Supabase Auth y Google Cloud. No se considera operativo hasta completar esa configuración y probar el callback en Preview. El flujo Google no necesita SMTP.
 
 ## Migraciones aplicadas en Supabase
 
@@ -54,7 +54,7 @@ Proyecto: `RamiroTienda` (`zpttucawhdmhgqeuzaup`).
 - Supabase Advisors ya no reporta funciones `SECURITY DEFINER` expuestas en `public`. El único aviso actual es la protección de contraseñas filtradas desactivada.
 - La RPC pública de checkout sigue aceptando pedidos de invitados por diseño; requiere protección antiabuso/rate limiting antes de campañas de alto tráfico.
 - La protección de contraseñas filtradas sigue desactivada en Supabase Auth. Debe activarse desde Authentication → Security and Protection.
-- Google/Facebook requieren configuración OAuth externa y URLs de retorno autorizadas. La interfaz está preparada, pero no se afirma que los proveedores estén activos.
+- La configuración externa de Google OAuth y sus URLs de retorno autorizadas está pendiente; no se afirma que el proveedor esté activo.
 - No se han creado pedidos reales para probar la vinculación. Las pruebas de checkout/cuenta se hacen con Supabase simulado.
 
 ## Extracción pública del catálogo
@@ -78,7 +78,7 @@ El build falla si no puede obtener productos/categorías activos, para evitar pu
 - PR #5 permanece abierta y en borrador.
 - No se ha fusionado la PR ni desplegado a producción.
 - El preview de Cloudflare que se comprobó anteriormente todavía servía una versión anterior; el despliegue de los últimos cambios no está confirmado.
-- Los proveedores OAuth, el SMTP de Auth y la URL de retorno deben revisarse antes de anunciar el registro a clientes.
+- Google OAuth y la URL de retorno deben revisarse antes de anunciar el acceso de clientes.
 - No se han cambiado productos, precios, pedidos existentes, inventario ni lógica de comisiones.
 
 ## Bloqueo P1 confirmado en la base viva — 24 de noviembre de 2026
