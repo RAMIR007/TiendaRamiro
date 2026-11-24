@@ -47,6 +47,7 @@ assert.match(rendered, /class="product-card"/);
 assert.match(rendered, /id="catalog-prerender-data"/);
 assert.match(rendered, /id="catalog-item-list-jsonld"/);
 assert.match(rendered, /Todos los productos/);
+assert.match(rendered, /1 producto disponible/);
 const embedded = rendered.match(/<script type="application\/json" id="catalog-prerender-data">([\s\S]*?)<\/script>/);
 assert.ok(embedded);
 const embeddedData = JSON.parse(embedded[1]);
