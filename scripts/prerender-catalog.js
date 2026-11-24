@@ -145,7 +145,7 @@ function buildItemList(products, categories, canonicalUrl) {
 
 function injectCatalogMarkup(html, products, categories) {
   const categoryPattern = /<div id="categoriesPills" class="categories-pills" role="group" aria-label="Filtrar por categoría">[\s\S]*?<\/div>/;
-  const gridPattern = /<div id="productsGrid" class="products-grid">[\s\S]*?(?:<!-- CATALOG_PRERENDER_END -->\s*)?<\/div>/;
+  const gridPattern = /<div id="productsGrid" class="products-grid">(?:[\s\S]*?<!-- CATALOG_PRERENDER_END -->\s*|[\s\S]*?)<\/div>/;
   if (!categoryPattern.test(html) || !gridPattern.test(html)) {
     throw new Error('No se encontraron los contenedores públicos del catálogo en index.html.');
   }
