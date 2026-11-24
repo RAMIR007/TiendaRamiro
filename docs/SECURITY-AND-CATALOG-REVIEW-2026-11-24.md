@@ -42,6 +42,13 @@ Proyecto: `RamiroTienda` (`zpttucawhdmhgqeuzaup`).
 - Actualiza las políticas RLS para usar `private.is_admin()` y `private.is_staff()`.
 - Se verificó que las funciones privilegiadas ya no están en el esquema público y que el asesor de Supabase dejó de reportarlas.
 
+### `20261124111630_customer_profile_contact`
+
+- Añade `profiles.phone` y `profiles.address`.
+- Cuando el cliente verifica su correo y reclama pedidos, copia al perfil el teléfono y la dirección de su compra más reciente vinculada.
+- La operación ocurre dentro de `private.claim_my_orders()`; no confía en metadata editable para autorizar la vinculación.
+- La página de cuenta muestra los datos de contacto guardados.
+
 ## Hallazgos y avisos de seguridad restantes
 
 - Supabase Advisors ya no reporta funciones `SECURITY DEFINER` expuestas en `public`. El único aviso actual es la protección de contraseñas filtradas desactivada.
