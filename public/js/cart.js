@@ -431,7 +431,6 @@ function validateCheckout() {
   const notesInput = document.getElementById('clientNotes');
   const paymentInput = document.getElementById('clientPaymentNote');
   const emailInput = document.getElementById('clientEmail');
-  const createAccountInput = document.getElementById('createCustomerAccount');
 
   const name = nameInput ? nameInput.value.trim() : '';
   const phone = getDigits(phoneInput ? phoneInput.value : '');
@@ -445,7 +444,6 @@ function validateCheckout() {
   const notes = notesInput ? notesInput.value.trim() : '';
   const paysWith = paymentInput ? Number(paymentInput.value) || 0 : 0;
   const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
-  const createAccount = Boolean(createAccountInput && createAccountInput.checked);
 
   let ok = true;
   let firstInvalid = null;
@@ -465,9 +463,7 @@ function validateCheckout() {
   const emailIsValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   if (!emailIsValid) {
     markInvalid(emailInput, 'Escribe un correo electrónico válido.');
-  } else if (createAccount && !email) {
-    markInvalid(emailInput, 'Necesitas un correo para crear tu cuenta.');
-  } else {
+  } else {  } else {
     setFieldError(emailInput, '');
   }
 
@@ -531,7 +527,7 @@ function validateCheckout() {
   return {
     ok, firstInvalid, name, phone, phoneLandline, deliveryMethod,
     municipality, address, reference, timeRange, sellerCode, notes, paysWith, fullAddress,
-    email, createAccount
+    email
   };
 }
 
@@ -710,27 +706,13 @@ async function checkoutWhatsApp() {
       return;
     }
 
-    // El pedido ya está confirmado: abre WhatsApp y vacía el carrito antes
-    // de cualquier petición secundaria de Auth para evitar duplicados y retrasos.
+    // El pedido ya está confirmado: abre WhatsApp y vacía el carrito.
+    // La creación de cuenta es opcional y se realiza después desde Mi cuenta con Google.
     const message = buildWhatsAppMessage(data, totalCents, orderCode);
     openWhatsApp(buildWhatsAppUrl(message));
 
     clearCart();
     closeCartDrawer();
-
-    let accountLinkSent = false;
-    if (data.createAccount) {
-      try {
-        await requestCustomerMagicLink(
-          data.email,
-          data.name,
-          new URL('/account.html', window.location.origin).toString()
-        );
-        accountLinkSent = true;
-      } catch (error) {
-        console.warn('[auth] No se pudo enviar el enlace de acceso:', error);
-      }
-    }
 
     ['clientName', 'clientPhone', 'clientEmail', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
       'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
@@ -739,14 +721,7 @@ async function checkoutWhatsApp() {
     });
     const timeInput = document.getElementById('clientTimeRange');
     if (timeInput) timeInput.value = '';
-    const accountInput = document.getElementById('createCustomerAccount');
-    if (accountInput) accountInput.checked = false;
-
-    showToast(data.createAccount
-      ? (accountLinkSent
-        ? 'Pedido registrado. Revisa tu correo para activar tu cuenta y envía el mensaje en WhatsApp.'
-        : 'Pedido registrado. No pudimos enviar el enlace de cuenta; puedes intentarlo desde Mi cuenta. Envía el mensaje en WhatsApp.')
-      : 'Pedido registrado. Envía el mensaje en WhatsApp para confirmar tu compra.');
+    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmar tu compra. Si quieres consultar tu historial, entra después en Mi cuenta con Google y el mismo correo.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);
