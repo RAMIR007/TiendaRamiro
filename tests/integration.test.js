@@ -594,7 +594,7 @@ async function login(win, doc, email, password) {
     assert.ok(voucher.includes('Dirección: Calle 23, número 12'));
     assert.ok(voucher.includes('Municipio: Playa'));
     assert.ok(voucher.includes('Punto de referencia: Frente al parque'));
-    assert.ok(voucher.includes('Teléfono fijo en caso de tener: —'));
+    assert.ok(voucher.includes('Teléfono fijo en caso de tener: 72001234'));
     assert.ok(voucher.includes('Precio de mensajería: $2 USD'));
     assert.ok(voucher.includes('Forma de pago: Efectivo'));
     assert.ok(voucher.includes('Vuelto: $102 USD'));
