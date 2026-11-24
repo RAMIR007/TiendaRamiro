@@ -53,4 +53,8 @@ const embeddedData = JSON.parse(embedded[1]);
 assert.equal(embeddedData.products.length, 1);
 assert.equal(embeddedData.categories[0].key, 'tecnologia');
 
+const rebuilt = injectCatalogMarkup(rendered, [product], categories);
+assert.equal((rebuilt.match(/class="product-card"/g) || []).length, 1);
+assert.equal((rebuilt.match(/id="catalog-prerender-data"/g) || []).length, 1);
+
 console.log('Prerender de catálogo: todas las comprobaciones OK.');
