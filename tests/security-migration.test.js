@@ -35,4 +35,18 @@ assert.match(customerMigration, /create policy order_items_customer_read_own/i);
 assert.match(customerMigration, /grant execute on function public\.claim_my_orders\(\) to authenticated/i);
 assert.doesNotMatch(customerMigration, /grant execute on function public\.claim_my_orders\(\) to anon/i);
 
-console.log('Seguridad y vinculación de cuentas SQL: todas las comprobaciones OK.');
+
+const privateMigration = fs.readFileSync(
+  path.join(__dirname, '..', 'supabase/migrations/20261124111358_private_security_functions.sql'),
+  'utf8'
+);
+assert.match(privateMigration, /create schema if not exists private/i);
+assert.match(privateMigration, /alter function public\.is_admin\(\) set schema private/i);
+assert.match(privateMigration, /alter function public\.claim_my_orders\(\) set schema private/i);
+assert.match(privateMigration, /grant execute on function private\.claim_my_orders\(\) to authenticated/i);
+assert.match(privateMigration, /alter policy orders_customer_read_own/i) === false;
+assert.match(privateMigration, /alter policy orders_admin_read on public\.orders using \(private\.is_admin\(\)\)/i);
+assert.match(privateMigration, /security invoker/i);
+assert.doesNotMatch(privateMigration, /create or replace function public\.create_order\([\s\S]*?security definer/i);
+
+console.log('Seguridad, aislamiento privado y vinculación de cuentas SQL: todas las comprobaciones OK.');
