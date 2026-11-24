@@ -43,19 +43,12 @@
 
   <main class="account-shell">
     <section class="account-card" id="accountAuthPanel">
-      <h2>Tu cuenta, sin contraseña</h2>
-      <p class="account-muted">Accede con un enlace seguro enviado a tu correo. Si hiciste pedidos como invitado con ese mismo correo, podrás vincularlos después de verificarlo. Google y Facebook pueden reconocer la misma cuenta cuando comparten un correo verificado.</p>
-      <form class="account-form" id="customerLoginForm">
-        <label for="customerName">Nombre (solo al crear la cuenta, opcional)</label>
-        <input class="checkout-input" id="customerName" type="text" maxlength="80" autocomplete="name" placeholder="Tu nombre">
-        <label for="customerEmail">Correo electrónico</label>
-        <input class="checkout-input" id="customerEmail" type="email" maxlength="254" autocomplete="email" required placeholder="tu@correo.com">
-        <button class="account-primary" type="submit" id="sendMagicLinkBtn">Enviar enlace de acceso</button>
-      </form>
+      <h2>Accede de forma segura con Google</h2>
+      <p class="account-muted">No necesitas crear una cuenta para comprar. Si ya hiciste un pedido como invitado, entra con Google usando exactamente el mismo correo que escribiste al comprar. Después de verificar tu identidad, vincularemos los pedidos que correspondan y podrás consultar tu historial.</p>
       <div class="account-actions">
-        <button class="account-secondary" type="button" data-provider="google">Continuar con Google</button>
-        <button class="account-secondary" type="button" data-provider="facebook">Continuar con Facebook</button>
+        <button class="account-primary" type="button" data-provider="google">Continuar con Google</button>
       </div>
+      <p class="account-muted">La compra como invitado seguirá disponible aunque no quieras iniciar sesión.</p>
       <p class="account-status" id="accountStatus" role="status" aria-live="polite"></p>
     </section>
 
