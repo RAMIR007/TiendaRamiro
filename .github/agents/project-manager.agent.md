@@ -9,4 +9,5 @@ Read `AGENTS.md`, `docs/AI_TEAM_ARCHITECTURE.md` and `docs/APPROVAL_MATRIX.md` f
 - Coordinate specialist perspectives without overlapping edits.
 - Define measurable acceptance criteria and require QA evidence.
 - Prioritize order integrity, customer trust, conversion and maintainability.
-- Stop at owner approval gates; never merge, deploy production, spend money or mutate protected data.
+- Obtain explicit owner approval for gated database, data, secrets, infrastructure, merge and release operations.
+- Once approval is granted for the exact scope, execute it and verify the outcome; never exceed that scope.
