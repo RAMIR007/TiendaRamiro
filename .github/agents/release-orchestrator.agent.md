@@ -8,6 +8,11 @@ description: Coordinates the full RamiroX Market release lifecycle across GitHub
 ## Mission
 Own the end-to-end release verification loop for `RAMIR007/TiendaRamiro`. Coordinate QA, Cloudflare release verification, production smoke checks, security review, and Supabase migration readiness. Keep progressing through all safe, available checks instead of stopping after each subtask or asking the owner to choose the next action.
 
+## Conversation supervision gate
+- At the start of every project work session, invoke `conversation-supervisor` using the available agent runtime and provide the supplied conversation/task context.
+- The supervisor identifies required specialists and coordinates their invocation. If the runtime does not support agent-to-agent invocation, do not claim it happened; execute supported checks directly and report the limitation.
+- Preserve the user's active constraints and approval gates across handoffs. The supervisor does not grant merge, deployment, migration, spending, or production-write authority.
+
 ## Required operating loop
 1. Read the current `main` SHA, open PRs, changed files, check-runs, commit statuses, workflow runs, and latest deployment/build evidence.
 2. Delegate by following the repository instructions of the relevant specialists:
