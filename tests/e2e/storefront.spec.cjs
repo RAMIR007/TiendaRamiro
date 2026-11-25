@@ -39,51 +39,49 @@ const categories = [
   { key: 'moda', label: 'Moda', emoji: '👕', active: true }
 ];
 
-async function installSafeSupabaseMocks(page) {
+async function installSafeNetworkMocks(page) {
   const sideEffects = [];
 
-  await page.route(`${SUPABASE_ORIGIN}/**`, async (route) => {
+  await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    const method = request.method();
 
-    if (url.pathname === '/rest/v1/products' && method === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(products)
-      });
-      return;
-    }
-
-    if (url.pathname === '/rest/v1/categories' && method === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(categories)
-      });
-      return;
-    }
-
-    // Toda operación de escritura queda registrada y bloqueada.
-    if (method !== 'GET' && method !== 'HEAD') {
-      sideEffects.push({ method, path: url.pathname });
-    }
-
-    await route.fulfill({
-      status: 403,
-      contentType: 'application/json',
-      body: JSON.stringify({ message: 'Blocked by safe Playwright test fixture' })
-    });
-  });
-
-  // No se permite que una prueba contacte servicios externos reales.
-  await page.route(/^https?:\\/\\/(?!127\\.0\\.0\\.1|localhost).*/, async (route) => {
-    const url = new URL(route.request().url());
     if (url.origin === SUPABASE_ORIGIN) {
+      if (request.method() === 'GET' && url.pathname === '/rest/v1/products') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(products)
+        });
+        return;
+      }
+
+      if (request.method() === 'GET' && url.pathname === '/rest/v1/categories') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(categories)
+        });
+        return;
+      }
+
+      if (!['GET', 'HEAD'].includes(request.method())) {
+        sideEffects.push({ method: request.method(), path: url.pathname });
+      }
+
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Blocked by safe Playwright test fixture' })
+      });
+      return;
+    }
+
+    if (url.origin === 'http://127.0.0.1:8080' || url.origin === 'http://localhost:8080') {
       await route.continue();
       return;
     }
+
     await route.abort();
   });
 
@@ -91,14 +89,14 @@ async function installSafeSupabaseMocks(page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await installSafeSupabaseMocks(page);
+  page.sideEffects = await installSafeNetworkMocks(page);
 });
 
 test('muestra catálogo, categorías y metadatos accesibles', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/RamiroX Market/i);
   await expect(page.locator('.product-card')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: /filtrar por categoría/i })).toBeVisible();
+  await expect(page.locator('#categoriesPills')).toHaveAttribute('role', 'group');
   await expect(page.getByRole('searchbox', { name: /buscar productos/i })).toBeVisible();
   await expect(page.locator('.skip-link')).toHaveAttribute('href', '#mainContent');
 });
@@ -133,7 +131,6 @@ test('añade un artículo, actualiza el total y abre el carrito', async ({ page 
 });
 
 test('checkout vacío muestra validaciones y nunca crea un pedido', async ({ page }) => {
-  const sideEffects = await installSafeSupabaseMocks(page);
   await page.goto('/');
   await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
   await page.getByRole('button', { name: 'Abrir carrito' }).click();
@@ -143,7 +140,7 @@ test('checkout vacío muestra validaciones y nunca crea un pedido', async ({ pag
   });
 
   await expect(page.locator('#clientName')).toHaveClass(/invalid/);
-  expect(sideEffects).toEqual([]);
+  expect(page.sideEffects).toEqual([]);
 });
 
 test('la vista móvil permite navegar por el catálogo y abrir el carrito', async ({ page }) => {
