@@ -53,11 +53,14 @@ jobs:
           checks="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/check-runs?per_page=100")"
           total="$(jq '.total_count' <<<"$checks")"
           [[ "$total" -gt 0 ]] || { echo "No check runs found for this SHA."; exit 1; }
-          bad="$(jq '[.check_runs[] | select(.status != "completed" or .conclusion != "success")] | length' <<<"$checks")"
+          files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" | jq -s 'add')"
+          db_changed="$(jq '[.[] | select(.filename | test("^(supabase/|.*\\.sql$|.*schema.*|.*migration.*)"))] | length > 0' <<<"$files")"
+          bad="$(jq --argjson db_changed "$db_changed" '[.check_runs[] | select((.status != "completed" or .conclusion != "success") and (not (.name == "Supabase Preview" and .status == "completed" and .conclusion == "skipped" and $db_changed == false)))] | length' <<<"$checks")"
           [[ "$bad" -eq 0 ]] || { echo "$bad check run(s) are pending or not successful."; jq -r '.check_runs[] | select(.status != "completed" or .conclusion != "success") | [.name,.status,(.conclusion // "none"),.html_url] | @tsv' <<<"$checks"; exit 1; }
           statuses="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/status")"
+          contexts="$(jq '.statuses | length' <<<"$statuses")"
           state_status="$(jq -r '.state' <<<"$statuses")"
-          [[ "$state_status" == "success" ]] || { echo "Combined commit status is not success: $state_status"; exit 1; }
+          [[ "$contexts" -eq 0 || "$state_status" == "success" ]] || { echo "Commit status contexts are not successful: $state_status"; exit 1; }
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "head_sha=$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
           echo "Preflight passed for PR #$PR_NUMBER at $EXPECTED_SHA. Human approval is still required."
@@ -89,5 +92,8 @@ jobs:
           [[ "$(jq -r '.head.sha' <<<"$pr")" == "$EXPECTED_SHA" ]] || { echo "PR head changed after approval; refusing merge."; exit 1; }
           [[ "$(jq -r '.mergeable' <<<"$pr")" == "true" ]] || { echo "PR is no longer mergeable."; exit 1; }
           checks="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/check-runs?per_page=100")"
-          [[ "$(jq '[.check_runs[] | select(.status != "completed" or .conclusion != "success")] | length' <<<"$checks")" -eq 0 ]] || { echo "Checks changed or are no longer all successful."; exit 1; }
+          files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" | jq -s 'add')"
+          db_changed="$(jq '[.[] | select(.filename | test("^(supabase/|.*\\.sql$|.*schema.*|.*migration.*)"))] | length > 0' <<<"$files")"
+          bad="$(jq --argjson db_changed "$db_changed" '[.check_runs[] | select((.status != "completed" or .conclusion != "success") and (not (.name == "Supabase Preview" and .status == "completed" and .conclusion == "skipped" and $db_changed == false)))] | length' <<<"$checks")"
+          [[ "$bad" -eq 0 ]] || { echo "Checks changed or are no longer successful."; exit 1; }
           gh api --method PUT "repos/$GH_REPO/pulls/$PR_NUMBER/merge" -f sha="$EXPECTED_SHA" -f merge_method=squash
