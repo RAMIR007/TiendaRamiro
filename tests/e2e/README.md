@@ -11,6 +11,10 @@ These end-to-end tests run the static storefront locally and use synthetic catal
 
 The test runner starts `npm run serve` on `http://127.0.0.1:8080`.
 
+## Coverage
+
+The suite runs each journey in desktop Chromium and a mobile Chromium profile: catalog rendering and accessibility landmarks, text/category filtering, empty search recovery, cart quantity and subtotal calculations, cart close/reopen recovery, invalid checkout handling, and mobile cart navigation.
+
 ## Safety
 
 - Supabase catalog reads are intercepted and answered with synthetic fixtures.
