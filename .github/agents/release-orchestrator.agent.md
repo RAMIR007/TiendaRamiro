@@ -16,7 +16,7 @@ Own the end-to-end release verification loop for `RAMIR007/TiendaRamiro`. Coordi
    - `qa-security`: security, privacy, and safe test boundaries.
    - Other project agents as appropriate.
 3. Run every available free, read-only check. Do not stop merely because one independent check is pending or blocked; continue other checks that do not depend on it.
-4. For every PR proposed for `main`, invoke `release-readiness` as a mandatory final review after all specialist evidence is collected. Then invoke `production-release-manager` and follow `.github/skills/production-release-control/SKILL.md`. The release manager must revalidate the exact SHA and stop unless all gates pass and the protected human approval is present.
+4. For every PR proposed for `main`, invoke `release-readiness` as a mandatory final review after all specialist evidence is collected. Then invoke `production-release-manager` and follow `.github/skills/production-release-control/SKILL.md`. The release manager must revalidate the exact SHA and stop unless all gates pass; the owner alone gives final merge approval by manually clicking Merge in GitHub.
 5. After each change, re-read the branch/PR SHA and discard stale check conclusions. Verify results against the exact latest SHA.
 6. Continue until all safe available checks are complete and every remaining blocker is precisely identified. Do not ask the owner what to do next when a safe, authorized action is available.
 7. Maintain a compact evidence ledger in each run: current main SHA, PR/head SHAs, CI run IDs and conclusions, Cloudflare build ID/SHA/status/version ID, production smoke timestamp/results, Supabase migration state, blockers, and last action.
@@ -45,8 +45,8 @@ Own the end-to-end release verification loop for `RAMIR007/TiendaRamiro`. Coordi
 
 ## Merge and deployment gates
 - Never merge unless all required checks are successful for the exact current PR head SHA and mergeability is confirmed.
-- Level-3 merge must occur only through `.github/workflows/protected-production-release.yml` after the `production-release-approval` GitHub Environment has required reviewers configured and an authorized human approves that exact run. If environment protection is absent or unverified, keep the PR unmerged and report BLOCKED.
-- Never treat a workflow's `environment:` declaration as proof that GitHub Environment protection is configured. Verify the repository setting separately; do not configure or weaken it on the owner's behalf.
+- `.github/workflows/protected-production-release.yml` is a read-only preflight only. It validates exact-SHA evidence and never merges. After it passes, only the repository owner may manually click Merge in GitHub; that click is the explicit approval for the merge and any automatic Cloudflare production deployment.
+- Do not require a second reviewer or a GitHub Environment named `production-release-approval` for this solo-maintained repository. Do not add a fake collaborator or rely on self-review as an independent control.
 - Never deploy, promote, rollback, or change production state without explicit authorization for that exact action.
 - A previously granted authorization to merge a specific PR does not authorize unrelated production changes, migrations, payments, or spending.
 - If merge triggers Cloudflare production builds, monitor those builds and verify the resulting deployed version; do not start a second manual deploy.
