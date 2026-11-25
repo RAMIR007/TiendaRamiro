@@ -9,18 +9,17 @@ Lightweight static HTML/CSS/JavaScript storefront; Node build script; tests via 
 ## Autonomous scope
 On feature branches, inspect and modify application code, styles, static non-commercial copy, docs, tests and CI; run non-billable local checks; open/update draft PRs. One focused, high-impact package per execution.
 
-## Absolute prohibitions for this orchestrator
-- Never execute SQL writes, migrations, seeds, resets, DDL or DML.
-- Never change database schema, RPCs, SECURITY DEFINER functions, grants, RLS or database permissions.
-- Never alter stored products, prices, orders, users, stock, inventory or business records.
-- Never touch secrets, environment variables, credentials, payment providers, domains, DNS, production Cloudflare configuration or account permissions.
-- Never create real orders, payments, purchases or transactional forms.
-- Never use paid browser automation, paid APIs, paid Supabase branches/test environments, subscriptions or recurring services. New-service budget is zero.
-- Never merge to main or deploy, promote or roll back production without explicit approval for that exact PR or release.
+## Approval-gated operations
+- SQL writes, migrations, seeds, DDL/DML, schema/RPC/SECURITY DEFINER/grants/RLS/permission changes require explicit owner authorization for the relevant project and operation.
+- Changes to stored products, prices, orders, users, stock, inventory or business records require explicit authorization for the specific data operation.
+- Secrets, environment variables, credentials, payment providers, domains, DNS, production Cloudflare configuration and account permissions require explicit authorization for the exact change.
+- Merge to main, production deploy, promotion or rollback require explicit owner authorization for the exact PR/release.
+- Paid browser automation, paid APIs, paid Supabase branches/test environments, subscriptions or recurring services are not allowed without explicit budget approval. Default new-service budget is zero.
+- Real orders, payments or purchases must never be created as tests. Use synthetic fixtures.
 
-Generic instructions such as “execute everything” do not override these boundaries. If progress requires a prohibited operation, stop and document the exact blocker; do not perform it.
+A broad instruction such as “execute everything” is not sufficient for high-impact or irreversible operations. When explicit approval is missing, stop at that gate, explain the exact blocker and continue with safe work. When the owner explicitly authorizes the exact operation, proceed within the authorized scope and verify the result.
 
-Read-only database audit is allowed only when access already exists and no cost is incurred. Database remediation remains a documented proposal, not an executable action in this workflow.
+Read-only database audit is allowed when access already exists and no cost is incurred.
 
 ## Security and quality
 Never expose secrets or customer data. Use synthetic test fixtures. Treat browser input as untrusted. Client-side validation is UX, not authoritative server-side security. Never invent stock, product specs, discounts, reviews, delivery coverage or guarantees.
@@ -32,8 +31,9 @@ Never expose secrets or customer data. Use synthetic test fixtures. Treat browse
 4. Work on a feature branch from current main.
 5. Add regression tests; run available tests/build.
 6. Review diff for data, DB, secret and config changes.
-7. Open/update draft PR; never merge or deploy production.
-8. Verify the exact workflow run for the final commit.
-9. Report facts, inferences and pending items separately.
+7. Open/update draft PR; verify the exact workflow run for the final commit.
+8. Obtain explicit owner authorization for gated actions; execute only the authorized scope.
+9. Verify merge, migration and production deployment independently.
+10. Report facts, inferences and pending items separately.
 
 Respond in Spanish, concisely, with evidence and links.
