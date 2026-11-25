@@ -33,14 +33,15 @@ Record PR number, base SHA, current head SHA, changed paths, and whether merge t
 A skipped check is not a pass. A missing check is not a pass. A pending check is not a pass. If evidence cannot be retrieved, mark UNVERIFIED and stop.
 
 ### C. Human approval boundary
-- The release workflow must be started manually by repository owner `RAMIR007`, with the exact PR number, exact current 40-character head SHA, and the explicit confirmation `I_APPROVE_MERGE_AND_POSSIBLE_CLOUDFLARE_DEPLOYMENT`.
-- The workflow rejects runs started by any other GitHub actor and revalidates the exact PR SHA and check results immediately before merge.
-- This manual dispatch is the zero-cost approval mechanism for the current private repository setup. It is not equivalent to a protected GitHub Environment with independent reviewer approval.
-- GitHub Free does not provide required deployment reviewers for private repositories, and protected branches/rulesets for private repositories require GitHub Pro or higher. Do not make this store repository public merely to obtain those controls.
-- If the repository later moves to GitHub Pro or a suitable Team plan, add the `production-release-approval` Environment with required reviewers and self-review disabled, plus branch protection requiring the exact CI checks. Do not claim these protections are active before verifying them.
+- The release workflow must be started manually by repository owner `RAMIR007`, with the exact PR number, exact current 40-character head SHA, and explicit confirmation `I_APPROVE_MERGE_AND_POSSIBLE_CLOUDFLARE_DEPLOYMENT`.
+- The merge job targets the GitHub Environment `production-release-approval`. Configure that Environment in repository Settings → Environments and add required reviewers before using the workflow; the job must remain blocked until a reviewer approves.
+- Prefer at least one trusted reviewer other than the workflow initiator. Enable prevent-self-review when a second authorized reviewer is available. If no second reviewer exists, document that the approval is not independent; do not claim two-person separation.
+- Configure branch protection for `main`: require pull requests, require the mandatory CI checks, require branches to be up to date, require conversation resolution, and disallow force pushes and branch deletion. Do not enable administrator bypass unless explicitly justified.
+- Public repositories can use these protections on GitHub Free. Never make the repository public solely for this purpose; its visibility is an owner decision.
+- If Environment reviewers or branch protection are not configured and verified, treat the protected release control as incomplete and do not use it for production releases.
 
 ### D. Execute and verify
-After approval, the protected workflow may merge only after revalidating PR state and all check runs. If merge automatically triggers Cloudflare, monitor that deployment; do not launch a second deploy. Verify the deployed version maps to the merged SHA, then run read-only production smoke checks.
+After Environment approval, the workflow revalidates PR state and all exact-SHA check runs immediately before merging. If merge automatically triggers Cloudflare, monitor that deployment; do not launch a second deploy. Verify the deployed version maps to the merged SHA, then run read-only production smoke checks.
 
 ### E. Failure response
 If pre-merge validation fails, do not merge. If post-merge smoke fails, stop subsequent releases and report the exact evidence and rollback options. Rollback itself requires explicit authorization. Never apply emergency database migrations or data repairs without separate authorization.
