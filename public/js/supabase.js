@@ -48,18 +48,27 @@ async function supabaseRequest(path, options = {}) {
   if (prefer) requestHeaders.Prefer = prefer;
 
   let response;
+  let raw;
+  const timeoutMs = Number.isFinite(options.timeoutMs) ? Math.max(1000, options.timeoutMs) : 12000;
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
   try {
     response = await fetch(`${SUPABASE_CONFIG.url}${path}`, {
       method,
       headers: requestHeaders,
-      body: rawBody !== undefined ? rawBody : (body === undefined ? undefined : JSON.stringify(body))
+      body: rawBody !== undefined ? rawBody : (body === undefined ? undefined : JSON.stringify(body)),
+      ...(controller ? { signal: controller.signal } : {})
     });
+    raw = await response.text();
   } catch (error) {
+    if (error && error.name === 'AbortError') {
+      throw new SupabaseError('La conexión está tardando demasiado. Comprueba tu conexión e inténtalo de nuevo.', 0, null, error);
+    }
     throw new SupabaseError('No se pudo conectar con el servidor. Revisa tu conexión.', 0, null, error);
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
   }
-
-  const raw = await response.text();
   let data = null;
 
   if (raw) {
@@ -313,7 +322,7 @@ async function fetchCategoriesFromApi(options = {}) {
   const activeFilter = includeInactive ? '' : '&active=eq.true';
   const rows = await supabaseRequest(
     `/rest/v1/categories?select=key,label,emoji,active&order=label.asc${activeFilter}`,
-    { token }
+    { token, timeoutMs: 8000 }
   );
 
   return (Array.isArray(rows) ? rows : [])
@@ -415,7 +424,7 @@ async function fetchProductsFromApi(options = {}) {
 
   const rows = await supabaseRequest(
     `/rest/v1/products?select=${select}&order=created_at.desc${filter}`,
-    { token }
+    { token, timeoutMs: 8000 }
   );
 
   return (Array.isArray(rows) ? rows : [])
