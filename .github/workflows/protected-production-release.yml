@@ -37,9 +37,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ inputs.pr_number }}
           EXPECTED_SHA: ${{ inputs.expected_head_sha }}
+          RELEASE_GATES_CONFIGURED: ${{ vars.PRODUCTION_RELEASE_GATES_CONFIGURED }}
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$RELEASE_GATES_CONFIGURED" == "true" ]] || { echo "Blocked: configure the production GitHub Environment reviewers and main branch protection, then set repository variable PRODUCTION_RELEASE_GATES_CONFIGURED=true."; exit 1; }
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Expected SHA must be 40 lowercase hexadecimal characters."; exit 1; }
           pr="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER")"
           state="$(jq -r '.state' <<<"$pr")"
@@ -83,9 +85,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
           EXPECTED_SHA: ${{ needs.preflight.outputs.head_sha }}
+          RELEASE_GATES_CONFIGURED: ${{ vars.PRODUCTION_RELEASE_GATES_CONFIGURED }}
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$RELEASE_GATES_CONFIGURED" == "true" ]] || { echo "Production release protections are not declared ready; refusing merge."; exit 1; }
           pr="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER")"
           [[ "$(jq -r '.state' <<<"$pr")" == "open" ]] || { echo "PR is no longer open."; exit 1; }
           [[ "$(jq -r '.base.ref' <<<"$pr")" == "main" ]] || { echo "PR no longer targets main."; exit 1; }
