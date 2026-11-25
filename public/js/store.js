@@ -6,6 +6,7 @@ let searchQuery = '';
 let selectedVariant = null;
 let currentModalProduct = null;
 let shareProduct = null;
+let shareLastFocused = null;
 let lastSharedProductId = null;
 let currentModalQty = 1;
 let modalLastFocused = null;
@@ -520,6 +521,7 @@ function openProductShare(productId) {
   if (!product) return;
 
   shareProduct = product;
+  shareLastFocused = document.activeElement;
   const overlay = document.getElementById('shareSheetOverlay');
   const title = document.getElementById('shareSheetProductName');
   if (!overlay) return;
@@ -540,6 +542,8 @@ function closeProductShare() {
   overlay.setAttribute('aria-hidden', 'true');
   overlay.hidden = true;
   shareProduct = null;
+  if (shareLastFocused && typeof shareLastFocused.focus === 'function') shareLastFocused.focus();
+  shareLastFocused = null;
 }
 
 function openShareDestination(url) {
@@ -689,8 +693,15 @@ function setupModalEvents() {
       return;
     }
 
-    if (event.key === 'Tab' && overlay && overlay.classList.contains('active')) {
-      trapTab(event, overlay.querySelector('.modal-content'));
+    if (event.key === 'Tab') {
+      const shareOverlay = document.getElementById('shareSheetOverlay');
+      if (shareOverlay && !shareOverlay.hidden) {
+        trapTab(event, shareOverlay.querySelector('.share-sheet'));
+        return;
+      }
+      if (overlay && overlay.classList.contains('active')) {
+        trapTab(event, overlay.querySelector('.modal-content'));
+      }
     }
   });
 }
