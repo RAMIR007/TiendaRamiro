@@ -1,6 +1,14 @@
 name: RamiroX Market production smoke
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/production-smoke.js"
+      - ".github/workflows/production-smoke.yml"
+      - ".github/agents/production-smoke.agent.md"
+      - ".github/agents/qa-security.agent.md"
   workflow_dispatch:
   schedule:
     - cron: '17 12 * * *'
@@ -9,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ramirox-production-smoke
+  group: ramirox-production-smoke-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
