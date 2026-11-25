@@ -543,8 +543,7 @@ function closeProductShare() {
 }
 
 function openShareDestination(url) {
-  const opened = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!opened) showToast('El navegador bloqueó la ventana. Copia el enlace para compartirlo.');
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 async function copyProductShareLink(productUrl) {
