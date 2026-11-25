@@ -1,0 +1,89 @@
+name: Protected production release
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number targeting main
+        required: true
+        type: number
+      expected_head_sha:
+        description: Exact 40-character PR head SHA approved for release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: protected-production-release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Revalidate exact release candidate
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.validate.outputs.pr_number }}
+      head_sha: ${{ steps.validate.outputs.head_sha }}
+    steps:
+      - name: Validate PR and exact-SHA checks
+        id: validate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          EXPECTED_SHA: ${{ inputs.expected_head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Expected SHA must be 40 lowercase hexadecimal characters."; exit 1; }
+          pr="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER")"
+          state="$(jq -r '.state' <<<"$pr")"
+          base="$(jq -r '.base.ref' <<<"$pr")"
+          head="$(jq -r '.head.sha' <<<"$pr")"
+          merged="$(jq -r '.merged' <<<"$pr")"
+          mergeable="$(jq -r '.mergeable' <<<"$pr")"
+          [[ "$state" == "open" && "$base" == "main" && "$merged" == "false" ]] || { echo "PR must be open, unmerged, and target main."; exit 1; }
+          [[ "$head" == "$EXPECTED_SHA" ]] || { echo "PR head changed. Re-run all reviews for the new SHA."; exit 1; }
+          [[ "$mergeable" == "true" ]] || { echo "GitHub does not confirm this PR is mergeable."; exit 1; }
+          checks="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/check-runs?per_page=100")"
+          total="$(jq '.total_count' <<<"$checks")"
+          [[ "$total" -gt 0 ]] || { echo "No check runs found for this SHA."; exit 1; }
+          bad="$(jq '[.check_runs[] | select(.status != "completed" or .conclusion != "success")] | length' <<<"$checks")"
+          [[ "$bad" -eq 0 ]] || { echo "$bad check run(s) are pending or not successful."; jq -r '.check_runs[] | select(.status != "completed" or .conclusion != "success") | [.name,.status,(.conclusion // "none"),.html_url] | @tsv' <<<"$checks"; exit 1; }
+          statuses="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/status")"
+          state_status="$(jq -r '.state' <<<"$statuses")"
+          [[ "$state_status" == "success" ]] || { echo "Combined commit status is not success: $state_status"; exit 1; }
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
+          echo "Preflight passed for PR #$PR_NUMBER at $EXPECTED_SHA. Human approval is still required."
+
+  approved-merge:
+    name: Human-approved merge (may trigger Cloudflare production deployment)
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: production-release-approval
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Revalidate and merge approved PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
+          EXPECTED_SHA: ${{ needs.preflight.outputs.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER")"
+          [[ "$(jq -r '.state' <<<"$pr")" == "open" ]] || { echo "PR is no longer open."; exit 1; }
+          [[ "$(jq -r '.base.ref' <<<"$pr")" == "main" ]] || { echo "PR no longer targets main."; exit 1; }
+          [[ "$(jq -r '.head.sha' <<<"$pr")" == "$EXPECTED_SHA" ]] || { echo "PR head changed after approval; refusing merge."; exit 1; }
+          [[ "$(jq -r '.mergeable' <<<"$pr")" == "true" ]] || { echo "PR is no longer mergeable."; exit 1; }
+          checks="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/check-runs?per_page=100")"
+          [[ "$(jq '[.check_runs[] | select(.status != "completed" or .conclusion != "success")] | length' <<<"$checks")" -eq 0 ]] || { echo "Checks changed or are no longer all successful."; exit 1; }
+          gh api --method PUT "repos/$GH_REPO/pulls/$PR_NUMBER/merge" -f sha="$EXPECTED_SHA" -f merge_method=squash
