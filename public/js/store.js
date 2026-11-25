@@ -7,6 +7,7 @@ let selectedVariant = null;
 let currentModalProduct = null;
 let shareProduct = null;
 let shareLastFocused = null;
+let shareOpenedFromProductModal = false;
 let lastSharedProductId = null;
 let currentModalQty = 1;
 let modalLastFocused = null;
@@ -51,7 +52,6 @@ async function refreshProductsFromServer(options = {}) {
 
     if (typeof syncCartWithCatalog === 'function') syncCartWithCatalog();
     renderCatalog();
-    openSharedProductFromUrl(products);
 
     if (currentModalProduct) {
       const stillExists = products.find((product) => product.id === currentModalProduct.id);
@@ -63,6 +63,7 @@ async function refreshProductsFromServer(options = {}) {
       }
     }
 
+    openSharedProductFromUrl(products);
     return products;
   } catch (error) {
     console.error('[catalog]', error);
@@ -522,6 +523,12 @@ function openProductShare(productId) {
 
   shareProduct = product;
   shareLastFocused = document.activeElement;
+  const productOverlay = document.getElementById('productModalOverlay');
+  shareOpenedFromProductModal = Boolean(currentModalProduct && productOverlay && productOverlay.classList.contains('active'));
+  if (shareOpenedFromProductModal) {
+    productOverlay.setAttribute('aria-hidden', 'true');
+    productOverlay.setAttribute('aria-modal', 'false');
+  }
   const overlay = document.getElementById('shareSheetOverlay');
   const title = document.getElementById('shareSheetProductName');
   if (!overlay) return;
@@ -542,6 +549,14 @@ function closeProductShare() {
   overlay.setAttribute('aria-hidden', 'true');
   overlay.hidden = true;
   shareProduct = null;
+  if (shareOpenedFromProductModal) {
+    const productOverlay = document.getElementById('productModalOverlay');
+    if (productOverlay) {
+      productOverlay.setAttribute('aria-hidden', 'false');
+      productOverlay.setAttribute('aria-modal', 'true');
+    }
+  }
+  shareOpenedFromProductModal = false;
   if (shareLastFocused && typeof shareLastFocused.focus === 'function') shareLastFocused.focus();
   shareLastFocused = null;
 }
