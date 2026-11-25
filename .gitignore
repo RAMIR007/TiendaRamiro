@@ -4,3 +4,7 @@ npm-debug.log*
 Thumbs.db
 .wrangler/
 .dev.vars
+
+# Playwright browser test output
+playwright-report/
+test-results/
