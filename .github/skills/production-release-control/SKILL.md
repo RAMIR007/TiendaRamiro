@@ -33,12 +33,11 @@ Record PR number, base SHA, current head SHA, changed paths, and whether merge t
 A skipped check is not a pass. A missing check is not a pass. A pending check is not a pass. If evidence cannot be retrieved, mark UNVERIFIED and stop.
 
 ### C. Human approval boundary
-- The final release action must run through a GitHub Actions workflow targeting the protected GitHub Environment `production-release-approval`.
-- A repository administrator must configure required reviewers and prevent self-review for that environment in GitHub settings. A workflow reference to an Environment alone does not create its protection rules.
-- The approver must inspect the exact PR and SHA and approve the waiting deployment job.
-- Do not configure or weaken the Environment, branch protection, or required checks from this skill.
-- If the protected Environment is not configured, the workflow must be treated as unavailable and the release remains blocked.
-- The workflow also requires the repository Actions variable `PRODUCTION_RELEASE_GATES_CONFIGURED=true`. Set it only after configuring the `production-release-approval` Environment with required reviewers and self-review disabled, and configuring `main` branch protection/rulesets with required CI checks. The variable is a fail-closed operator assertion, not independent proof of those settings. If unsure, leave it unset.
+- The release workflow must be started manually by repository owner `RAMIR007`, with the exact PR number, exact current 40-character head SHA, and the explicit confirmation `I_APPROVE_MERGE_AND_POSSIBLE_CLOUDFLARE_DEPLOYMENT`.
+- The workflow rejects runs started by any other GitHub actor and revalidates the exact PR SHA and check results immediately before merge.
+- This manual dispatch is the zero-cost approval mechanism for the current private repository setup. It is not equivalent to a protected GitHub Environment with independent reviewer approval.
+- GitHub Free does not provide required deployment reviewers for private repositories, and protected branches/rulesets for private repositories require GitHub Pro or higher. Do not make this store repository public merely to obtain those controls.
+- If the repository later moves to GitHub Pro or a suitable Team plan, add the `production-release-approval` Environment with required reviewers and self-review disabled, plus branch protection requiring the exact CI checks. Do not claim these protections are active before verifying them.
 
 ### D. Execute and verify
 After approval, the protected workflow may merge only after revalidating PR state and all check runs. If merge automatically triggers Cloudflare, monitor that deployment; do not launch a second deploy. Verify the deployed version maps to the merged SHA, then run read-only production smoke checks.
