@@ -57,8 +57,8 @@ jobs:
 
             quality="$(jq '[.check_runs[] | select(.name == "Tests and static build check" and .status == "completed" and .conclusion == "success")] | length' <<<"$checks")"
             security="$(jq '[.check_runs[] | select(.name == "Dependency vulnerability audit" and .status == "completed" and .conclusion == "success")] | length' <<<"$checks")"
-            pending="$(jq '[.check_runs[] | select((.name | test("Revalidate exact release candidate"; "i") | not) and (.status != "completed" or (.conclusion != "success" and not (.name == "Supabase Preview" and .conclusion == "skipped" and $db_changed == false))))] | length' --argjson db_changed "$db_changed" <<<"$checks")"
-            failures="$(jq '[.check_runs[] | select((.name | test("Revalidate exact release candidate"; "i") | not) and .status == "completed" and .conclusion != "success" and not (.name == "Supabase Preview" and .conclusion == "skipped" and $db_changed == false))] | length' --argjson db_changed "$db_changed" <<<"$checks")"
+            pending="$(jq '[.check_runs[] | select((.name | test("Revalidate exact release candidate"; "i") | not) and (.status != "completed" or (.conclusion != "success" and ((.name != "Supabase Preview") or .conclusion != "skipped" or $db_changed))))] | length' --argjson db_changed "$db_changed" <<<"$checks")"
+            failures="$(jq '[.check_runs[] | select((.name | test("Revalidate exact release candidate"; "i") | not) and .status == "completed" and .conclusion != "success" and ((.name != "Supabase Preview") or .conclusion != "skipped" or $db_changed))] | length' --argjson db_changed "$db_changed" <<<"$checks")"
 
             if [[ "$failures" -gt 0 ]]; then
               echo "One or more exact-SHA checks failed:"
