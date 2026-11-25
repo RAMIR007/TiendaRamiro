@@ -4,22 +4,22 @@
 A trustworthy storefront that converts qualified traffic into valid, fulfilled orders and creates sustainable revenue.
 
 ## Phase 0 — Team foundation
-- Define 8 specialist profiles and 8 Skills.
+- Define specialist profiles and reusable Skills.
 - Define one orchestrator and explicit approval gates.
 - Configure supported coding environments to load the profiles.
 
 ## Phase 1 — Order integrity (highest priority)
 - Review checkout, commissions, delivery fee and order payload.
-- Commission/RPC mismatch and legacy RPC exposure remain release blockers until independently resolved and verified.
-- The orchestrator is strictly read-only for the database: no SQL writes, migrations, DDL/DML, schema, RPC, SECURITY DEFINER, grants, RLS or permission changes.
-- Document database remediation as a proposal only. Do not create a paid test environment or mutate a live/test database.
+- Restore and verify fixed-amount and percentage commission snapshots without rewriting historical orders.
+- Keep guest checkout, seller attribution, supplier availability and customer account RPC contracts compatible.
+- Apply database changes only after explicit owner authorization; record every production migration in version control.
 - Verify Cloudflare preview separately from GitHub Actions.
 
 ## Phase 2 — Customer trust and conversion
 - Audit home, categories, product cards, cart and checkout.
 - Clarify delivery vs pickup, payment method, order steps and contact.
 - Improve imagery, mobile layout, form feedback and accessibility.
-- Do not change stored catalog/pricing/stock in frontend work.
+- Do not change stored catalog/pricing/stock in frontend work without explicit authorization.
 
 ## Phase 3 — Growth
 - Metadata, canonical, sitemap, robots, structured data and internal links.
