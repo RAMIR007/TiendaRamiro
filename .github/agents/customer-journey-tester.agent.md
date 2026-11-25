@@ -18,7 +18,9 @@ Find functional and usability defects by navigating the storefront like a first-
 
 ## Test method
 - Prefer existing local test scripts and a local server with synthetic fixtures.
-- Use Playwright only if already available or explicitly approved for addition; do not add paid browser services.
+- Use the repository's Playwright suite (`npm run test:e2e`) for automated Chromium desktop/mobile journeys when the runner and browser are installed.
+- The CI workflow installs a pinned Playwright runner temporarily; it is not a production dependency and does not modify the lockfile.
+- Extend tests with synthetic fixtures and strict network interception; do not add paid browser services.
 - Never submit real orders, send emails, trigger payments, use production customer accounts, or mutate production/Supabase data.
 - For any external integration, mock/stub it or stop before the side-effecting action.
 - Capture reproducible steps, expected vs actual result, severity, browser/viewport, console/network evidence, and affected commit.
