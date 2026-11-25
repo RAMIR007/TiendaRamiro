@@ -1642,3 +1642,129 @@ select.checkout-input option {
 .btn-share-modal:hover {
   background: rgba(37, 211, 102, 0.12);
 }
+
+
+/* Menú multicanal para compartir productos */
+.share-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 450;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(2, 6, 14, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.share-sheet-overlay[hidden] {
+  display: none;
+}
+
+.share-sheet {
+  width: min(100%, 430px);
+  padding: 1.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.share-sheet-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.share-sheet-heading h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.share-sheet-product-name {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.share-sheet-close {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.share-sheet-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.7rem;
+  min-height: 48px;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.share-option:hover,
+.share-option:focus-visible {
+  border-color: var(--primary-text);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.share-option > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.share-option-whatsapp > span:first-child { color: #25d366; }
+.share-option-facebook > span:first-child { color: #1877f2; font-family: Arial, sans-serif; font-size: 1.25rem; }
+.share-option-telegram > span:first-child { color: #2aabee; }
+.share-option-copy > span:first-child { color: var(--primary-text); }
+
+.share-sheet-hint {
+  margin: 0.9rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 480px) {
+  .share-sheet-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .share-sheet {
+    width: 100%;
+    padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
