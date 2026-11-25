@@ -152,3 +152,29 @@ test('la vista móvil permite navegar por el catálogo y abrir el carrito', asyn
   await expect(page.locator('#cartDrawerOverlay')).toHaveClass(/open/);
   await expect(page.locator('#cartItemsList')).toContainText('Auriculares de prueba');
 });
+
+test('la búsqueda sin coincidencias no rompe el catálogo y permite recuperarlo', async ({ page }) => {
+  await page.goto('/');
+  const search = page.getByRole('searchbox', { name: /buscar productos/i });
+
+  await search.fill('producto que no existe');
+  await expect(page.locator('.product-card')).toHaveCount(0);
+
+  await search.fill('');
+  await expect(page.locator('.product-card')).toHaveCount(2);
+});
+
+test('el carrito se puede cerrar y volver a abrir sin perder sus artículos', async ({ page }) => {
+  await page.goto('/');
+  await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
+
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
+  await expect(page.locator('#cartDrawerOverlay')).toHaveClass(/open/);
+
+  await page.getByRole('button', { name: 'Cerrar carrito' }).click();
+  await expect(page.locator('#cartDrawerOverlay')).not.toHaveClass(/open/);
+
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
+  await expect(page.locator('#cartItemsList')).toContainText('Auriculares de prueba');
+  await expect(page.locator('.cart-count').first()).toHaveText('1');
+});
