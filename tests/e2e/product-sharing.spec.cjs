@@ -102,7 +102,7 @@ test('usa el menú nativo para compartir con otras aplicaciones', async ({ page 
 });
 
 test('un enlace compartido abre directamente el producto correcto', async ({ page }) => {
-  await page.goto(`/?/share/${PRODUCT_ID}`);
+  await page.goto(`/?product=${PRODUCT_ID}`);
 
   await expect(page.locator('#productModalOverlay')).toHaveClass(/active/);
   await expect(page.locator('#modalTitle')).toHaveText('Auriculares de prueba');
