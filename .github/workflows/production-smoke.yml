@@ -13,8 +13,6 @@ on:
       - ".github/agents/production-smoke.agent.md"
       - ".github/agents/qa-security.agent.md"
   workflow_dispatch:
-  schedule:
-    - cron: '17 12 * * *'
 
 permissions:
   contents: read
