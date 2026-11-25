@@ -178,3 +178,26 @@ test('el carrito se puede cerrar y volver a abrir sin perder sus artículos', as
   await expect(page.locator('#cartItemsList')).toContainText('Auriculares de prueba');
   await expect(page.locator('.cart-count').first()).toHaveText('1');
 });
+
+
+test('la primera visita informa del fallo del catálogo y permite reintentar', async ({ page }) => {
+  let productRequests = 0;
+
+  await page.route(`${SUPABASE_ORIGIN}/rest/v1/products**`, async (route) => {
+    productRequests += 1;
+    if (productRequests === 1) {
+      await route.abort('failed');
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto('/');
+  await expect(page.locator('.catalog-status')).toContainText('No se pudo cargar el catálogo');
+  await expect(page.locator('[data-action="retry-products"]')).toBeVisible();
+
+  await page.locator('[data-action="retry-products"]').click();
+  await expect(page.locator('.product-card')).toHaveCount(2);
+  expect(productRequests).toBe(2);
+  expect(page.sideEffects).toEqual([]);
+});
