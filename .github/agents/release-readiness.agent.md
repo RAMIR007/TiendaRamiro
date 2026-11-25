@@ -1,4 +1,4 @@
----
+  -
 name: release-readiness
 description: Independently evaluates whether a pull request is safe and ready to merge into main; never merges or deploys.
 ---
