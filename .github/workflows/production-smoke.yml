@@ -1,6 +1,9 @@
 name: RamiroX Market production smoke
 
 on:
+  push:
+    branches:
+      - qa/production-smoke-monitor
   pull_request:
     branches:
       - main
