@@ -1,4 +1,4 @@
-name: Protected production release
+name: Protected production release preflight
 
 on:
   workflow_dispatch:
@@ -8,15 +8,15 @@ on:
         required: true
         type: number
       expected_head_sha:
-        description: Exact 40-character PR head SHA approved for release
+        description: Exact 40-character PR head SHA to validate
         required: true
         type: string
-      confirm_release:
-        description: Explicitly approve merge and any automatic Cloudflare production deployment
+      confirm_preflight:
+        description: Confirm running a read-only release preflight (does not merge or deploy)
         required: true
         type: choice
         options:
-          - I_APPROVE_MERGE_AND_POSSIBLE_CLOUDFLARE_DEPLOYMENT
+          - I_APPROVE_PREFLIGHT_ONLY
 
 permissions:
   contents: read
@@ -25,103 +25,67 @@ permissions:
   statuses: read
 
 concurrency:
-  group: protected-production-release
+  group: protected-production-release-preflight
   cancel-in-progress: false
 
 jobs:
   preflight:
     name: Revalidate exact release candidate
     runs-on: ubuntu-latest
-    outputs:
-      pr_number: ${{ steps.validate.outputs.pr_number }}
-      head_sha: ${{ steps.validate.outputs.head_sha }}
     steps:
-      - name: Validate PR and exact-SHA checks
-        id: validate
+      - name: Validate PR, exact-SHA checks, and release evidence
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ inputs.pr_number }}
           EXPECTED_SHA: ${{ inputs.expected_head_sha }}
-          RELEASE_APPROVAL: ${{ inputs.confirm_release }}
+          PREFLIGHT_APPROVAL: ${{ inputs.confirm_preflight }}
           TRIGGER_ACTOR: ${{ github.actor }}
+          WORKFLOW_REF: ${{ github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$TRIGGER_ACTOR" == "RAMIR007" ]] || { echo "Only repository owner RAMIR007 may authorize this release workflow."; exit 1; }
-          [[ "$RELEASE_APPROVAL" == "I_APPROVE_MERGE_AND_POSSIBLE_CLOUDFLARE_DEPLOYMENT" ]] || { echo "Explicit release approval is required."; exit 1; }
+          [[ "$TRIGGER_ACTOR" == "RAMIR007" ]] || { echo "Only repository owner RAMIR007 may run this release preflight."; exit 1; }
+          [[ "$PREFLIGHT_APPROVAL" == "I_APPROVE_PREFLIGHT_ONLY" ]] || { echo "Explicit preflight confirmation is required."; exit 1; }
           [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Expected SHA must be 40 lowercase hexadecimal characters."; exit 1; }
+
           pr="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER")"
           state="$(jq -r '.state' <<<"$pr")"
           base="$(jq -r '.base.ref' <<<"$pr")"
           head="$(jq -r '.head.sha' <<<"$pr")"
+          head_ref="$(jq -r '.head.ref' <<<"$pr")"
           merged="$(jq -r '.merged' <<<"$pr")"
           mergeable="$(jq -r '.mergeable' <<<"$pr")"
+
           [[ "$state" == "open" && "$base" == "main" && "$merged" == "false" ]] || { echo "PR must be open, unmerged, and target main."; exit 1; }
-          [[ "$head" == "$EXPECTED_SHA" ]] || { echo "PR head changed. Re-run all reviews for the new SHA."; exit 1; }
+          [[ "$head" == "$EXPECTED_SHA" ]] || { echo "PR head changed. Restart release-readiness and all exact-SHA checks."; exit 1; }
+          [[ "$WORKFLOW_REF" == "$head_ref" ]] || { echo "Run this workflow from the PR head branch ($head_ref), not $WORKFLOW_REF."; exit 1; }
           [[ "$mergeable" == "true" ]] || { echo "GitHub does not confirm this PR is mergeable."; exit 1; }
+
           checks="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/check-runs?per_page=100")"
           total="$(jq '.total_count' <<<"$checks")"
           [[ "$total" -gt 0 ]] || { echo "No check runs found for this SHA."; exit 1; }
+
           files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" | jq -s 'add')"
           db_changed="$(jq '[.[] | select(.filename | test("^(supabase/|.*\\.sql$|.*schema.*|.*migration.*)"))] | length > 0' <<<"$files")"
           bad="$(jq --argjson db_changed "$db_changed" '[.check_runs[] | select((.status != "completed" or .conclusion != "success") and (not (.name == "Supabase Preview" and .status == "completed" and .conclusion == "skipped" and $db_changed == false)))] | length' <<<"$checks")"
+
           for required in "Tests and static build check" "Dependency vulnerability audit"; do
             jq -e --arg name "$required" '.check_runs[] | select(.name == $name and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Required check missing or unsuccessful: $required"; exit 1; }
           done
+
           customer_changed="$(jq '[.[] | select(.filename | test("^(public/|src/|app/|pages/|components/|js/|css/)|(^|/)(index|shop|catalog).*\\.html$"))] | length > 0' <<<"$files")"
           if [[ "$customer_changed" == "true" ]]; then
             jq -e '.check_runs[] | select((.name | test("browser|customer journey"; "i")) and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Customer-facing changes require a successful browser/customer journey check."; exit 1; }
           fi
+
           [[ "$bad" -eq 0 ]] || { echo "$bad check run(s) are pending or not successful."; jq -r '.check_runs[] | select(.status != "completed" or .conclusion != "success") | [.name,.status,(.conclusion // "none"),.html_url] | @tsv' <<<"$checks"; exit 1; }
+
           statuses="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/status")"
           contexts="$(jq '.statuses | length' <<<"$statuses")"
           state_status="$(jq -r '.state' <<<"$statuses")"
           [[ "$contexts" -eq 0 || "$state_status" == "success" ]] || { echo "Commit status contexts are not successful: $state_status"; exit 1; }
-          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "head_sha=$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
-          echo "Preflight passed for PR #$PR_NUMBER at $EXPECTED_SHA. The protected Environment approval is still required."
 
-  approved-merge:
-    name: Human-approved merge (may trigger Cloudflare production deployment)
-    needs: preflight
-    runs-on: ubuntu-latest
-    environment:
-      name: production-release-approval
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: read
-      statuses: read
-    steps:
-      - name: Revalidate and merge approved PR
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
-          EXPECTED_SHA: ${{ needs.preflight.outputs.head_sha }}
-          RELEASE_APPROVAL: ${{ inputs.confirm_release }}
-          TRIGGER_ACTOR: ${{ github.actor }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$TRIGGER_ACTOR" == "RAMIR007" ]] || { echo "Only repository owner RAMIR007 may authorize this release workflow."; exit 1; }
-          [[ "$RELEASE_APPROVAL" == "I_APPROVE_MERGE_AND_POSSIBLE_CLOUDFLARE_DEPLOYMENT" ]] || { echo "Explicit release approval is required."; exit 1; }
-          pr="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER")"
-          [[ "$(jq -r '.state' <<<"$pr")" == "open" ]] || { echo "PR is no longer open."; exit 1; }
-          [[ "$(jq -r '.base.ref' <<<"$pr")" == "main" ]] || { echo "PR no longer targets main."; exit 1; }
-          [[ "$(jq -r '.head.sha' <<<"$pr")" == "$EXPECTED_SHA" ]] || { echo "PR head changed after approval; refusing merge."; exit 1; }
-          [[ "$(jq -r '.mergeable' <<<"$pr")" == "true" ]] || { echo "PR is no longer mergeable."; exit 1; }
-          checks="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/check-runs?per_page=100")"
-          files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" | jq -s 'add')"
-          db_changed="$(jq '[.[] | select(.filename | test("^(supabase/|.*\\.sql$|.*schema.*|.*migration.*)"))] | length > 0' <<<"$files")"
-          bad="$(jq --argjson db_changed "$db_changed" '[.check_runs[] | select((.status != "completed" or .conclusion != "success") and (not (.name == "Supabase Preview" and .status == "completed" and .conclusion == "skipped" and $db_changed == false)))] | length' <<<"$checks")"
-          for required in "Tests and static build check" "Dependency vulnerability audit"; do
-            jq -e --arg name "$required" '.check_runs[] | select(.name == $name and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Required check missing or unsuccessful: $required"; exit 1; }
-          done
-          customer_changed="$(jq '[.[] | select(.filename | test("^(public/|src/|app/|pages/|components/|js/|css/)|(^|/)(index|shop|catalog).*\\.html$"))] | length > 0' <<<"$files")"
-          if [[ "$customer_changed" == "true" ]]; then
-            jq -e '.check_runs[] | select((.name | test("browser|customer journey"; "i")) and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Customer-facing changes require a successful browser/customer journey check."; exit 1; }
-          fi
-          [[ "$bad" -eq 0 ]] || { echo "Checks changed or are no longer successful."; exit 1; }
-          gh api --method PUT "repos/$GH_REPO/pulls/$PR_NUMBER/merge" -f sha="$EXPECTED_SHA" -f merge_method=squash
+          echo "READY TO MERGE MANUALLY: PR #$PR_NUMBER at $EXPECTED_SHA passed the exact-SHA preflight."
+          echo "This workflow is read-only. It does not merge, deploy, run migrations, or modify production."
+          echo "The repository owner must review the PR and click Merge in GitHub. That merge may trigger the connected Cloudflare production deployment."
