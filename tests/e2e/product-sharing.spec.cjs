@@ -83,7 +83,7 @@ test('comparte el producto por WhatsApp, Facebook y Telegram', async ({ page }) 
 
     const opened = await page.evaluate(() => window.__openedShareUrls.at(-1));
     expect(opened).toContain(expectedHost);
-    expect(decodeURIComponent(opened)).toContain(`product=${PRODUCT_ID}`);
+    expect(decodeURIComponent(opened)).toContain(`/share/${PRODUCT_ID}`);
     await expect(page.locator('#shareSheetOverlay')).toBeHidden();
   }
 
@@ -96,13 +96,13 @@ test('usa el menú nativo para compartir con otras aplicaciones', async ({ page 
   await page.locator('#shareSheetOverlay [data-share-target="system"]').click();
 
   await expect.poll(() => page.evaluate(() => window.__nativeSharePayload && window.__nativeSharePayload.url))
-    .toContain(`product=${PRODUCT_ID}`);
+    .toContain(`/share/${PRODUCT_ID}`);
   await expect(page.locator('#shareSheetOverlay')).toBeHidden();
   expect(page.sideEffects).toEqual([]);
 });
 
 test('un enlace compartido abre directamente el producto correcto', async ({ page }) => {
-  await page.goto(`/?product=${PRODUCT_ID}`);
+  await page.goto(`/?/share/${PRODUCT_ID}`);
 
   await expect(page.locator('#productModalOverlay')).toHaveClass(/active/);
   await expect(page.locator('#modalTitle')).toHaveText('Auriculares de prueba');
