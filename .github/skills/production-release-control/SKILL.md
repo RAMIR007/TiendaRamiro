@@ -34,7 +34,7 @@ Record PR number, base SHA, current head SHA, changed paths, and whether merging
 A skipped check is not a pass unless this procedure explicitly allows that exact skip for a change that does not touch the corresponding system. A missing check is not a pass. A pending check is not a pass. If evidence cannot be retrieved, mark UNVERIFIED and stop.
 
 ### C. Automatic read-only release preflight
-- The workflow `.github/workflows/protected-production-release.yml` runs automatically for PRs targeting `main`, but only evaluates PRs authored by `RAMIR007`.
+- The workflow `.github/workflows/protected-production-release.yml` runs automatically for every PR targeting `main`. It is read-only and does not execute PR code, so it can safely evaluate contributions from forks as well.
 - It checks the exact current PR head SHA, open PR state, base branch, changed paths, required quality/security checks, conditional browser journey, all other check runs, and commit statuses.
 - It waits for checks to finish, fails closed on failed/missing/pending evidence, and never runs storefront code or uses production data.
 - The workflow has read-only permissions. It must not call the GitHub merge API, push commits, deploy, or modify repository settings.
