@@ -1,0 +1,41 @@
+name: RamiroX Market production smoke
+
+on:
+  push:
+    branches:
+      - qa/production-smoke-monitor
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/production-smoke.js"
+      - ".github/workflows/production-smoke.yml"
+      - ".github/agents/production-smoke.agent.md"
+      - ".github/agents/qa-security.agent.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ramirox-production-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-smoke:
+    name: Read-only public production checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check production endpoints and static assets
+        env:
+          PRODUCTION_URL: https://tiendaramiro.ramiroxavier07.workers.dev
+        run: node scripts/production-smoke.js
