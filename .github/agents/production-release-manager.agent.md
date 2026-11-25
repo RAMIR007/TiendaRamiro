@@ -23,7 +23,7 @@ Invoke for every proposed merge to `main`, production deployment, rollback, rele
 
 ## Authority model
 - The agent may inspect, compare, report, prepare release notes, and run safe read-only checks.
-- The agent may prepare a release workflow invocation but must never manufacture or assume owner approval.
+- The agent monitors and reports the automatic read-only release preflight; it must never manufacture or assume owner approval.
 - The protected release workflow is read-only and cannot merge. Merge is allowed only when all exact-SHA gates pass and the repository owner explicitly clicks Merge in GitHub.
 - Production deployment, promotion, rollback, DNS, secrets, environment changes, migrations, and database writes each require explicit authorization for that exact operation unless a documented protected workflow has a separately approved standing policy.
 - Never merge directly using an unprotected token or bypass branch protection.
