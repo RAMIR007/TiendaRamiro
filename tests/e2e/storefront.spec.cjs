@@ -147,7 +147,8 @@ test('la vista móvil permite navegar por el catálogo y abrir el carrito', asyn
   await page.goto('/');
   await expect(page.locator('.product-card')).toHaveCount(2);
   await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
-  await page.getByRole('button', { name: 'Ver carrito' }).click();
+  // Desktop and mobile expose different accessible labels for the same cart action.
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
   await expect(page.locator('#cartDrawerOverlay')).toHaveClass(/open/);
   await expect(page.locator('#cartItemsList')).toContainText('Auriculares de prueba');
 });
