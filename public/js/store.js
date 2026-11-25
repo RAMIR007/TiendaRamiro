@@ -5,6 +5,10 @@ let currentCategory = 'all';
 let searchQuery = '';
 let selectedVariant = null;
 let currentModalProduct = null;
+let shareProduct = null;
+let shareLastFocused = null;
+let shareOpenedFromProductModal = false;
+let lastSharedProductId = null;
 let currentModalQty = 1;
 let modalLastFocused = null;
 let catalogState = 'loading';
@@ -17,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCatalogEvents();
   setupSearchEvents();
   setupModalEvents();
+  setupShareEvents();
   window.addEventListener('storage', handleStorageChange);
 
   catalogState = getCachedProducts().length > 0 ? 'ready' : 'loading';
@@ -58,6 +63,7 @@ async function refreshProductsFromServer(options = {}) {
       }
     }
 
+    openSharedProductFromUrl(products);
     return products;
   } catch (error) {
     console.error('[catalog]', error);
@@ -181,9 +187,10 @@ function renderProductCard(product) {
           <div class="product-price">${escapeHtml(formatMoney(product.price))}</div>
           <div class="product-actions">
             <button type="button" class="btn-share-quick" data-share="${escapeHtml(product.id)}"
-              aria-label="Compartir ${escapeHtml(product.name)} por WhatsApp" title="Compartir por WhatsApp">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.004.577 1.764.846 2.806.847h.005c3.182 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.77-5.773-5.77zm4.565 8.081c-.195.55-1.124 1.056-1.547 1.127-.406.068-.934.096-2.738-.65-1.928-.797-3.17-2.754-3.266-2.883-.095-.128-.781-1.04-1.189-1.579-.408-.538-.216-.807-.024-.999.172-.172.384-.44.576-.632.192-.192.256-.32.384-.544.128-.224.064-.416-.032-.608-.096-.192-.864-2.083-1.184-2.853-.312-.751-.628-.648-.864-.66-.224-.012-.48-.016-.736-.016-.256 0-.672.096-1.024.48-.352.384-1.344 1.312-1.344 3.2 0 1.888 1.376 3.712 1.568 3.968.192.256 2.709 4.137 6.561 5.799 3.852 1.662 3.852 1.108 4.544 1.044.692-.064 2.24-1.08 2.56-2.12.32-1.04.32-1.936.224-2.12-.096-.184-.352-.288-.736-.48z"/>
+              aria-label="Compartir ${escapeHtml(product.name)}" title="Compartir producto">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+                <path d="m8.6 10.7 6.8-4.4M8.6 13.3l6.8 4.4"></path>
               </svg>
             </button>
             <button type="button" class="btn-add-quick" data-add="${escapeHtml(product.id)}"
@@ -495,28 +502,150 @@ function changeModalQty(delta) {
   if (qtyEl) qtyEl.textContent = String(currentModalQty);
 }
 
+function getProductShareUrl(product) {
+  return new URL(`/share/${encodeURIComponent(product.id)}`, window.location.origin).toString();
+}
+
+function getProductShareMessage(product, productUrl) {
+  const description = String(product.description || '').trim();
+  return [
+    `🛍️ ${product.name}`,
+    description,
+    `Mira el producto en RamiroX Market: ${productUrl}`
+  ].filter(Boolean).join('\n\n');
+}
+
 function openProductShare(productId) {
   const product = findProduct(productId);
   if (!product) return;
 
-  const primaryImage = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '';
-  const productUrl = `${window.location.origin}/index.html#${encodeURIComponent(product.id)}`;
-  const message = `🛍️ *${brandNameText(product)}*\n${formatMoney(product.price)}\n\n👀 Mira el detalle: ${productUrl}\n\nPide desde ${window.location.origin} 📱`;
-
-  if (primaryImage) {
-    const shareUrl = new URL('https://wa.me/');
-    shareUrl.searchParams.set('text', message + `\n\n📸 ${primaryImage}`);
-    openWhatsApp(shareUrl.toString());
-  } else {
-    openWhatsApp(`https://wa.me/?text=${encodeURIComponent(message)}`);
+  shareProduct = product;
+  shareLastFocused = document.activeElement;
+  const productOverlay = document.getElementById('productModalOverlay');
+  shareOpenedFromProductModal = Boolean(currentModalProduct && productOverlay && productOverlay.classList.contains('active'));
+  if (shareOpenedFromProductModal) {
+    productOverlay.setAttribute('aria-hidden', 'true');
+    productOverlay.setAttribute('aria-modal', 'false');
   }
+  const overlay = document.getElementById('shareSheetOverlay');
+  const title = document.getElementById('shareSheetProductName');
+  if (!overlay) return;
 
-  showToast('Abre WhatsApp y elige el contacto');
+  if (title) title.textContent = product.name;
+  overlay.hidden = false;
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  const closeButton = overlay.querySelector('[data-share-target="close"]');
+  if (closeButton) closeButton.focus();
 }
 
-function brandNameText(product) {
-  if (product.stock > 0) return product.name;
-  return `${product.name}${product.supplierAvailable ? ' (disponible con proveedor)' : ' (agotado)'}`;
+function closeProductShare() {
+  const overlay = document.getElementById('shareSheetOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.hidden = true;
+  shareProduct = null;
+  if (shareOpenedFromProductModal) {
+    const productOverlay = document.getElementById('productModalOverlay');
+    if (productOverlay) {
+      productOverlay.setAttribute('aria-hidden', 'false');
+      productOverlay.setAttribute('aria-modal', 'true');
+    }
+  }
+  shareOpenedFromProductModal = false;
+  if (shareLastFocused && typeof shareLastFocused.focus === 'function') shareLastFocused.focus();
+  shareLastFocused = null;
+}
+
+function openShareDestination(url) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+async function copyProductShareLink(productUrl) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(productUrl);
+    } else {
+      const field = document.createElement('textarea');
+      field.value = productUrl;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.appendChild(field);
+      field.select();
+      const copied = document.execCommand('copy');
+      field.remove();
+      if (!copied) throw new Error('No se pudo copiar el enlace');
+    }
+    showToast('Enlace del producto copiado');
+  } catch (error) {
+    console.error('[share] copy failed', error);
+    showToast('No se pudo copiar automáticamente. Mantén pulsado el enlace para copiarlo.');
+  }
+}
+
+async function shareProductTo(target) {
+  if (!shareProduct) return;
+
+  const product = shareProduct;
+  const productUrl = getProductShareUrl(product);
+  const message = getProductShareMessage(product, productUrl);
+  const encodedUrl = encodeURIComponent(productUrl);
+  const encodedMessage = encodeURIComponent(message);
+
+  if (target === 'whatsapp') {
+    closeProductShare();
+    openShareDestination(`https://wa.me/?text=${encodedMessage}`);
+    return;
+  }
+
+  if (target === 'facebook') {
+    closeProductShare();
+    openShareDestination(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`);
+    return;
+  }
+
+  if (target === 'telegram') {
+    closeProductShare();
+    openShareDestination(`https://t.me/share/url?url=${encodedUrl}&text=${encodedMessage}`);
+    return;
+  }
+
+  if (target === 'system') {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: product.name, text: message, url: productUrl });
+        closeProductShare();
+      } catch (error) {
+        if (error && error.name !== 'AbortError') {
+          console.error('[share] native share failed', error);
+          showToast('No se pudo abrir el menú de compartir');
+        }
+      }
+    } else {
+      closeProductShare();
+      await copyProductShareLink(productUrl);
+    }
+    return;
+  }
+
+  if (target === 'copy') {
+    closeProductShare();
+    await copyProductShareLink(productUrl);
+  }
+}
+
+function openSharedProductFromUrl(products) {
+  const productId = new URLSearchParams(window.location.search).get('product');
+  if (!productId || productId === lastSharedProductId) return;
+
+  const product = products.find((item) => item.id === productId);
+  if (!product) return;
+
+  lastSharedProductId = productId;
+  openProductModal(productId);
 }
 
 function addCurrentModalToCart() {
@@ -568,12 +697,45 @@ function setupModalEvents() {
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
+      const shareOverlay = document.getElementById('shareSheetOverlay');
+      if (shareOverlay && !shareOverlay.hidden) {
+        closeProductShare();
+        return;
+      }
       closeProductModal();
       return;
     }
 
-    if (event.key === 'Tab' && overlay && overlay.classList.contains('active')) {
-      trapTab(event, overlay.querySelector('.modal-content'));
+    if (event.key === 'Tab') {
+      const shareOverlay = document.getElementById('shareSheetOverlay');
+      if (shareOverlay && !shareOverlay.hidden) {
+        trapTab(event, shareOverlay.querySelector('.share-sheet'));
+        return;
+      }
+      if (overlay && overlay.classList.contains('active')) {
+        trapTab(event, overlay.querySelector('.modal-content'));
+      }
     }
+  });
+}
+
+function setupShareEvents() {
+  const overlay = document.getElementById('shareSheetOverlay');
+  if (!overlay) return;
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) {
+      closeProductShare();
+      return;
+    }
+
+    const button = event.target.closest('[data-share-target]');
+    if (!button) return;
+    const target = button.getAttribute('data-share-target');
+    if (target === 'close') {
+      closeProductShare();
+      return;
+    }
+    shareProductTo(target);
   });
 }
