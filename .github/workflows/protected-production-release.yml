@@ -66,6 +66,20 @@ jobs:
           files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files?per_page=100" | jq -s 'add')"
           db_changed="$(jq '[.[] | select(.filename | test("^(supabase/|.*\\.sql$|.*schema.*|.*migration.*)"))] | length > 0' <<<"$files")"
           bad="$(jq --argjson db_changed "$db_changed" '[.check_runs[] | select((.status != "completed" or .conclusion != "success") and (not (.name == "Supabase Preview" and .status == "completed" and .conclusion == "skipped" and $db_changed == false)))] | length' <<<"$checks")"
+          for required in "Tests and static build check" "Dependency vulnerability audit"; do
+            jq -e --arg name "$required" '.check_runs[] | select(.name == $name and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Required check missing or unsuccessful: $required"; exit 1; }
+          done
+          customer_changed="$(jq '[.[] | select(.filename | test("^(public/|src/|app/|pages/|components/|js/|css/)|(^|/)(index|shop|catalog).*\\.html$"))] | length > 0' <<<"$files")"
+          if [[ "$customer_changed" == "true" ]]; then
+            jq -e '.check_runs[] | select((.name | test("browser|customer journey"; "i")) and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Customer-facing changes require a successful browser/customer journey check."; exit 1; }
+          fi
+          for required in "Tests and static build check" "Dependency vulnerability audit"; do
+            jq -e --arg name "$required" '.check_runs[] | select(.name == $name and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Required check missing or unsuccessful: $required"; exit 1; }
+          done
+          customer_changed="$(jq '[.[] | select(.filename | test("^(public/|src/|app/|pages/|components/|js/|css/)|(^|/)(index|shop|catalog).*\\.html$"))] | length > 0' <<<"$files")"
+          if [[ "$customer_changed" == "true" ]]; then
+            jq -e '.check_runs[] | select((.name | test("browser|customer journey"; "i")) and .status == "completed" and .conclusion == "success")' <<<"$checks" >/dev/null || { echo "Customer-facing changes require a successful browser/customer journey check."; exit 1; }
+          fi
           [[ "$bad" -eq 0 ]] || { echo "$bad check run(s) are pending or not successful."; jq -r '.check_runs[] | select(.status != "completed" or .conclusion != "success") | [.name,.status,(.conclusion // "none"),.html_url] | @tsv' <<<"$checks"; exit 1; }
           statuses="$(gh api "repos/$GH_REPO/commits/$EXPECTED_SHA/status")"
           contexts="$(jq '.statuses | length' <<<"$statuses")"
