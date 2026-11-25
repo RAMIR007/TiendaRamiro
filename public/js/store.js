@@ -503,9 +503,7 @@ function changeModalQty(delta) {
 }
 
 function getProductShareUrl(product) {
-  const url = new URL('/', window.location.origin);
-  url.searchParams.set('product', product.id);
-  return url.toString();
+  return new URL(`/share/${encodeURIComponent(product.id)}`, window.location.origin).toString();
 }
 
 function getProductShareMessage(product, productUrl) {
