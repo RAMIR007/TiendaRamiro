@@ -80,12 +80,14 @@ jobs:
           [[ "$contexts" -eq 0 || "$state_status" == "success" ]] || { echo "Commit status contexts are not successful: $state_status"; exit 1; }
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "head_sha=$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
-          echo "Preflight passed for PR #$PR_NUMBER at $EXPECTED_SHA. Human approval is still required."
+          echo "Preflight passed for PR #$PR_NUMBER at $EXPECTED_SHA. The protected Environment approval is still required."
 
   approved-merge:
     name: Human-approved merge (may trigger Cloudflare production deployment)
     needs: preflight
     runs-on: ubuntu-latest
+    environment:
+      name: production-release-approval
     permissions:
       contents: write
       pull-requests: write
