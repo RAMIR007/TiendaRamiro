@@ -1,0 +1,59 @@
+name: RamiroX Market browser tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "public/**"
+      - "scripts/**"
+      - "tests/**"
+      - "playwright.config.cjs"
+      - "package.json"
+      - ".github/workflows/browser-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ramirox-browser-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    name: Chromium customer journeys (mock data)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked project dependencies
+        run: npm ci
+
+      - name: Install pinned Playwright test runner (CI only)
+        run: npm install --no-save --package-lock=false @playwright/test@1.65.1
+
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser customer journeys
+        run: npm run test:e2e
+
+      - name: Upload browser report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ramirox-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
