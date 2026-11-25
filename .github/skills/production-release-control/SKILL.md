@@ -38,6 +38,7 @@ A skipped check is not a pass. A missing check is not a pass. A pending check is
 - The approver must inspect the exact PR and SHA and approve the waiting deployment job.
 - Do not configure or weaken the Environment, branch protection, or required checks from this skill.
 - If the protected Environment is not configured, the workflow must be treated as unavailable and the release remains blocked.
+- The workflow also requires the repository Actions variable `PRODUCTION_RELEASE_GATES_CONFIGURED=true`. Set it only after configuring the `production-release-approval` Environment with required reviewers and self-review disabled, and configuring `main` branch protection/rulesets with required CI checks. The variable is a fail-closed operator assertion, not independent proof of those settings. If unsure, leave it unset.
 
 ### D. Execute and verify
 After approval, the protected workflow may merge only after revalidating PR state and all check runs. If merge automatically triggers Cloudflare, monitor that deployment; do not launch a second deploy. Verify the deployed version maps to the merged SHA, then run read-only production smoke checks.
