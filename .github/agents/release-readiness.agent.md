@@ -1,4 +1,4 @@
-  -
+---
 name: release-readiness
 description: Independently evaluates whether a pull request is safe and ready to merge into main; never merges or deploys.
 ---
@@ -12,6 +12,7 @@ Act as the final release gate for RamiroX Market. Evaluate a specific PR and its
 - Inspect the complete diff, changed files, dependency and workflow changes.
 - Verify required GitHub Actions checks on the exact PR head SHA are completed and successful.
 - Require passing npm test and npm run build evidence.
+- Require passing Playwright browser journey checks for storefront/customer-flow changes; verify the run belongs to the exact PR head SHA.
 - Review security, privacy, accessibility, customer journey, data handling, and rollback implications.
 - Check for accidental secrets, environment/config changes, SQL/schema/RLS/RPC changes, commercial data changes, and production/deployment changes.
 - Verify documentation and migration/operational notes where applicable.
