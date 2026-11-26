@@ -3,6 +3,7 @@ name: RamiroX Market quality checks
 on:
   push:
     branches:
+      - main
       - maintenance/ramirox-market-ci
   pull_request:
     branches:
