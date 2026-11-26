@@ -578,14 +578,28 @@ async function createOrderInApi(order) {
     }
   });
 
-  if (!data || typeof data !== 'object') {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new SupabaseError('El servidor no devolvió el pedido creado.', 500, data);
   }
 
+  const orderId = typeof data.order_id === 'string' ? data.order_id.trim() : '';
+  const hasTotalCents = data.total_cents !== null
+    && data.total_cents !== undefined
+    && data.total_cents !== '';
+  const totalCents = Number(data.total_cents);
+
+  if (!orderId || !hasTotalCents || !Number.isSafeInteger(totalCents) || totalCents < 0) {
+    throw new SupabaseError(
+      'El servidor no devolvió un identificador y un total válidos para el pedido.',
+      500,
+      data
+    );
+  }
+
   return {
-    orderId: data.order_id,
+    orderId,
     orderCode: data.order_code || '',
-    totalCents: Number(data.total_cents) || 0,
+    totalCents,
     commissionCents: Number(data.commission_cents) || 0,
     count: Number(data.count) || 0
   };
