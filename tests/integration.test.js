@@ -72,6 +72,7 @@ const PRODUCTS = [
 const ORDERS = [
   {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    customer_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
     created_at: '2026-10-24T12:00:00Z',
     status: 'pendiente',
     client_name: 'María López',
@@ -91,7 +92,8 @@ const AUDIT = [
 const USERS = {
   'admin@test.com': { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'admin@test.com', password: 'Admin12345', name: 'Administrador', role: 'admin' },
   'ventas@test.com': { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: 'ventas@test.com', password: 'Ventas12345', name: 'Ventas', role: 'staff' },
-  'pending@test.com': { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', email: 'pending@test.com', password: 'Pending12345', name: 'Pendiente', role: 'pending' }
+  'pending@test.com': { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', email: 'pending@test.com', password: 'Pending12345', name: 'Pendiente', role: 'pending' },
+  'cliente@test.com': { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', email: 'cliente@test.com', name: 'Cliente', phone: '5355551234', address: 'Calle 10, Playa', role: 'customer' }
 };
 
 function createMock() {
@@ -113,13 +115,16 @@ function createMock() {
     productImages: [],
     orders: clone(ORDERS),
     audit: clone(AUDIT),
+    otpRequests: [],
+    claimedOrders: 1,
     profiles: Object.fromEntries(Object.values(USERS).map((user) => [
       user.id,
-      { id: user.id, name: user.name, role: user.role }
+      { id: user.id, name: user.name, phone: user.phone || null, address: user.address || null, role: user.role }
     ])),
     users: USERS,
     requests: [],
     lastOrderPayload: null,
+    failNextOrder: false,
     lastOrderPatch: null,
     productCosts: [],
     passwordUpdates: [],
@@ -166,6 +171,11 @@ function createMock() {
         expires_in: 3600,
         user: { id: user.id, email: user.email }
       });
+    }
+
+    if (route === '/auth/v1/otp' && method === 'POST') {
+      state.otpRequests.push({ email: body.email, create_user: body.create_user, data: body.data, redirect_to: url.searchParams.get('redirect_to') });
+      return respond({}, 200);
     }
 
     if (route === '/auth/v1/recover' && method === 'POST') {
@@ -279,6 +289,11 @@ function createMock() {
     }
 
     if (route === '/rest/v1/orders' && method === 'GET') {
+      const customerFilter = url.searchParams.get('customer_id');
+      if (customerFilter) {
+        const customerId = customerFilter.replace(/^eq\./, '');
+        return respond(state.orders.filter((order) => order.customer_id === customerId));
+      }
       return respond(state.orders);
     }
 
@@ -296,8 +311,16 @@ function createMock() {
       return respond(null, 204);
     }
 
+    if (route === '/rest/v1/rpc/claim_my_orders' && method === 'POST') {
+      return respond(state.claimedOrders);
+    }
+
     if (route === '/rest/v1/rpc/create_order' && method === 'POST') {
       state.lastOrderPayload = body;
+      if (state.failNextOrder) {
+        state.failNextOrder = false;
+        return respond({ msg: 'Servicio temporalmente no disponible' }, 503);
+      }
 
       const totalCents = body.p_items.reduce((sum, item) => {
         const product = state.products.find((candidate) => candidate.id === item.product_id);
@@ -540,6 +563,7 @@ async function login(win, doc, email, password) {
   await check('rechaza un billete que no cubre producto y mensajería antes de crear el pedido', async () => {
     doc.getElementById('clientName').value = 'María López';
     doc.getElementById('clientPhone').value = '+53 5838 2989';
+    doc.getElementById('clientPhoneLandline').value = '72001234';
     doc.getElementById('clientMunicipality').value = 'Playa';
     doc.getElementById('clientAddress').value = 'Calle 23, número 12';
     doc.getElementById('clientReference').value = 'Frente al parque';
@@ -562,6 +586,7 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientReference').value = 'Frente al parque';
     doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
     doc.getElementById('clientPaymentNote').value = '500';
+    doc.getElementById('clientEmail').value = 'maria@test.com';
 
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
@@ -570,8 +595,13 @@ async function login(win, doc, email, password) {
     assert.ok(payload, 'no se llamó a create_order');
     assert.strictEqual(payload.p_client_name, 'María López');
     assert.strictEqual(payload.p_client_phone, '5358382989');
+    assert.strictEqual(payload.p_client_email, 'maria@test.com');
     assert.strictEqual(payload.p_delivery_method, 'domicilio');
+    assert.strictEqual(storeMock.state.otpRequests.length, 0, 'el checkout no debe enviar correos ni crear cuentas');
     assert.strictEqual(payload.p_client_address, 'Calle 23, número 12, Playa (ref: Frente al parque)');
+    assert.match(payload.p_client_notes, /Teléfono fijo: 72001234/);
+    assert.match(payload.p_client_notes, /Horario de entrega\/recogida: Tarde/);
+    assert.match(payload.p_client_notes, /Paga con: \$500 USD/);
     assert.strictEqual(payload.p_items.length, 2);
     assert.strictEqual(payload.p_items[0].quantity, 12);
     assert.strictEqual(payload.p_items[1].quantity, 3);
@@ -585,11 +615,32 @@ async function login(win, doc, email, password) {
     assert.ok(voucher.includes('Dirección: Calle 23, número 12'));
     assert.ok(voucher.includes('Municipio: Playa'));
     assert.ok(voucher.includes('Punto de referencia: Frente al parque'));
-    assert.ok(voucher.includes('Teléfono fijo en caso de tener: —'));
+    assert.ok(voucher.includes('Teléfono fijo en caso de tener: 72001234'));
     assert.ok(voucher.includes('Precio de mensajería: $2 USD'));
     assert.ok(voucher.includes('Forma de pago: Efectivo'));
     assert.ok(voucher.includes('Vuelto: $102 USD'));
     assert.ok(voucher.includes('La mensajería es obligatoria pagarla aunque el cliente no se quede con el producto.'));
+  });
+
+  await check('no envía por WhatsApp ni vacía el carrito si Supabase no registra el pedido', async () => {
+    win.addToCart('11111111-1111-4111-8111-111111111111');
+    doc.getElementById('clientName').value = 'Ana Gómez';
+    doc.getElementById('clientPhone').value = '5358382989';
+    doc.getElementById('clientMunicipality').value = 'Playa';
+    doc.getElementById('clientAddress').value = 'Calle 23, número 12';
+    doc.getElementById('clientReference').value = 'Frente al parque';
+    doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
+    doc.getElementById('clientPaymentNote').value = '100';
+    win.__lastOpened = null;
+    storeMock.state.failNextOrder = true;
+
+    submit(doc.getElementById('checkoutForm'));
+    await tick(260);
+
+    assert.strictEqual(win.__lastOpened, null);
+    assert.strictEqual(win.getCartTotals().count, 1);
+    assert.strictEqual(doc.getElementById('clientName').value, 'Ana Gómez');
+    win.clearCart();
   });
 
   await check('genera el vale de recogida con sus campos y sin datos de mensajería', async () => {
@@ -640,6 +691,44 @@ async function login(win, doc, email, password) {
   });
 
   store.dom.window.close();
+
+  /* ---------------------------------------------------------------- */
+  console.log('\nCuenta de cliente — acceso exclusivo con Google');
+  /* ---------------------------------------------------------------- */
+
+  const accountMock = createMock();
+  const accountLogin = await loadPage('public/account.html', accountMock);
+
+  await check('muestra Google como único método de acceso y mantiene la compra invitada', () => {
+    assert.deepStrictEqual(accountLogin.errors, []);
+    assert.ok(accountLogin.doc.querySelector('[data-provider="google"]'));
+    assert.strictEqual(accountLogin.doc.querySelector('[data-provider="facebook"]'), null);
+    assert.strictEqual(accountLogin.doc.getElementById('customerLoginForm'), null);
+    assert.strictEqual(accountLogin.doc.getElementById('customerEmail'), null);
+    assert.match(accountLogin.doc.getElementById('accountAuthPanel').textContent, /mismo correo/i);
+  });
+
+  await check('rechaza proveedores distintos de Google', () => {
+    assert.throws(() => accountLogin.win.signInCustomerWithOAuth('facebook'), /Proveedor de acceso no permitido/);
+  });
+
+  accountLogin.dom.window.close();
+
+  const accountCallback = await loadPage('public/account.html', accountMock, {
+    url: 'http://localhost/account.html#access_token=token-dddddddd-dddd-4ddd-8ddd-dddddddddddd&refresh_token=refresh-customer&expires_in=3600'
+  });
+
+  await check('verifica la sesión, reclama pedidos del mismo correo y muestra el historial propio', async () => {
+    await tick(120);
+    assert.strictEqual(accountCallback.doc.getElementById('customerDashboard').hidden, false);
+    assert.match(accountCallback.doc.getElementById('claimSummary').textContent, /1 pedido/);
+    assert.ok(accountCallback.doc.getElementById('customerOrdersList').textContent.includes('Pedido'));
+    assert.match(accountCallback.doc.getElementById('customerProfileDetails').textContent, /5355551234/);
+    assert.match(accountCallback.doc.getElementById('customerProfileDetails').textContent, /Calle 10, Playa/);
+    assert.strictEqual(accountCallback.win.sessionStorage.getItem('rx_sb_session') !== null, true);
+  });
+
+  accountCallback.dom.window.close();
 
   /* ---------------------------------------------------------------- */
   console.log('\nPanel — autenticación Supabase');
@@ -935,6 +1024,75 @@ async function login(win, doc, email, password) {
 
     assert.match(orderFunctions[0], /p_seller_code[\s\S]*?seller_id, seller_code/i);
     assert.match(orderFunctions[0], /role in \('admin', 'staff'\)/i);
+  });
+
+  await check('la nueva migración conserva comisiones fijas y porcentuales sin alterar el contrato del checkout', () => {
+    const migration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261117120000_fix_order_commissions_and_legacy_rpc.sql'),
+      'utf8'
+    );
+
+    assert.match(migration, /create or replace function public\.create_order\([\s\S]*?p_seller_code text,[\s\S]*?p_items jsonb\s*\)/i);
+    assert.match(migration, /select cost_cents, commission_type, commission_percent, commission_fixed_cents, supplier[\s\S]*?from public\.product_costs/i);
+    assert.match(migration, /if v_commission_type = 'amount' then[\s\S]*?v_commission_unit := v_commission_fixed[\s\S]*?else[\s\S]*?round\(v_product\.price_cents \* v_commission_percent \/ 100\)/i);
+    assert.match(migration, /commission_type, commission_percent, commission_fixed_cents,[\s\S]*?commission_cents, supplier/i);
+    assert.match(migration, /if v_product\.stock > 0 then\s+update public\.products[\s\S]*?set stock = stock - v_qty/i);
+    assert.match(migration, /revoke all on function public\.create_order\(text, text, text, jsonb\) from public, anon, authenticated/i);
+    assert.match(migration, /grant execute on function public\.create_order\(text, text, text, text, text, text, jsonb\) to anon, authenticated/i);
+
+    const supabaseClient = fs.readFileSync(path.join(root, 'public/js/supabase.js'), 'utf8');
+    assert.match(supabaseClient, /order_items\([^)]*commission_type[^)]*commission_fixed_cents[^)]*\)/i);
+  });
+
+
+  await check('la RPC propuesta conserva las garantías de la definición activa y calcula comisiones desde el servidor', () => {
+    const activeMigration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261031120000_supplier_availability.sql'),
+      'utf8'
+    );
+    const proposedMigration = fs.readFileSync(
+      path.join(root, 'supabase/migrations/20261117120000_fix_order_commissions_and_legacy_rpc.sql'),
+      'utf8'
+    );
+    const activeSignature = /create or replace function public\.create_order\(\s*p_client_name text,\s*p_client_phone text,\s*p_client_address text,\s*p_client_notes text,\s*p_delivery_method text,\s*p_seller_code text,\s*p_items jsonb\s*\)[\s\S]*?\$\$;/i;
+    const activeRpc = (activeMigration.match(activeSignature) || [])[0];
+    const proposedRpc = (proposedMigration.match(activeSignature) || [])[0];
+
+    assert.ok(activeRpc, 'no se encontró la RPC de siete argumentos activa en main');
+    assert.ok(proposedRpc, 'no se encontró la RPC de siete argumentos propuesta');
+
+    const sharedContracts = [
+      ['validación del nombre', /length\(trim\(p_client_name\)\) < 3/i],
+      ['normalización del teléfono', /regexp_replace\(coalesce\(p_client_phone, ''\), '\[\^0-9\]', '', 'g'\)/i],
+      ['longitud del teléfono', /length\(v_phone\) < 8 or length\(v_phone\) > 15/i],
+      ['método de entrega permitido', /v_delivery not in \('domicilio', 'recogida'\)/i],
+      ['dirección obligatoria para domicilio', /v_delivery = 'domicilio' and \(v_address is null or length\(v_address\) < 5\)/i],
+      ['lista de artículos no vacía', /p_items is null or jsonb_typeof\(p_items\) <> 'array' or jsonb_array_length\(p_items\) = 0/i],
+      ['máximo de líneas', /jsonb_array_length\(p_items\) > 50/i],
+      ['cantidad válida por línea', /v_qty <= 0 or v_qty > 100/i],
+      ['producto activo bloqueado durante la compra', /where id = \(v_item ->> 'product_id'\)::uuid\s+and active\s+for update/i],
+      ['variante válida', /v_variant is null or not \(v_variant = any \(v_product\.variants\)\)/i],
+      ['stock cero solo con proveedor disponible', /v_product\.stock = 0 and not v_product\.supplier_available/i],
+      ['stock local suficiente', /v_product\.stock > 0 and v_product\.stock < v_qty/i],
+      ['límite agregado de proveedor', /v_supplier_order_quantity > 100/i],
+      ['atribución solo a personal autorizado', /where lower\(referral_code\) = lower\(trim\(p_seller_code\)\)\s+and role in \('admin', 'staff'\)/i],
+      ['total con precio leído del producto', /v_total := v_total \+ \(v_product\.price_cents \* v_qty\)/i],
+      ['descuento solo de inventario local', /if v_product\.stock > 0 then\s+update public\.products\s+set stock = stock - v_qty/i]
+    ];
+
+    sharedContracts.forEach(([label, pattern]) => {
+      assert.match(activeRpc, pattern, 'la RPC activa debe conservar: ' + label);
+      assert.match(proposedRpc, pattern, 'la RPC propuesta debe conservar: ' + label);
+    });
+
+    assert.doesNotMatch(proposedRpc, /v_item\s*->>\s*'(?:price|price_cents|total_cents)'/i,
+      'el checkout no debe aceptar importes enviados por el navegador');
+    assert.match(proposedRpc,
+      /if v_commission_type = 'amount' then\s+v_commission_unit := v_commission_fixed;\s+else\s+v_commission_unit := round\(v_product\.price_cents \* v_commission_percent \/ 100\)::integer;\s+end if;/i);
+    assert.match(proposedRpc, /v_commission_line := v_commission_unit \* v_qty;/i);
+    assert.match(proposedRpc,
+      /commission_type,\s*commission_percent,\s*commission_fixed_cents,\s*commission_cents,\s*supplier/i);
+    assert.match(proposedRpc, /v_commission_total := v_commission_total \+ v_commission_line;/i);
   });
 
   /* ---------------------------------------------------------------- */

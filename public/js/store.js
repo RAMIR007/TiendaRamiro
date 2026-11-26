@@ -11,6 +11,7 @@ let catalogState = 'loading';
 let catalogError = '';
 
 document.addEventListener('DOMContentLoaded', () => {
+  hydratePrerenderedCatalog();
   applyStoreConfig();
   renderCategories();
   setupCategoryEvents();
@@ -24,6 +25,36 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshCategoriesFromServer();
   refreshProductsFromServer();
 });
+
+/* ------------------------------------------------------------------ */
+/* Catálogo prerenderizado (buscadores y primera pintura)              */
+/* ------------------------------------------------------------------ */
+
+function hydratePrerenderedCatalog() {
+  const dataNode = document.getElementById('catalog-prerender-data');
+  if (!dataNode) return;
+
+  try {
+    const data = JSON.parse(dataNode.textContent || '{}');
+    if (Array.isArray(data.categories) && data.categories.length > 0) {
+      STORE_CONFIG.categories = data.categories
+        .filter((category) => category && typeof category.key === 'string' && typeof category.label === 'string')
+        .map((category) => ({
+          key: category.key,
+          label: category.label,
+          emoji: category.emoji || '📦',
+          active: true
+        }));
+    }
+
+    if (getCachedProducts().length === 0 && Array.isArray(data.products)) {
+      const products = data.products.map((row) => mapProductRow(row, false)).filter(Boolean);
+      if (products.length > 0) setCachedProducts(products);
+    }
+  } catch (error) {
+    console.warn('[catalog] No se pudo leer el catálogo prerenderizado:', error);
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Sincronización con Supabase                                         */

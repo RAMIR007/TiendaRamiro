@@ -10,7 +10,7 @@ const SUPABASE_ORDER_SELECT = [
   'id,created_at,status,client_name,client_phone,client_address,client_notes',
   'total_cents,commission_cents,order_code,delivery_method,payment_method,seller_id,seller_code',
   'seller:profiles(name,referral_code)',
-  'order_items(id,name,variant,unit_price_cents,quantity,cost_cents,commission_percent,commission_cents,supplier)'
+  'order_items(id,name,variant,unit_price_cents,quantity,cost_cents,commission_type,commission_percent,commission_fixed_cents,commission_cents,supplier)'
 ].join(',');
 
 class SupabaseError extends Error {
@@ -236,6 +236,77 @@ async function requestPasswordReset(email, redirectTo) {
     method: 'POST',
     body: { email: String(email).trim() }
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Cuenta de cliente: acceso OAuth solo con Google                    */
+/* ------------------------------------------------------------------ */
+
+function signInCustomerWithOAuth(provider, redirectTo) {
+  const allowedProviders = ['google'];
+  if (!allowedProviders.includes(provider)) {
+    throw new SupabaseError('Proveedor de acceso no permitido.', 400, null);
+  }
+
+  const callback = redirectTo || `${window.location.origin}/account.html`;
+  const url = `${SUPABASE_CONFIG.url}/auth/v1/authorize?provider=${encodeURIComponent(provider)}&redirect_to=${encodeURIComponent(callback)}`;
+  window.location.assign(url);
+}
+
+async function completeCustomerAuthRedirect() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const errorDescription = params.get('error_description') || params.get('error');
+  if (errorDescription) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    throw new SupabaseError(errorDescription, 400, null);
+  }
+
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (!accessToken || !refreshToken) return null;
+
+  const authUser = await supabaseRequest('/auth/v1/user', { token: accessToken });
+  const session = buildSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    expires_in: params.get('expires_in'),
+    user: authUser
+  }, authUser);
+
+  writeSupabaseSession(session);
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  const claimedOrders = await claimCustomerOrders();
+  return { user: authUser, claimedOrders };
+}
+
+async function claimCustomerOrders() {
+  const token = await requireAccessToken();
+  return supabaseRequest('/rest/v1/rpc/claim_my_orders', {
+    method: 'POST',
+    token,
+    body: {}
+  });
+}
+
+async function fetchCustomerOrders(limit = 50) {
+  const token = await requireAccessToken();
+  const user = await getCurrentUser();
+  const select = 'id,created_at,status,order_code,total_cents,delivery_method,order_items(id,name,variant,unit_price_cents,quantity)';
+  const rows = await supabaseRequest(
+    `/rest/v1/orders?select=${select}&customer_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=${Math.min(100, Math.max(1, Number(limit) || 50))}`,
+    { token }
+  );
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function fetchCustomerProfile() {
+  const token = await requireAccessToken();
+  const user = await getCurrentUser();
+  const rows = await supabaseRequest(
+    `/rest/v1/profiles?select=name,phone,address&id=eq.${encodeURIComponent(user.id)}&limit=1`,
+    { token }
+  );
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -574,7 +645,8 @@ async function createOrderInApi(order) {
       p_client_notes: order.notes || null,
       p_delivery_method: order.deliveryMethod || 'domicilio',
       p_seller_code: order.sellerCode || null,
-      p_items: order.items
+      p_items: order.items,
+      p_client_email: order.email || null
     }
   });
 

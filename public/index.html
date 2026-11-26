@@ -245,6 +245,13 @@
             autocomplete="tel" inputmode="tel" maxlength="18" aria-describedby="clientPhoneError">
           <p id="clientPhoneError" class="field-error" role="alert"></p>
 
+          <label class="sr-only" for="clientEmail">Correo electrónico opcional</label>
+          <input type="email" id="clientEmail" class="checkout-input"
+            placeholder="Correo electrónico (opcional, para guardar tus pedidos)"
+            autocomplete="email" inputmode="email" maxlength="254" aria-describedby="clientEmailError">
+          <p id="clientEmailError" class="field-error" role="alert"></p>
+          <p class="checkout-payment-note">Comprar como invitado no requiere una cuenta. Si luego quieres consultar tus pedidos, puedes entrar desde <a href="/account.html">Mi cuenta</a> con Google usando el mismo correo de esta compra.</p>
+
           <label class="sr-only" for="clientPhoneLandline" data-field="domicilio">Teléfono fijo (si tienes)</label>
           <input type="tel" id="clientPhoneLandline" class="checkout-input" placeholder="Teléfono fijo, si tienes (opcional)"
             autocomplete="tel-local" inputmode="tel" maxlength="18" data-field="domicilio" aria-describedby="clientPhoneLandlineError">
@@ -318,7 +325,7 @@
 
   <!-- Pie de página -->
   <footer class="site-footer">
-    <p><strong data-config="brand-name">RamiroX Market</strong> — Desarrollado por
+    <p><a href="/account.html">Mi cuenta</a> · <strong data-config="brand-name">RamiroX Market</strong> — Desarrollado por
       <a id="footerWhatsApp" href="https://wa.me/5358382989" target="_blank" rel="noopener noreferrer" data-config="studio-link">RX Web Studio</a>
     </p>
     <p>Escaparate funcional del <strong>Paquete 3: Tienda o Catálogo con pedidos</strong></p>

@@ -430,6 +430,7 @@ function validateCheckout() {
   const sellerInput = document.getElementById('sellerCodeInput');
   const notesInput = document.getElementById('clientNotes');
   const paymentInput = document.getElementById('clientPaymentNote');
+  const emailInput = document.getElementById('clientEmail');
 
   const name = nameInput ? nameInput.value.trim() : '';
   const phone = getDigits(phoneInput ? phoneInput.value : '');
@@ -442,6 +443,7 @@ function validateCheckout() {
   const sellerCode = sellerInput ? sellerInput.value.trim().toUpperCase() : '';
   const notes = notesInput ? notesInput.value.trim() : '';
   const paysWith = paymentInput ? Number(paymentInput.value) || 0 : 0;
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
 
   let ok = true;
   let firstInvalid = null;
@@ -456,6 +458,13 @@ function validateCheckout() {
     setFieldError(nameInput, '');
   } else {
     markInvalid(nameInput, 'Escribe tu nombre completo (mínimo 3 letras).');
+  }
+
+  const emailIsValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!emailIsValid) {
+    markInvalid(emailInput, 'Escribe un correo electrónico válido.');
+  } else {
+    setFieldError(emailInput, '');
   }
 
   const { minPhoneDigits, maxPhoneDigits } = STORE_CONFIG.checkout;
@@ -517,7 +526,8 @@ function validateCheckout() {
 
   return {
     ok, firstInvalid, name, phone, phoneLandline, deliveryMethod,
-    municipality, address, reference, timeRange, sellerCode, notes, paysWith, fullAddress
+    municipality, address, reference, timeRange, sellerCode, notes, paysWith, fullAddress,
+    email
   };
 }
 
@@ -653,18 +663,24 @@ async function checkoutWhatsApp() {
 
   try {
     const localTotalCents = getCartTotals().totalCents;
-    let registered = false;
     let totalCents = localTotalCents;
     let orderCode = '';
+    const registrationNotes = [
+      data.notes ? 'Comentarios: ' + data.notes : '',
+      data.phoneLandline ? 'Teléfono fijo: ' + data.phoneLandline : '',
+      data.timeRange ? 'Horario de entrega/recogida: ' + data.timeRange : '',
+      data.paysWith > 0 ? 'Paga con: ' + formatCents(toCents(data.paysWith)) : ''
+    ].filter(Boolean).join('\n');
 
     try {
       const result = await createOrderInApi({
         name: data.name,
         phone: data.phone,
         address: data.fullAddress,
-        notes: data.notes,
+        notes: registrationNotes,
         deliveryMethod: data.deliveryMethod,
         sellerCode: data.sellerCode,
+        email: data.email,
         items: cart.map((item) => ({
           product_id: item.id,
           variant: item.variant,
@@ -672,47 +688,40 @@ async function checkoutWhatsApp() {
         }))
       });
 
-      registered = true;
       totalCents = result.totalCents || localTotalCents;
       orderCode = result.orderCode;
       rememberSellerCode(data.sellerCode);
     } catch (error) {
       console.error('[checkout]', error);
+      const reason = error && error.status === 0
+        ? 'No se pudo conectar con el sistema'
+        : (error.message || 'No se pudo registrar el pedido');
 
-      if (error && error.status === 0) {
-        // Sin conexión: no se pierde la venta; se ofrece enviar igual por WhatsApp.
-        const proceed = window.confirm(
-          'No se pudo registrar el pedido en el sistema. ¿Quieres enviarlo igual por WhatsApp?'
-        );
-        if (!proceed) return;
-      } else {
-        showToast(error.message || 'No se pudo registrar el pedido');
+      showToast(reason + '. El pedido no se ha enviado. Conservamos tus datos y el carrito; inténtalo de nuevo.');
 
-        if (typeof refreshProductsFromServer === 'function') {
-          await refreshProductsFromServer({ silent: true });
-        }
+      if (error && error.status !== 0 && typeof refreshProductsFromServer === 'function') {
+        await refreshProductsFromServer({ silent: true });
         syncCartWithCatalog();
-        return;
       }
+      return;
     }
 
+    // El pedido ya está confirmado: abre WhatsApp y vacía el carrito.
+    // La creación de cuenta es opcional y se realiza después desde Mi cuenta con Google.
     const message = buildWhatsAppMessage(data, totalCents, orderCode);
     openWhatsApp(buildWhatsAppUrl(message));
 
     clearCart();
     closeCartDrawer();
 
-    ['clientName', 'clientPhone', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
+    ['clientName', 'clientPhone', 'clientEmail', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
       'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
       const input = document.getElementById(id);
       if (input) input.value = '';
     });
     const timeInput = document.getElementById('clientTimeRange');
     if (timeInput) timeInput.value = '';
-
-    showToast(registered
-      ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
-      : 'Pedido enviado por WhatsApp. No se pudo registrar en el panel.');
+    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmar tu compra. Si quieres consultar tu historial, entra después en Mi cuenta con Google y el mismo correo.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);
@@ -766,7 +775,7 @@ function setupCartEvents() {
     });
   }
 
-  ['clientName', 'clientPhone', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
+  ['clientName', 'clientPhone', 'clientEmail', 'clientPhoneLandline', 'clientMunicipality', 'clientAddress',
     'clientReference', 'sellerCodeInput', 'clientNotes', 'clientPaymentNote'].forEach((id) => {
     const input = document.getElementById(id);
     if (!input) return;
