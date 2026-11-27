@@ -143,6 +143,218 @@ test('checkout vacío muestra validaciones y nunca crea un pedido', async ({ pag
   expect(page.sideEffects).toEqual([]);
 });
 
+
+test('checkout de mensajería usa el subtotal del servidor y no envía precios del navegador', async ({ page }) => {
+  let orderPayload = null;
+  await page.route(`${SUPABASE_ORIGIN}/rest/v1/rpc/create_order`, async (route) => {
+    orderPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        order_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        order_code: 'E2E-DELIVERY-001',
+        total_cents: 39500,
+        commission_cents: 0,
+        count: 1
+      })
+    });
+  });
+  await page.addInitScript(() => {
+    window.__testWhatsAppUrl = null;
+    const nativeClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.href.startsWith('https://wa.me/')) {
+        window.__testWhatsAppUrl = this.href;
+        return;
+      }
+      return nativeClick.call(this);
+    };
+  });
+
+  await page.goto('/');
+  await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
+  await page.locator('#clientName').fill('Cliente E2E');
+  await page.locator('#clientPhone').fill('5355555555');
+  await page.locator('#deliveryMethod').selectOption('domicilio');
+  await page.locator('#clientMunicipality').fill('Playa');
+  await page.locator('#clientAddress').fill('Calle 23, número 12');
+  await page.locator('#clientReference').fill('Frente al parque');
+  await page.locator('#clientTimeRange').selectOption('Tarde (15:00 — 19:00)');
+  await page.locator('#clientPaymentNote').fill('500');
+
+  await page.locator('#checkoutBtn').click();
+  await expect.poll(() => orderPayload).not.toBeNull();
+  await expect.poll(() => page.evaluate(() => window.__testWhatsAppUrl)).not.toBeNull();
+
+  expect(orderPayload.p_client_name).toBe('Cliente E2E');
+  expect(orderPayload.p_delivery_method).toBe('domicilio');
+  expect(orderPayload.p_items).toHaveLength(1);
+  expect(orderPayload.p_items[0]).toMatchObject({ product_id: PRODUCT_ID, quantity: 1 });
+  expect(orderPayload.p_items[0]).not.toHaveProperty('price_cents');
+  expect(orderPayload.p_items[0]).not.toHaveProperty('stock');
+  expect(orderPayload).not.toHaveProperty('p_total_cents');
+  expect(orderPayload).not.toHaveProperty('p_delivery_fee_cents');
+
+  const whatsappUrl = await page.evaluate(() => window.__testWhatsAppUrl);
+  const voucher = new URL(whatsappUrl).searchParams.get('text');
+  expect(voucher).toContain('Nº de vale: E2E-DELIVERY-001');
+  expect(voucher).toContain('Subtotal de productos (confirmado por el sistema): $395 USD');
+  expect(voucher).toContain('Precio de mensajería (tarifa configurada): $2 USD');
+  expect(voucher).toContain('Total a pagar: $397 USD');
+  expect(voucher).toContain('Vuelto: $103 USD');
+  expect(voucher).not.toContain('Precio del producto:');
+  await expect(page.locator('#cartSubtotal')).toHaveText('$0 USD');
+  expect(page.sideEffects).toEqual([]);
+});
+
+test('checkout de recogida usa el subtotal del servidor y omite mensajería', async ({ page }) => {
+  let orderPayload = null;
+  await page.route(`${SUPABASE_ORIGIN}/rest/v1/rpc/create_order`, async (route) => {
+    orderPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        order_id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+        order_code: 'E2E-PICKUP-001',
+        total_cents: 2700,
+        commission_cents: 0,
+        count: 1
+      })
+    });
+  });
+  await page.addInitScript(() => {
+    window.__testWhatsAppUrl = null;
+    const nativeClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.href.startsWith('https://wa.me/')) {
+        window.__testWhatsAppUrl = this.href;
+        return;
+      }
+      return nativeClick.call(this);
+    };
+  });
+
+  await page.goto('/');
+  await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
+  await page.locator('#clientName').fill('Cliente E2E');
+  await page.locator('#clientPhone').fill('5355555555');
+  await page.locator('#deliveryMethod').selectOption('recogida');
+  await page.locator('#clientTimeRange').selectOption('Mañana (9:00 — 12:00)');
+
+  await page.locator('#checkoutBtn').click();
+  await expect.poll(() => orderPayload).not.toBeNull();
+  await expect.poll(() => page.evaluate(() => window.__testWhatsAppUrl)).not.toBeNull();
+
+  expect(orderPayload.p_delivery_method).toBe('recogida');
+  expect(orderPayload.p_client_address).toBeNull();
+  const whatsappUrl = await page.evaluate(() => window.__testWhatsAppUrl);
+  const voucher = new URL(whatsappUrl).searchParams.get('text');
+  expect(voucher).toContain('Nº de vale: E2E-PICKUP-001');
+  expect(voucher).toContain('Subtotal de productos (confirmado por el sistema): $27 USD');
+  expect(voucher).toContain('Total a pagar: $27 USD');
+  expect(voucher).not.toContain('Precio de mensajería');
+  expect(voucher).not.toContain('Precio del producto:');
+  expect(voucher).not.toContain('Dirección:');
+  expect(page.sideEffects).toEqual([]);
+});
+
+test('no abre WhatsApp ni vacía el carrito si la RPC devuelve un total inválido', async ({ page }) => {
+  let orderPayload = null;
+  await page.route(`${SUPABASE_ORIGIN}/rest/v1/rpc/create_order`, async (route) => {
+    orderPayload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        order_id: '11111111-1111-4111-8111-111111111111',
+        order_code: 'E2E-INVALID-001',
+        count: 1
+      })
+    });
+  });
+  await page.addInitScript(() => {
+    window.__testWhatsAppUrl = null;
+    const nativeClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.href.startsWith('https://wa.me/')) {
+        window.__testWhatsAppUrl = this.href;
+        return;
+      }
+      return nativeClick.call(this);
+    };
+  });
+
+  await page.goto('/');
+  await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
+  await page.locator('#clientName').fill('Cliente E2E');
+  await page.locator('#clientPhone').fill('5355555555');
+  await page.locator('#clientMunicipality').fill('Playa');
+  await page.locator('#clientAddress').fill('Calle 23, número 12');
+  await page.locator('#clientReference').fill('Frente al parque');
+  await page.locator('#clientTimeRange').selectOption('Tarde (15:00 — 19:00)');
+  await page.locator('#clientPaymentNote').fill('500');
+
+  await page.locator('#checkoutBtn').click();
+  await expect.poll(() => orderPayload).not.toBeNull();
+  await expect(page.locator('#checkoutBtn')).toContainText('Completar Pedido en WhatsApp');
+  await expect(page.locator('#cartSubtotal')).toHaveText('$28 USD');
+  expect(await page.evaluate(() => window.__testWhatsAppUrl)).toBeNull();
+  expect(page.sideEffects).toEqual([]);
+});
+
+
+test('no envía a WhatsApp ni vacía el carrito si se pierde la conexión al registrar', async ({ page }) => {
+  let orderAttempted = false;
+  await page.route(`${SUPABASE_ORIGIN}/rest/v1/rpc/create_order`, async (route) => {
+    orderAttempted = true;
+    await route.abort('failed');
+  });
+
+  let confirmShown = false;
+  page.on('dialog', async (dialog) => {
+    confirmShown = true;
+    await dialog.accept();
+  });
+
+  await page.addInitScript(() => {
+    window.__testWhatsAppUrl = null;
+    const nativeClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.href.startsWith('https://wa.me/')) {
+        window.__testWhatsAppUrl = this.href;
+        return;
+      }
+      return nativeClick.call(this);
+    };
+  });
+
+  await page.goto('/');
+  await page.locator(`.product-card[data-id="${PRODUCT_ID}"] .btn-add-quick`).click();
+  await page.locator('.cart-floating-fab:visible, .btn-cart-nav:visible').first().click();
+  await page.locator('#clientName').fill('Cliente E2E');
+  await page.locator('#clientPhone').fill('5355555555');
+  await page.locator('#deliveryMethod').selectOption('domicilio');
+  await page.locator('#clientMunicipality').fill('Playa');
+  await page.locator('#clientAddress').fill('Calle 23, número 12');
+  await page.locator('#clientReference').fill('Frente al parque');
+  await page.locator('#clientTimeRange').selectOption('Tarde (15:00 — 19:00)');
+  await page.locator('#clientPaymentNote').fill('500');
+
+  await page.locator('#checkoutBtn').click();
+  await expect.poll(() => orderAttempted).toBe(true);
+  await expect(page.locator('#checkoutBtn')).toContainText('Completar Pedido en WhatsApp');
+  await expect(page.locator('#cartSubtotal')).toHaveText('$28 USD');
+
+  expect(confirmShown).toBe(false);
+  expect(await page.evaluate(() => window.__testWhatsAppUrl)).toBeNull();
+  expect(page.sideEffects).toEqual([]);
+});
+
 test('la vista móvil permite navegar por el catálogo y abrir el carrito', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.product-card')).toHaveCount(2);

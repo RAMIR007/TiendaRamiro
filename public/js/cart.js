@@ -528,22 +528,14 @@ function totalOrderValue() {
 function productLines() {
   return cart.map((item) => {
     const variant = item.variant ? ` (${item.variant})` : '';
-    const unit = formatCents(toCents(item.price));
-    const lineTotal = formatCents(toCents(item.price) * item.quantity);
     return {
-      name: `${item.quantity}x ${item.name}${variant}`,
-      unit,
-      lineTotal
+      name: `${item.quantity}x ${item.name}${variant}`
     };
   });
 }
 
 function productNamesText(lines) {
   return lines.map((line) => `• ${line.name}`).join('\n');
-}
-
-function productPricesText(lines) {
-  return lines.map((line) => `• ${line.lineTotal} (${line.unit} c/u)`).join('\n');
 }
 
 function valeGestorLine() {
@@ -554,7 +546,8 @@ function valeGestorLine() {
 function buildWhatsAppMessage(data, totalCents, orderCode) {
   const lines = productLines();
   const productsText = productNamesText(lines);
-  const pricesText = productPricesText(lines);
+  const subtotalLabel = 'Subtotal de productos (confirmado por el sistema)';
+  const totalLabel = 'Total a pagar';
   const disclaimer = 'Revisar bien el producto una vez el cliente se vaya no hay devolución de ningún tipo.';
   const paymentMethod = 'Efectivo';
 
@@ -566,17 +559,21 @@ function buildWhatsAppMessage(data, totalCents, orderCode) {
     vale += `Teléfono: ${data.phone}\n`;
     vale += `Rango de horario de recogida: ${data.timeRange}\n`;
     vale += `Producto:\n${productsText}\n`;
-    vale += `Precio del producto:\n${pricesText}\n`;
+    vale += `${subtotalLabel}: ${formatCents(totalCents)}\n`;
+    vale += `${totalLabel}: ${formatCents(totalCents)}\n`;
     vale += `Forma de pago: ${paymentMethod}\n`;
     vale += `\n${valeGestorLine()}\n\n`;
     vale += disclaimer;
     return vale;
   }
 
-  const deliveryPrice = Number(STORE_CONFIG.deliveryPrice) || 0;
+  const deliveryPriceCents = Math.max(0, toCents(Number(STORE_CONFIG.deliveryPrice) || 0));
+  const amountDueCents = totalCents + deliveryPriceCents;
+  const cashCents = data.paysWith ? toCents(data.paysWith) : 0;
   const vuelto = data.paysWith
-    ? formatMoney(Math.max(0, Number(data.paysWith) - (totalCents / 100 + deliveryPrice)))
+    ? formatCents(Math.max(0, cashCents - amountDueCents))
     : '—';
+  const cashInsufficient = cashCents > 0 && cashCents < amountDueCents;
 
   let vale = '🔱 *VALE DE MENSAJERÍA* 🔱';
   if (orderCode) vale += `\nNº de vale: ${orderCode}`;
@@ -589,10 +586,14 @@ function buildWhatsAppMessage(data, totalCents, orderCode) {
   vale += `Teléfono fijo en caso de tener: ${data.phoneLandline || '—'}\n`;
   vale += `Rango de horario de mensajería: ${data.timeRange}\n`;
   vale += `Producto:\n${productsText}\n`;
-  vale += `Precio del producto:\n${pricesText}\n`;
-  vale += `Precio de mensajería: ${formatMoney(deliveryPrice)}\n`;
+  vale += `${subtotalLabel}: ${formatCents(totalCents)}\n`;
+  vale += `Precio de mensajería (tarifa configurada): ${formatCents(deliveryPriceCents)}\n`;
+  vale += `${totalLabel}: ${formatCents(amountDueCents)}\n`;
   vale += `Forma de pago: ${paymentMethod}\n`;
   vale += `Vuelto: ${vuelto}\n`;
+  if (cashInsufficient) {
+    vale += '⚠️ El billete indicado no cubre el total actualizado. Confirma el importe antes de aceptar el pedido.\n';
+  }
   if (data.sellerCode) vale += `Código de vendedor: ${data.sellerCode}\n`;
   if (data.notes) vale += `Nota: ${data.notes}\n`;
   vale += `\n${valeGestorLine()}\n\n`;
@@ -600,7 +601,6 @@ function buildWhatsAppMessage(data, totalCents, orderCode) {
   vale += 'La mensajería es obligatoria pagarla aunque el cliente no se quede con el producto.';
   return vale;
 }
-
 function buildWhatsAppUrl(message) {
   const phone = String(STORE_CONFIG.whatsappPhone || '').replace(/\D/g, '');
   if (phone.length < 8) {
@@ -652,9 +652,7 @@ async function checkoutWhatsApp() {
   setCheckoutBusy(true);
 
   try {
-    const localTotalCents = getCartTotals().totalCents;
-    let registered = false;
-    let totalCents = localTotalCents;
+    let totalCents;
     let orderCode = '';
 
     try {
@@ -672,28 +670,23 @@ async function checkoutWhatsApp() {
         }))
       });
 
-      registered = true;
-      totalCents = result.totalCents || localTotalCents;
+      totalCents = result.totalCents;
       orderCode = result.orderCode;
       rememberSellerCode(data.sellerCode);
     } catch (error) {
       console.error('[checkout]', error);
 
       if (error && error.status === 0) {
-        // Sin conexión: no se pierde la venta; se ofrece enviar igual por WhatsApp.
-        const proceed = window.confirm(
-          'No se pudo registrar el pedido en el sistema. ¿Quieres enviarlo igual por WhatsApp?'
-        );
-        if (!proceed) return;
-      } else {
-        showToast(error.message || 'No se pudo registrar el pedido');
-
-        if (typeof refreshProductsFromServer === 'function') {
-          await refreshProductsFromServer({ silent: true });
-        }
-        syncCartWithCatalog();
+        showToast('No se pudo confirmar el registro por falta de conexión. No se envió a WhatsApp y tu carrito se conserva. Contacta con la tienda antes de reintentar para evitar pedidos duplicados.');
         return;
       }
+
+      showToast(error.message || 'No se pudo registrar el pedido');
+      if (typeof refreshProductsFromServer === 'function') {
+        await refreshProductsFromServer({ silent: true });
+      }
+      syncCartWithCatalog();
+      return;
     }
 
     const message = buildWhatsAppMessage(data, totalCents, orderCode);
@@ -710,9 +703,7 @@ async function checkoutWhatsApp() {
     const timeInput = document.getElementById('clientTimeRange');
     if (timeInput) timeInput.value = '';
 
-    showToast(registered
-      ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
-      : 'Pedido enviado por WhatsApp. No se pudo registrar en el panel.');
+    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);

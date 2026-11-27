@@ -121,6 +121,7 @@ function createMock() {
     requests: [],
     lastOrderPayload: null,
     lastOrderPatch: null,
+    orderResponseOverride: null,
     productCosts: [],
     passwordUpdates: [],
     recoveries: [],
@@ -305,7 +306,13 @@ function createMock() {
       }, 0);
       const count = body.p_items.reduce((sum, item) => sum + item.quantity, 0);
 
-      return respond({ order_id: randomUUID(), total_cents: totalCents, count });
+      return respond(state.orderResponseOverride || {
+        order_id: randomUUID(),
+        order_code: 'RX-TEST-0001',
+        total_cents: totalCents,
+        commission_cents: 0,
+        count
+      });
     }
 
     if (route === '/rest/v1/audit_logs' && method === 'GET') {
@@ -562,6 +569,13 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientReference').value = 'Frente al parque';
     doc.getElementById('clientTimeRange').value = 'Tarde (15:00 — 19:00)';
     doc.getElementById('clientPaymentNote').value = '500';
+    storeMock.state.orderResponseOverride = {
+      order_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      order_code: 'RX-TEST-DELIVERY',
+      total_cents: 39500,
+      commission_cents: 0,
+      count: 15
+    };
 
     submit(doc.getElementById('checkoutForm'));
     await tick(260);
@@ -576,19 +590,30 @@ async function login(win, doc, email, password) {
     assert.strictEqual(payload.p_items[0].quantity, 12);
     assert.strictEqual(payload.p_items[1].quantity, 3);
     assert.strictEqual(payload.p_items[1].variant, 'M');
+    assert.deepStrictEqual(Object.keys(payload).sort(), [
+      'p_client_address', 'p_client_name', 'p_client_notes', 'p_client_phone',
+      'p_delivery_method', 'p_items', 'p_seller_code'
+    ].sort());
+    assert.deepStrictEqual(Object.keys(payload.p_items[0]).sort(), [
+      'product_id', 'quantity', 'variant'
+    ].sort());
 
     assert.strictEqual(win.getCartTotals().count, 0);
     assert.strictEqual(doc.getElementById('cartSubtotal').textContent, '$0 USD');
     assert.match(win.__lastOpened, /^https:\/\/wa\.me\/5358382989\?text=/);
     const voucher = new URL(win.__lastOpened).searchParams.get('text');
     assert.ok(voucher.includes('🔱 *VALE DE MENSAJERÍA* 🔱'));
+    assert.ok(voucher.includes('Nº de vale: RX-TEST-DELIVERY'));
     assert.ok(voucher.includes('Dirección: Calle 23, número 12'));
     assert.ok(voucher.includes('Municipio: Playa'));
     assert.ok(voucher.includes('Punto de referencia: Frente al parque'));
     assert.ok(voucher.includes('Teléfono fijo en caso de tener: —'));
-    assert.ok(voucher.includes('Precio de mensajería: $2 USD'));
+    assert.ok(voucher.includes('Subtotal de productos (confirmado por el sistema): $395 USD'));
+    assert.ok(voucher.includes('Precio de mensajería (tarifa configurada): $2 USD'));
+    assert.ok(voucher.includes('Total a pagar: $397 USD'));
     assert.ok(voucher.includes('Forma de pago: Efectivo'));
-    assert.ok(voucher.includes('Vuelto: $102 USD'));
+    assert.ok(voucher.includes('Vuelto: $103 USD'));
+    assert.ok(!voucher.includes('Precio del producto:'));
     assert.ok(voucher.includes('La mensajería es obligatoria pagarla aunque el cliente no se quede con el producto.'));
   });
 
@@ -601,6 +626,7 @@ async function login(win, doc, email, password) {
     doc.getElementById('clientPhone').value = '5358382989';
     doc.getElementById('clientTimeRange').value = 'Mañana (9:00 — 12:00)';
     doc.getElementById('clientPaymentNote').value = '27';
+    storeMock.state.orderResponseOverride = null;
     storeMock.state.lastOrderPayload = null;
 
     submit(doc.getElementById('checkoutForm'));
@@ -620,13 +646,15 @@ async function login(win, doc, email, password) {
     assert.ok(voucher.includes('Teléfono: 5358382989'));
     assert.ok(voucher.includes('Rango de horario de recogida: Mañana (9:00 — 12:00)'));
     assert.ok(voucher.includes('Producto:\n• 1x Auriculares Inalámbricos TWS Pro (Negro Mate)'));
-    assert.ok(voucher.includes('Precio del producto:\n• $28 USD ($28 USD c/u)'));
+    assert.ok(voucher.includes('Subtotal de productos (confirmado por el sistema): $28 USD'));
+    assert.ok(voucher.includes('Total a pagar: $28 USD'));
+    assert.ok(!voucher.includes('Precio del producto:'));
     assert.ok(voucher.includes('Forma de pago: Efectivo'));
     assert.ok(voucher.includes('Nombre y teléfono del gestor (se requiere para las dinámicas): Ramiro (5358382989)'));
     assert.ok(voucher.includes('Revisar bien el producto una vez el cliente se vaya no hay devolución de ningún tipo.'));
     assert.ok(!voucher.includes('Dirección:'));
-    assert.ok(!voucher.includes('Precio de mensajería:'));
-    assert.ok(!voucher.includes('Total a pagar:'));
+    assert.ok(!voucher.includes('Precio de mensajería'));
+    assert.ok(voucher.includes('Total a pagar: $28 USD'));
   });
 
   await check('escapa un producto malicioso que llega de la API', async () => {
