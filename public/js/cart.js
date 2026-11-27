@@ -543,13 +543,11 @@ function valeGestorLine() {
   return `Nombre y teléfono del gestor (se requiere para las dinámicas): ${gestor.name || '—'} (${gestor.phone || '—'})`;
 }
 
-function buildWhatsAppMessage(data, totalCents, orderCode, registered = true) {
+function buildWhatsAppMessage(data, totalCents, orderCode) {
   const lines = productLines();
   const productsText = productNamesText(lines);
-  const subtotalLabel = registered
-    ? 'Subtotal de productos (confirmado por el sistema)'
-    : 'Subtotal de productos (estimado; pendiente de registro)';
-  const totalLabel = registered ? 'Total a pagar' : 'Total estimado (pedido no registrado)';
+  const subtotalLabel = 'Subtotal de productos (confirmado por el sistema)';
+  const totalLabel = 'Total a pagar';
   const disclaimer = 'Revisar bien el producto una vez el cliente se vaya no hay devolución de ningún tipo.';
   const paymentMethod = 'Efectivo';
 
@@ -654,9 +652,7 @@ async function checkoutWhatsApp() {
   setCheckoutBusy(true);
 
   try {
-    const localTotalCents = getCartTotals().totalCents;
-    let registered = false;
-    let totalCents = localTotalCents;
+    let totalCents;
     let orderCode = '';
 
     try {
@@ -674,7 +670,6 @@ async function checkoutWhatsApp() {
         }))
       });
 
-      registered = true;
       totalCents = result.totalCents;
       orderCode = result.orderCode;
       rememberSellerCode(data.sellerCode);
@@ -682,23 +677,19 @@ async function checkoutWhatsApp() {
       console.error('[checkout]', error);
 
       if (error && error.status === 0) {
-        // Sin conexión: no se pierde la venta; se ofrece enviar igual por WhatsApp.
-        const proceed = window.confirm(
-          'No se pudo registrar el pedido en el sistema. ¿Quieres enviarlo igual por WhatsApp?'
-        );
-        if (!proceed) return;
-      } else {
-        showToast(error.message || 'No se pudo registrar el pedido');
-
-        if (typeof refreshProductsFromServer === 'function') {
-          await refreshProductsFromServer({ silent: true });
-        }
-        syncCartWithCatalog();
+        showToast('No se pudo confirmar el registro por falta de conexión. No se envió a WhatsApp y tu carrito se conserva. Contacta con la tienda antes de reintentar para evitar pedidos duplicados.');
         return;
       }
+
+      showToast(error.message || 'No se pudo registrar el pedido');
+      if (typeof refreshProductsFromServer === 'function') {
+        await refreshProductsFromServer({ silent: true });
+      }
+      syncCartWithCatalog();
+      return;
     }
 
-    const message = buildWhatsAppMessage(data, totalCents, orderCode, registered);
+    const message = buildWhatsAppMessage(data, totalCents, orderCode);
     openWhatsApp(buildWhatsAppUrl(message));
 
     clearCart();
@@ -712,9 +703,7 @@ async function checkoutWhatsApp() {
     const timeInput = document.getElementById('clientTimeRange');
     if (timeInput) timeInput.value = '';
 
-    showToast(registered
-      ? 'Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.'
-      : 'Pedido enviado por WhatsApp. No se pudo registrar en el panel.');
+    showToast('Pedido registrado. Envía el mensaje en WhatsApp para confirmarlo.');
   } finally {
     checkoutInProgress = false;
     setCheckoutBusy(false);
